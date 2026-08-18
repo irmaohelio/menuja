@@ -15,6 +15,10 @@ export default function CategoriasPage() {
 
   const load = () => {
     fetch("/api/categories").then(r => r.json()).then(d => { if (d.success) setCategories(d.categories) })
+    // Load extras templates from API
+    fetch("/api/categories/templates").then(r => r.json()).then(d => {
+      if (d.success && d.templates) setCatTemplates(d.templates)
+    })
   }
   useEffect(() => { load() }, [])
 
