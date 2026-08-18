@@ -56,6 +56,14 @@ model Store {
   primaryColor  String   @default("#e11d48")
   secondaryColor String  @default("#f0abfc")
   buttonColor   String   @default("#e11d48")
+
+  // Trial & Plan
+  plan          String   @default("trial") // trial, basic, pro, enterprise
+  trialStartsAt DateTime @default(now())
+  trialEndsAt   DateTime // Set to 7 days from now on registration
+  planExpiresAt DateTime? // When paid plan expires (null = no plan)
+  isBlocked     Boolean  @default(false) // Manual block by master
+
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

@@ -1,12 +1,17 @@
 "use client"
 import { useState, useEffect } from "react"
+import Link from "next/link"
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<any>(null)
+  const [trial, setTrial] = useState<any>(null)
 
   useEffect(() => {
     fetch("/api/dashboard").then(r => r.json()).then(data => {
       if (data.success) setStats(data)
+    })
+    fetch("/api/trial/status").then(r => r.json()).then(data => {
+      if (data.success) setTrial(data)
     })
   }, [])
 
@@ -23,6 +28,50 @@ export default function AdminDashboard() {
 
   return (
     <div>
+      {/* Trial Banner */}
+      {trial && (
+        <div className={`mb-6 p-4 rounded-2xl ${
+          trial.isBlocked 
+            ? 'bg-red-50 border-2 border-red-200' 
+            : trial.daysRemaining <= 2 
+              ? 'bg-yellow-50 border-2 border-yellow-200' 
+              : 'bg-blue-50 border-2 border-blue-200'
+        }`}>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div>
+              <h3 className={`font-bold ${
+                trial.isBlocked ? 'text-red-700' : trial.daysRemaining <= 2 ? 'text-yellow-700' : 'text-blue-700'
+              }`}>
+                {trial.isBlocked 
+                  ? '⛔ Período de teste expirado' 
+                  : trial.isPaid 
+                    ? `📅 Plano ${trial.plan.toUpperCase()} — ${trial.daysRemaining} dias restantes`
+                    : `🎁 Período de teste — ${trial.daysRemaining} dias restantes`}
+              </h3>
+              <p className={`text-sm mt-1 ${
+                trial.isBlocked ? 'text-red-600' : trial.daysRemaining <= 2 ? 'text-yellow-600' : 'text-blue-600'
+              }`}>
+                {trial.isBlocked 
+                  ? 'Para continuar usando o MenuJá, escolha um plano abaixo.'
+                  : trial.isPaid 
+                    ? `Seu plano expira em ${new Date(trial.planExpiresAt).toLocaleDateString('pt-BR')}`
+                    : `Seu teste gratuito expira em ${new Date(trial.trialEndsAt).toLocaleDateString('pt-BR')}`}
+              </p>
+            </div>
+            {(trial.isBlocked || trial.daysRemaining <= 3) && (
+              <Link
+                href="/admin/planos"
+                className={`px-5 py-2.5 rounded-xl font-bold text-white transition ${
+                  trial.isBlocked ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'
+                }`}
+              >
+                {trial.isBlocked ? 'Escolher Plano' : 'Ver Planos'}
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
+
       <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {cards.map((c, i) => (

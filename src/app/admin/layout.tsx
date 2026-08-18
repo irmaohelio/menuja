@@ -10,6 +10,7 @@ const menuItems = [
   { href: "/admin/produtos", label: "Produtos", icon: "📦" },
   { href: "/admin/categorias", label: "Categorias", icon: "📁" },
   { href: "/admin/configuracoes", label: "Config.", icon: "⚙️" },
+  { href: "/admin/planos", label: "Planos", icon: "💎" },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -22,6 +23,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [showNotif, setShowNotif] = useState(false)
   const [copied, setCopied] = useState(false)
   const [showStoreMenu, setShowStoreMenu] = useState(false)
+  const [trial, setTrial] = useState<any>(null)
   const { unread, notifications, markAllRead } = useNotifications()
 
   useEffect(() => {
@@ -35,6 +37,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       })
       .catch(() => { setAuthError(true); setTimeout(() => router.push("/login"), 500) })
   // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    fetch("/api/trial/status").then(r => r.json()).then(data => {
+      if (data.success) setTrial(data)
+    })
   }, [])
 
   const handleLogout = async () => {
@@ -75,6 +83,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <p className="text-gray-500 text-sm">Sessão expirada. Redirecionando...</p>
     </div>
   )
+
+  // Block access if trial expired and not on plans page
+  if (trial?.isBlocked && pathname !== "/admin/planos") {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-gray-50 px-4">
+        <p className="text-6xl">⛔</p>
+        <h1 className="text-2xl font-bold text-red-600">Período de teste expirado</h1>
+        <p className="text-gray-500 text-center max-w-md">
+          Seu período de teste gratuito de 7 dias acabou. Para continuar usando o MenuJá e recebendo pedidos, escolha um plano.
+        </p>
+        <Link
+          href="/admin/planos"
+          className="px-6 py-3 bg-rose-600 text-white rounded-xl font-bold hover:bg-rose-700 transition"
+        >
+          Escolher Plano
+        </Link>
+        <button onClick={handleLogout} className="text-sm text-gray-400 hover:text-gray-600 mt-2">
+          Sair da conta
+        </button>
+      </div>
+    )
+  }
 
   const storeLink = store?.slug ? `${typeof window !== "undefined" ? window.location.origin : ""}/loja/${store.slug}` : ""
 
