@@ -349,15 +349,6 @@ export default function ProdutosPage() {
               />
             ))}
           </div>
-          <CategoryTemplateEditor
-            category={cat}
-            extras={catTemplates[cat.id] || []}
-            onSave={(newExtras) => {
-              const newTemplates = { ...catTemplates, [cat.id]: newExtras }
-              setCatTemplates(newTemplates)
-              try { localStorage.setItem("cat_extras_templates", JSON.stringify(newTemplates)) } catch {}
-            }}
-          />
         </div>
       ))}
 
