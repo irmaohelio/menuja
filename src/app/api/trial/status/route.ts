@@ -1,17 +1,14 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getUserFromToken } from '@/lib/auth'
+import { getCurrentUser } from '@/lib/auth'
 import { success, error } from '@/lib/api'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: NextRequest) {
   try {
-    const token = req.cookies.get('token')?.value
-    if (!token) return error('Não autenticado', 401)
-
-    const user = await getUserFromToken(token)
-    if (!user) return error('Sessão inválida', 401)
+    const user = await getCurrentUser()
+    if (!user) return error('Não autenticado', 401)
 
     const store = await prisma.store.findUnique({
       where: { userId: user.id },
