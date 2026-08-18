@@ -349,17 +349,15 @@ export default function ProdutosPage() {
               />
             ))}
           </div>
-          <div className="mt-3">
-            <CategoryTemplateEditor
-              category={cat}
-              extras={catTemplates[cat.id] || []}
-              onSave={(newExtras) => {
-                const newTemplates = { ...catTemplates, [cat.id]: newExtras }
-                setCatTemplates(newTemplates)
-                try { localStorage.setItem("cat_extras_templates", JSON.stringify(newTemplates)) } catch {}
-              }}
-            />
-          </div>
+          <CategoryTemplateEditor
+            category={cat}
+            extras={catTemplates[cat.id] || []}
+            onSave={(newExtras) => {
+              const newTemplates = { ...catTemplates, [cat.id]: newExtras }
+              setCatTemplates(newTemplates)
+              try { localStorage.setItem("cat_extras_templates", JSON.stringify(newTemplates)) } catch {}
+            }}
+          />
         </div>
       ))}
 
@@ -720,7 +718,7 @@ function CategoryTemplateEditor({ category, extras, onSave }: {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-4">
+    <div className="mt-3">
       <div className="flex items-center justify-between mb-2">
         <div>
           <span className="font-bold text-sm">Extras de {category.name}</span>
