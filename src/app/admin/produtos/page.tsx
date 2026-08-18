@@ -55,8 +55,6 @@ export default function ProdutosPage() {
         setForm(prev => ({ ...prev, ...draft.form }))
         if (draft.adicionais?.length) setAdicionais(draft.adicionais)
         if (draft.pizzaSizes?.length) setPizzaSizes(draft.pizzaSizes)
-        if (draft.form.extraName) setExtraName(draft.form.extraName)
-        if (draft.form.extraPrice) setExtraPrice(draft.form.extraPrice)
         if (draft.editing) {
           const p = products.find((pr: any) => pr.id === draft.editing)
           if (p) setEditing(p)
