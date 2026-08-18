@@ -43,10 +43,11 @@ export default function LandingPage() {
       {/* Hero */}
       <section className="bg-gradient-to-br from-rose-600 to-pink-500 text-white py-20 px-4">
         <div className="max-w-4xl mx-auto text-center">
+          <div className="inline-block bg-white/20 px-4 py-1.5 rounded-full text-sm font-bold mb-4">🎁 Teste grátis por 7 dias</div>
           <h1 className="text-4xl md:text-5xl font-bold mb-6">Crie sua loja online e venda para seus clientes</h1>
           <p className="text-xl text-rose-100 mb-8">Simples, rápido e sem complicação. Tenha seu próprio cardápio digital em minutos.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/cadastro" className="px-8 py-4 bg-white text-rose-600 rounded-xl font-bold text-lg hover:bg-rose-50 transition shadow-lg">🚀 Criar minha loja</Link>
+            <Link href="/cadastro" className="px-8 py-4 bg-white text-rose-600 rounded-xl font-bold text-lg hover:bg-rose-50 transition shadow-lg">🚀 Criar minha loja grátis</Link>
             <Link href="/login" className="px-8 py-4 border-2 border-white text-white rounded-xl font-bold text-lg hover:bg-white/10 transition">Entrar</Link>
           </div>
         </div>
@@ -99,6 +100,7 @@ export default function LandingPage() {
       {/* Preço */}
       <section className="py-16 px-4 bg-gradient-to-br from-rose-600 to-pink-500 text-white">
         <div className="max-w-md mx-auto text-center">
+          <div className="inline-block bg-white/20 px-4 py-1.5 rounded-full text-sm font-bold mb-4">🎁 7 dias grátis para testar</div>
           <h2 className="text-2xl font-bold mb-4">Plano Mensal</h2>
           <div className="text-6xl font-extrabold mb-2">R$34,99</div>
           <p className="text-rose-100 text-lg mb-8">/mês • sem taxa de adesão • cancele quando quiser</p>
@@ -110,7 +112,7 @@ export default function LandingPage() {
             <p>✅ Controle de horários</p>
             <p>✅ Suporte prioritário</p>
           </div>
-          <Link href="/cadastro" className="inline-block px-8 py-4 bg-white text-rose-600 rounded-xl font-bold text-lg hover:bg-rose-50 transition shadow-lg">Começar agora</Link>
+          <Link href="/cadastro" className="inline-block px-8 py-4 bg-white text-rose-600 rounded-xl font-bold text-lg hover:bg-rose-50 transition shadow-lg">Começar teste grátis</Link>
         </div>
       </section>
 
