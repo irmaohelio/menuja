@@ -1,6 +1,7 @@
 "use client"
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
+import Image from "next/image"
 
 type CartItem = {
   productId: string
@@ -133,7 +134,7 @@ export default function LojaPage() {
       <div className="sticky top-0 z-30 bg-white shadow-sm">
         <header>
           <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
-            {store.logo && <img src={store.logo} alt={store.name} className="w-10 h-10 rounded-full object-cover" />}
+            {store.logo && <Image src={store.logo} alt={store.name} width={40} height={40} className="rounded-full object-cover" />}
             <div className="flex-1 min-w-0">
               <h1 className="font-bold truncate">{store.name}</h1>
               <span className={`text-xs font-medium ${isStoreOpen ? "text-green-600" : "text-red-600"}`}>
@@ -170,7 +171,7 @@ export default function LojaPage() {
       {store.banner && (
         <div className="max-w-lg mx-auto px-3 pt-3">
           <div className="relative rounded-2xl overflow-hidden shadow-lg">
-            <img src={store.banner} alt={store.name} className="w-full h-44 sm:h-56 object-cover" />
+            <Image src={store.banner} alt={store.name} width={600} height={224} className="w-full h-44 sm:h-56 object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent" />
             <div className="absolute inset-0 text-left">
               <div className="absolute left-4 top-1/2 -translate-y-[calc(50%+1.5rem)]">
@@ -201,7 +202,7 @@ export default function LojaPage() {
                   {store.categories.flatMap((c: any) => c.products).filter((p: any) => p.isFeatured).map((p: any) => (
                     <div key={p.id} onClick={() => setSelectedProduct(p)}
                       className="bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100">
-                      {p.image && <img src={p.image} alt={p.name} className="w-full aspect-square object-cover" />}
+                      {p.image && <Image src={p.image} alt={p.name} width={200} height={200} className="w-full aspect-square object-cover" />}
                       <div className="p-2.5">
                         <p className="text-sm font-medium truncate">{p.name}</p>
                         <p className="text-sm font-bold mt-1.5" style={{ color: store.primaryColor }}>
@@ -225,7 +226,7 @@ export default function LojaPage() {
                   {cat.products.map((p: any) => (
                     <div key={p.id} onClick={() => setSelectedProduct(p)}
                       className="bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100">
-                      {p.image && <img src={p.image} alt={p.name} className="w-full aspect-square object-cover" />}
+                      {p.image && <Image src={p.image} alt={p.name} width={200} height={200} className="w-full aspect-square object-cover" />}
                       <div className="p-2.5">
                         <p className="text-sm font-medium truncate">{p.name}</p>
                         {p.description && <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">{p.description}</p>}
@@ -513,7 +514,7 @@ function ProductModal({ product, store, onClose, onAdd }: {
     <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center" onClick={onClose}>
       <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto"
         onClick={e => e.stopPropagation()}>
-        {product.image && <img src={product.image} alt={product.name} className="w-full aspect-video object-cover" />}
+        {product.image && <Image src={product.image} alt={product.name} width={400} height={225} className="w-full aspect-video object-cover" />}
         <div className="p-5">
           <h3 className="text-xl font-bold">{product.name}</h3>
           {product.description && <p className="text-gray-500 text-sm mt-1">{product.description}</p>}
