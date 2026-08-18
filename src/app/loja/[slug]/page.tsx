@@ -201,7 +201,7 @@ export default function LojaPage() {
                   {store.categories.flatMap((c: any) => c.products).filter((p: any) => p.isFeatured).map((p: any) => (
                     <div key={p.id} onClick={() => setSelectedProduct(p)}
                       className="bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100">
-                      {p.image && <img src={p.image} alt={p.name} className="w-full aspect-square object-cover" />}
+                      {p.image && <img src={p.image} alt={p.name} className="w-full h-28 object-cover" />}
                       <div className="p-2.5">
                         <p className="text-sm font-medium truncate">{p.name}</p>
                         <p className="text-sm font-bold mt-1.5" style={{ color: store.primaryColor }}>
@@ -225,7 +225,7 @@ export default function LojaPage() {
                   {cat.products.map((p: any) => (
                     <div key={p.id} onClick={() => setSelectedProduct(p)}
                       className="bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100">
-                      {p.image && <img src={p.image} alt={p.name} className="w-full aspect-square object-cover" />}
+                      {p.image && <img src={p.image} alt={p.name} className="w-full h-28 object-cover" />}
                       <div className="p-2.5">
                         <p className="text-sm font-medium truncate">{p.name}</p>
                         {p.description && <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">{p.description}</p>}
