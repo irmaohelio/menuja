@@ -387,12 +387,15 @@ export default function ProdutosPage() {
                       <span className="text-2xl text-gray-400">📷</span>
                     </div>
                   )}
-                  <label className="flex-1 cursor-pointer">
-                    <div className="px-4 py-3 bg-gray-100 hover:bg-gray-200 border rounded-xl text-sm font-medium text-center transition">
-                      {form.image ? "Trocar foto" : "Selecionar foto"}
-                    </div>
-                    <input type="file" accept="image/*" onChange={handleImage} className="hidden" />
-                  </label>
+                  <div className="flex-1">
+                    <label className="cursor-pointer">
+                      <div className="px-4 py-3 bg-gray-100 hover:bg-gray-200 border rounded-xl text-sm font-medium text-center transition">
+                        {form.image ? "Trocar foto" : "Selecionar foto"}
+                      </div>
+                      <input type="file" accept="image/*" onChange={handleImage} className="hidden" />
+                    </label>
+                    <span className="text-xs text-gray-500 mt-1 block">tamanho 250x250px</span>
+                  </div>
                 </div>
               </div>
 

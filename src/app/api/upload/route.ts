@@ -17,14 +17,11 @@ export async function POST(req: NextRequest) {
   const arrayBuffer = await file.arrayBuffer()
   const buffer = Buffer.from(arrayBuffer)
 
-  // Resize image: max 800px wide, 600px tall, auto height
-  // Logo: 200x200 square
-  // Banner: 800x300
-  // Product: 400x400 square
+  // Product images: 250x250 square
   const resized = await sharp(buffer)
-    .resize(800, 800, { 
-      fit: 'inside',
-      withoutEnlargement: true 
+    .resize(250, 250, { 
+      fit: 'cover',
+      withoutEnlargement: false
     })
     .jpeg({ quality: 80 })
     .toBuffer()
