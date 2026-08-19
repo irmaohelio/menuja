@@ -170,8 +170,8 @@ export default function LojaPage() {
       {/* Banner */}
       {store.banner && (
         <div className="max-w-lg mx-auto px-3 pt-3">
-          <div className="relative rounded-2xl overflow-hidden shadow-lg">
-            <Image src={store.banner} alt={store.name} width={600} height={224} className="w-full h-44 sm:h-56 object-cover" />
+          <div className="relative rounded-2xl overflow-hidden shadow-lg" style={{ aspectRatio: '780/280' }}>
+            <Image src={store.banner} alt={store.name} fill className="object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent" />
             <div className="absolute inset-0 text-left">
               <div className="absolute left-4 top-1/2 -translate-y-[calc(50%+1.5rem)]">
