@@ -10,6 +10,7 @@ export async function POST(req: NextRequest) {
 
   const formData = await req.formData()
   const file = formData.get('file') as File
+  const type = (formData.get('type') as string) || 'product'
 
   if (!file) return error('Nenhum arquivo enviado')
 
@@ -17,9 +18,27 @@ export async function POST(req: NextRequest) {
   const arrayBuffer = await file.arrayBuffer()
   const buffer = Buffer.from(arrayBuffer)
 
-  // Product images: 250x250 square
+  // Resize based on type
+  let width: number, height: number
+  
+  switch (type) {
+    case 'logo':
+      width = 200
+      height = 200
+      break
+    case 'banner':
+      width = 780
+      height = 280
+      break
+    case 'product':
+    default:
+      width = 250
+      height = 250
+      break
+  }
+
   const resized = await sharp(buffer)
-    .resize(250, 250, { 
+    .resize(width, height, { 
       fit: 'cover',
       withoutEnlargement: false
     })

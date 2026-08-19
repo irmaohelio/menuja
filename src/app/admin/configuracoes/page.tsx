@@ -61,6 +61,7 @@ export default function ConfiguracoesPage() {
     if (!file) return
     const fd = new FormData()
     fd.append("file", file)
+    fd.append("type", "logo")
     const res = await fetch("/api/upload", { method: "POST", body: fd })
     const data = await res.json()
     if (data.success) setStore({ ...store, logo: data.url })
@@ -71,6 +72,7 @@ export default function ConfiguracoesPage() {
     if (!file) return
     const fd = new FormData()
     fd.append("file", file)
+    fd.append("type", "banner")
     const res = await fetch("/api/upload", { method: "POST", body: fd })
     const data = await res.json()
     if (data.success) setStore({ ...store, banner: data.url })
@@ -127,7 +129,7 @@ export default function ConfiguracoesPage() {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Banner da loja</label>
-            <p className="text-xs text-gray-400 mb-2">Aparece no topo da página da loja (recomendado: 1200x400px)</p>
+            <p className="text-xs text-gray-400 mb-2">Aparece no topo da página da loja (recomendado: 780x280px)</p>
             <div className="flex flex-col gap-3">
               {store.banner ? (
                 <div className="relative">
