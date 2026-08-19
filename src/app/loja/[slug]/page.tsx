@@ -131,13 +131,13 @@ export default function LojaPage() {
   return (
     <div className="min-h-screen bg-gray-50 pb-20" style={{ "--primary": store.primaryColor, "--secondary": store.secondaryColor, "--button": store.buttonColor } as any}>
       {/* Header + Category Tabs - sticky together */}
-      <div className="sticky top-0 z-30 bg-white shadow-sm">
-        <header>
-          <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
-            {store.logo && <Image src={store.logo} alt={store.name} width={40} height={40} className="rounded-full object-cover" />}
+      <div className="sticky top-0 z-30">
+        <header style={{ background: `linear-gradient(135deg, ${store.primaryColor || '#e74c3c'}, ${store.secondaryColor || store.primaryColor || '#c0392b'})` }}>
+          <div className="max-w-lg mx-auto px-4 py-4 flex items-center gap-3">
+            {store.logo && <Image src={store.logo} alt={store.name} width={48} height={48} className="rounded-full object-cover border-2 border-white/30 shadow-lg" />}
             <div className="flex-1 min-w-0">
-              <h1 className="font-bold truncate">{store.name}</h1>
-              <span className={`text-xs font-medium ${isStoreOpen ? "text-green-600" : "text-red-600"}`}>
+              <h1 className="font-bold text-white text-lg truncate drop-shadow-md">{store.name}</h1>
+              <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full mt-1 ${isStoreOpen ? "bg-white/20 text-white" : "bg-red-900/30 text-red-200"}`}>
                 {isStoreOpen ? "🟢 Aberta" : store.isTempClosed ? "🔴 " + (store.tempClosedMsg || "Fechada temporariamente") : "🔴 Fechada"}
               </span>
             </div>
