@@ -81,32 +81,16 @@ export default function ProdutosPage() {
   // Inicializar templates padrão
   useEffect(() => {
     if (categories.length === 0) return
-    if (localStorage.getItem("cat_extras_defaults_set")) return
-
-    const defaults: CategoryTemplate = {}
-    for (const cat of categories) {
-      const name = cat.name.toLowerCase()
-      if (name.includes("lanche") || name.includes("hambur")) {
-        defaults[cat.id] = [
-          { name: "Bacon", price: "5" }, { name: "Queijo", price: "3" },
-          { name: "Ovo", price: "2" }, { name: "Cheddar", price: "4" }, { name: "Catupiry", price: "4" },
-        ]
-      } else if (name.includes("pizza")) {
-        defaults[cat.id] = [
-          { name: "Catupiry", price: "5" }, { name: "Cheddar", price: "5" },
-          { name: "Bacon", price: "5" }, { name: "Calabresa", price: "5" },
-        ]
-      } else if (name.includes("salgado")) {
-        defaults[cat.id] = [
-          { name: "Molho especial", price: "0" }, { name: "Ketchup", price: "0" }, { name: "Maionese", price: "0" },
-        ]
+    // Load from API
+    fetch("/api/categories/templates").then(r => r.json()).then(d => {
+      if (d.success && d.templates) {
+        setCatTemplates(prev => {
+          const merged = { ...prev, ...d.templates }
+          try { localStorage.setItem("cat_extras_templates", JSON.stringify(merged)) } catch {}
+          return merged
+        })
       }
-    }
-    if (Object.keys(defaults).length > 0) {
-      setCatTemplates(defaults)
-      localStorage.setItem("cat_extras_templates", JSON.stringify(defaults))
-      localStorage.setItem("cat_extras_defaults_set", "true")
-    }
+    })
   }, [categories])
 
   const load = () => {
@@ -117,14 +101,13 @@ export default function ProdutosPage() {
 
   const handleCategoryChange = async (categoryId: string) => {
     setForm(f => ({ ...f, categoryId }))
-    if (editing) return // não sobrescrever extras ao editar
     
     // Buscar extras da API (banco de dados)
     try {
       const res = await fetch(`/api/categories/templates?categoryId=${categoryId}`)
       const data = await res.json()
-      if (data.success && data.data?.extras?.length > 0) {
-        setAdicionais(data.data.extras.map((e: any) => ({ name: e.name, price: String(e.price) })))
+      if (data.success && data.extras?.length > 0) {
+        setAdicionais(data.extras.map((e: any) => ({ name: e.name, price: String(e.price) })))
         setForm(f => ({ ...f, hasExtras: true }))
         return
       }
@@ -434,7 +417,26 @@ export default function ProdutosPage() {
                   <span className="text-sm">📐 Preço por tamanho</span>
                 </label>
                 <label className="flex items-center gap-2">
-                  <input type="checkbox" checked={form.hasExtras} onChange={e => setForm({...form, hasExtras: e.target.checked})} />
+                  <input type="checkbox" checked={form.hasExtras} onChange={async (e) => {
+                    const checked = e.target.checked
+                    setForm({...form, hasExtras: checked})
+                    if (checked && adicionais.length === 0 && form.categoryId) {
+                      // Try loading from category template
+                      const template = catTemplates[form.categoryId]
+                      if (template && template.length > 0) {
+                        setAdicionais([...template])
+                      } else {
+                        // Fetch from API
+                        try {
+                          const res = await fetch(`/api/categories/templates?categoryId=${form.categoryId}`)
+                          const data = await res.json()
+                          if (data.success && data.extras?.length > 0) {
+                            setAdicionais(data.extras.map((e: any) => ({ name: e.name, price: String(e.price) })))
+                          }
+                        } catch {}
+                      }
+                    }
+                  }} />
                   <span className="text-sm">➕ Adicionais</span>
                 </label>
               </div>
