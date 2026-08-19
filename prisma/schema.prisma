@@ -124,6 +124,7 @@ model Category {
   type        String   @default("standard")
   isActive    Boolean  @default(true)
   sortOrder   Int      @default(0)
+  extrasTemplate Json?  @default("[]") // [{name, price}] - stored directly on category
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

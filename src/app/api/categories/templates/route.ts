@@ -12,44 +12,21 @@ export async function GET(req: NextRequest) {
   const categoryId = req.nextUrl.searchParams.get("categoryId")
   
   if (categoryId) {
-    // Buscar extras de uma categoria específica
     const category = await prisma.category.findFirst({ where: { id: categoryId, storeId: store.id } })
     if (!category) return error("Categoria não encontrada", 404)
     
-    // Buscar o primeiro produto com extras desta categoria para usar como template
-    const templateProduct = await prisma.product.findFirst({
-      where: { storeId: store.id, categoryId },
-      include: { optionGroups: { include: { options: true } } },
-      orderBy: { createdAt: 'asc' },
-    })
-    
-    const extras = templateProduct?.optionGroups?.[0]?.options?.map(o => ({
-      name: o.name,
-      price: String(o.price),
-    })) || []
-
+    const extras = (category.extrasTemplate as any[]) || []
     return success({ extras })
   }
 
   // Buscar extras de todas as categorias
   const categories = await prisma.category.findMany({
     where: { storeId: store.id },
-    include: {
-      products: {
-        include: { optionGroups: { include: { options: true } } },
-        orderBy: { createdAt: 'asc' },
-        take: 1,
-      },
-    },
   })
 
   const templates: Record<string, any[]> = {}
   for (const cat of categories) {
-    const templateProduct = cat.products[0]
-    templates[cat.id] = templateProduct?.optionGroups?.[0]?.options?.map(o => ({
-      name: o.name,
-      price: String(o.price),
-    })) || []
+    templates[cat.id] = (cat.extrasTemplate as any[]) || []
   }
 
   return success({ templates })
@@ -67,6 +44,12 @@ export async function PUT(req: NextRequest) {
 
   const category = await prisma.category.findFirst({ where: { id: categoryId, storeId: store.id } })
   if (!category) return error("Categoria não encontrada", 404)
+
+  // Save template directly on category
+  await prisma.category.update({
+    where: { id: categoryId },
+    data: { extrasTemplate: extras },
+  })
 
   // Buscar todos os produtos desta categoria
   const products = await prisma.product.findMany({
