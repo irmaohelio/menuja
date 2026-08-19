@@ -15,18 +15,52 @@ export async function GET(req: NextRequest) {
     const category = await prisma.category.findFirst({ where: { id: categoryId, storeId: store.id } })
     if (!category) return error("Categoria não encontrada", 404)
     
-    const extras = (category.extrasTemplate as any[]) || []
+    // Primeiro tenta o campo extras da categoria
+    let extras = (category.extrasTemplate as any[]) || []
+    
+    // Se vazio, busca do primeiro produto da categoria (fallback)
+    if (extras.length === 0) {
+      const templateProduct = await prisma.product.findFirst({
+        where: { storeId: store.id, categoryId },
+        include: { optionGroups: { include: { options: true } } },
+        orderBy: { createdAt: 'asc' },
+      })
+      extras = templateProduct?.optionGroups?.[0]?.options?.map(o => ({
+        name: o.name,
+        price: String(o.price),
+      })) || []
+    }
+
     return success({ extras })
   }
 
   // Buscar extras de todas as categorias
   const categories = await prisma.category.findMany({
     where: { storeId: store.id },
+    include: {
+      products: {
+        include: { optionGroups: { include: { options: true } } },
+        orderBy: { createdAt: 'asc' },
+        take: 1,
+      },
+    },
   })
 
   const templates: Record<string, any[]> = {}
   for (const cat of categories) {
-    templates[cat.id] = (cat.extrasTemplate as any[]) || []
+    // Primeiro tenta o campo extras da categoria
+    let extras = (cat.extrasTemplate as any[]) || []
+    
+    // Se vazio, busca do primeiro produto (fallback)
+    if (extras.length === 0) {
+      const templateProduct = cat.products[0]
+      extras = templateProduct?.optionGroups?.[0]?.options?.map(o => ({
+        name: o.name,
+        price: String(o.price),
+      })) || []
+    }
+    
+    templates[cat.id] = extras
   }
 
   return success({ templates })
@@ -45,7 +79,7 @@ export async function PUT(req: NextRequest) {
   const category = await prisma.category.findFirst({ where: { id: categoryId, storeId: store.id } })
   if (!category) return error("Categoria não encontrada", 404)
 
-  // Save template directly on category
+  // Salvar extras direto na categoria
   await prisma.category.update({
     where: { id: categoryId },
     data: { extrasTemplate: extras },
@@ -59,10 +93,8 @@ export async function PUT(req: NextRequest) {
 
   // Atualizar cada produto
   for (const product of products) {
-    // Deletar grupos existentes
     await prisma.productOptionGroup.deleteMany({ where: { productId: product.id } })
 
-    // Criar novo grupo se houver extras
     if (extras.length > 0) {
       const group = await prisma.productOptionGroup.create({
         data: {
