@@ -6,12 +6,14 @@ type PizzaSize = { name: string; price: string }
 type CategoryTemplate = { [categoryId: string]: Adicional[] }
 
 // Componente de imagem com fallback
-function ProductImage({ src, alt, className }: { src?: string; alt: string; className?: string }) {
+function ProductImage({ src, alt, className, categoryType }: { src?: string; alt: string; className?: string; categoryType?: string }) {
   const [error, setError] = useState(false)
   if (!src || error) {
+    const icon = categoryType === 'sorvete' ? '🍦' : '📷'
+    const iconSize = categoryType === 'sorvete' ? 'text-3xl' : 'text-2xl'
     return (
       <div className={`${className} bg-gray-100 flex items-center justify-center rounded-lg`}>
-        <span className="text-2xl text-gray-300">📷</span>
+        <span className={`${iconSize} text-gray-300`}>{icon}</span>
       </div>
     )
   }
@@ -628,7 +630,7 @@ function ProductCard({ product, onEdit, onDuplicate, onDelete, onToggle, onFeatu
   return (
     <div className={`bg-white p-3 sm:p-4 rounded-xl shadow-sm transition ${!p.isActive ? "opacity-50" : ""}`}>
       <div className="flex items-center gap-3 sm:gap-4">
-        <ProductImage src={p.image} alt={p.name} className="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded-lg flex-shrink-0" />
+        <ProductImage src={p.image} alt={p.name} categoryType={p.category?.type} className="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded-lg flex-shrink-0" />
         <div className="flex-1 min-w-0">
           <p className="font-medium truncate text-sm sm:text-base">{p.name}</p>
           <div className="flex items-center gap-2 mt-1 flex-wrap">

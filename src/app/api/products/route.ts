@@ -12,7 +12,7 @@ export async function GET() {
     where: { storeId: store.id },
     orderBy: { sortOrder: 'asc' },
     include: {
-      category: { select: { name: true } },
+      category: { select: { name: true, type: true } },
       optionGroups: { include: { options: true } },
       pizzaSizes: { orderBy: { sortOrder: 'asc' }, include: { flavors: true } },
     },
