@@ -558,20 +558,34 @@ function ProductModal({ product, store, onClose, onAdd }: {
   const allPizzas = store.categories?.flatMap((c: any) => c.products).filter((p: any) => p.isPizza) || []
   const otherPizzas = allPizzas.filter((p: any) => p.id !== product.id)
 
-  const toggleOption = (groupId: string, option: any, maxQty?: number) => {
+  const [extraFlavors, setExtraFlavors] = useState(0) // sabores extras além do maxQty
+
+  const toggleOption = (groupId: string, option: any, maxQty?: number, groupName?: string) => {
     const current = selectedOptions[groupId] || []
     const exists = current.find(o => o.name === option.name)
     if (exists) {
       setSelectedOptions({ ...selectedOptions, [groupId]: current.filter(o => o.name !== option.name) })
+      // Se removeu um sabor extra, decrementar
+      if (groupName === 'Sabores' && current.length > (maxQty || 0) + extraFlavors) {
+        setExtraFlavors(Math.max(0, extraFlavors - 1))
+      }
     } else {
-      if (maxQty && current.length >= maxQty) return // respeitar maxQty
+      // Para Sabores: permitir além do maxQty se extraFlavors > 0
+      if (groupName === 'Sabores' && maxQty && current.length >= maxQty + extraFlavors) return
+      // Para outros grupos: respeitar maxQty normalmente
+      if (groupName !== 'Sabores' && maxQty && current.length >= maxQty) return
       setSelectedOptions({ ...selectedOptions, [groupId]: [...current, option] })
     }
+  }
+
+  const addExtraFlavor = () => {
+    setExtraFlavors(extraFlavors + 1)
   }
 
   const basePrice = selectedSize?.price || product.promoPrice || product.price
   const crustPrice = selectedCrust?.price || 0
   const optionsPrice = Object.values(selectedOptions).flat().reduce((s: number, o: any) => s + (o.price || 0), 0)
+  const extraFlavorsCost = extraFlavors * 4 // R$4 por sabor extra
 
   // For meio a meio: use the price of the most expensive half
   const halfHalfPrice = halfHalf && flavor2
@@ -593,7 +607,7 @@ function ProductModal({ product, store, onClose, onAdd }: {
     onAdd({
       productId: product.id,
       productName: halfHalf && flavor2 ? `${product.name} / ${flavor2.name}` : product.name,
-      unitPrice: effectivePrice,
+      unitPrice: effectivePrice + extraFlavorsCost,
       quantity,
       sizeName: selectedSize?.name,
       crustName: selectedCrust?.name,
@@ -735,9 +749,9 @@ function ProductModal({ product, store, onClose, onAdd }: {
               <div className="flex items-center justify-between mb-3">
                 <h4 className="font-bold text-base">
                   {group.name} {group.required && <span className="text-red-500 text-xs">(obrigatório)</span>}
-                    {group.maxQty > 1 && (
+                    {group.name === 'Sabores' && group.maxQty && (
                       <span className="text-xs text-gray-500 ml-1">
-                        ({(selectedOptions[group.id] || []).length}/{group.maxQty})
+                        ({(selectedOptions[group.id] || []).length}/{group.maxQty + extraFlavors})
                       </span>
                     )}
                 </h4>
@@ -751,7 +765,7 @@ function ProductModal({ product, store, onClose, onAdd }: {
                 {group.options.map((opt: any) => {
                   const isSelected = (selectedOptions[group.id] || []).find((o: any) => o.name === opt.name)
                   return (
-                    <label key={opt.id} onClick={() => toggleOption(group.id, opt, group.maxQty)}
+                    <label key={opt.id} onClick={() => toggleOption(group.id, opt, group.maxQty, group.name)}
                       className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer border-2 transition ${
                         isSelected ? "border-gray-400 bg-gray-50" : "border-gray-200 hover:border-gray-300"
                       }`}>
@@ -770,6 +784,16 @@ function ProductModal({ product, store, onClose, onAdd }: {
                   )
                 })}
               </div>
+              {/* Botão Adicionar outro sabor - apenas para grupo Sabores */}
+              {group.name === 'Sabores' && group.maxQty && (
+                <button
+                  onClick={addExtraFlavor}
+                  className="mt-3 w-full py-2 px-4 rounded-xl border-2 border-dashed text-sm font-medium transition hover:bg-gray-50"
+                  style={{ borderColor: store.primaryColor, color: store.primaryColor }}
+                >
+                  + Adicionar outro sabor (R$ 4.00)
+                </button>
+              )}
             </div>
           ))}
 
@@ -793,7 +817,7 @@ function ProductModal({ product, store, onClose, onAdd }: {
                 halfHalf && !flavor2 ? "opacity-50 cursor-not-allowed" : ""
               }`}
               style={{ backgroundColor: store.buttonColor }}>
-              {halfHalf && !flavor2 ? "Escolha a 2ª metade" : `Adicionar • R$ ${((effectivePrice + crustPrice + optionsPrice) * quantity).toFixed(2)}`}
+              {halfHalf && !flavor2 ? "Escolha a 2ª metade" : `Adicionar • R$ ${((effectivePrice + crustPrice + optionsPrice + extraFlavorsCost) * quantity).toFixed(2)}`}
             </button>
           </div>
         </div>

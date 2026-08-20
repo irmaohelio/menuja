@@ -4,10 +4,19 @@ const prisma = new PrismaClient();
 async function main() {
   const store = await prisma.store.findFirst({ where: { slug: 'acaiteria-santos' } });
   if (!store) { console.log('LOJA NÃO ENCONTRADA'); return; }
-  console.log('Loja:', store.name);
 
-  // 1. Criar categoria Sorvete
-  const cat = await prisma.category.create({
+  // Deletar sorvete existente
+  const existingCat = await prisma.category.findFirst({ where: { storeId: store.id, name: 'Sorvete' } });
+  if (existingCat) {
+    await prisma.productOption.deleteMany({ where: { group: { product: { categoryId: existingCat.id } } } });
+    await prisma.productOptionGroup.deleteMany({ where: { product: { categoryId: existingCat.id } } });
+    await prisma.product.deleteMany({ where: { categoryId: existingCat.id } });
+    await prisma.category.delete({ where: { id: existingCat.id } });
+    console.log('Sorvete antigo removido');
+  }
+
+  // Criar categoria Sorvete
+  const category = await prisma.category.create({
     data: {
       storeId: store.id,
       name: 'Sorvete',
@@ -15,69 +24,75 @@ async function main() {
       isActive: true,
     }
   });
-  console.log('Categoria criada:', cat.name);
+  console.log('Categoria criada:', category.name);
 
-  // 2. Sabores
-  const sabores = ['Chocolate', 'Morango', 'Creme', 'Pistache', 'Napolitano'];
-
-  // 3. Complementos (grátis)
-  const complementos = ['Calda de Groselha', 'Calda de Morango', 'Calda de Chocolate'];
-
-  // 4. Criar produtos: 1 Bola, 2 Bolas, 3 Bolas
-  const bolas = [
-    { nome: '1 Bola', price: 4, maxSabores: 1 },
-    { nome: '2 Bolas', price: 8, maxSabores: 2 },
-    { nome: '3 Bolas', price: 12, maxSabores: 3 },
+  // Produtos: 1 Bola, 2 Bolas, 3 Bolas
+  const sizes = [
+    { name: '1 Bola', desc: '1 Bola de sorvete', price: 4, maxFlavors: 1 },
+    { name: '2 Bolas', desc: '2 Bolas de sorvete', price: 8, maxFlavors: 2 },
+    { name: '3 Bolas', desc: '3 Bolas de sorvete', price: 12, maxFlavors: 3 },
   ];
 
-  for (const bola of bolas) {
+  const flavors = ['Chocolate', 'Morango', 'Creme', 'Pistache', 'Napolitano'];
+  const complementos = [
+    { name: 'Calda de Groselha', price: 0 },
+    { name: 'Calda de Morango', price: 0 },
+    { name: 'Calda de Chocolate', price: 0 },
+  ];
+  const extras = [
+    { name: 'Granola', price: 3 },
+    { name: 'Leite Condensado', price: 3 },
+    { name: 'Chocolate Granulado', price: 4 },
+    { name: 'Amendoim', price: 3 },
+    { name: 'Banana', price: 2 },
+  ];
+
+  for (const size of sizes) {
     const product = await prisma.product.create({
       data: {
         storeId: store.id,
-        categoryId: cat.id,
-        name: bola.nome,
-        description: `${bola.nome} de sorvete - escolha até ${bola.maxSabores} sabor(es)`,
-        price: bola.price,
+        categoryId: category.id,
+        name: size.name,
+        description: size.desc,
+        price: size.price,
         isActive: true,
-        sortOrder: bolas.indexOf(bola),
+        sortOrder: sizes.indexOf(size),
       }
     });
     console.log(`Produto criado: ${product.name} R$${product.price}`);
 
-    // Option group: Sabores
+    // Grupo Sabores (obrigatório, maxQty = número de bolas)
     const saboresGroup = await prisma.productOptionGroup.create({
       data: {
         productId: product.id,
         storeId: store.id,
         name: 'Sabores',
         required: true,
-        minQty: bola.maxSabores,
-        maxQty: bola.maxSabores,
+        maxQty: size.maxFlavors,
         sortOrder: 0,
       }
     });
 
-    for (let i = 0; i < sabores.length; i++) {
+    for (let i = 0; i < flavors.length; i++) {
       await prisma.productOption.create({
         data: {
           groupId: saboresGroup.id,
-          name: sabores[i],
+          name: flavors[i],
           price: 0,
           sortOrder: i,
         }
       });
     }
-    console.log(`  ${sabores.length} sabores adicionados`);
+    console.log(`  ${flavors.length} sabores adicionados`);
 
-    // Option group: Complementos (grátis)
+    // Grupo Complementos (grátis, opcional)
     const compGroup = await prisma.productOptionGroup.create({
       data: {
         productId: product.id,
         storeId: store.id,
         name: 'Complementos',
         required: false,
-        minQty: 0,
-        maxQty: 3,
+        maxQty: 99,
         sortOrder: 1,
       }
     });
@@ -86,13 +101,37 @@ async function main() {
       await prisma.productOption.create({
         data: {
           groupId: compGroup.id,
-          name: complementos[i],
-          price: 0,
+          name: complementos[i].name,
+          price: complementos[i].price,
           sortOrder: i,
         }
       });
     }
     console.log(`  ${complementos.length} complementos adicionados`);
+
+    // Grupo Extras (pagos, opcional)
+    const extrasGroup = await prisma.productOptionGroup.create({
+      data: {
+        productId: product.id,
+        storeId: store.id,
+        name: 'Extras',
+        required: false,
+        maxQty: 99,
+        sortOrder: 2,
+      }
+    });
+
+    for (let i = 0; i < extras.length; i++) {
+      await prisma.productOption.create({
+        data: {
+          groupId: extrasGroup.id,
+          name: extras[i].name,
+          price: extras[i].price,
+          sortOrder: i,
+        }
+      });
+    }
+    console.log(`  ${extras.length} extras adicionados`);
   }
 
   console.log('\n✅ Sorvete configurado com sucesso!');
