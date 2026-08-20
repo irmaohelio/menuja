@@ -317,9 +317,15 @@ export default function LojaPage() {
               <div className="text-center py-20 text-gray-400">
                 <p className="text-5xl mb-3">🛒</p>
                 <p>Seu carrinho está vazio</p>
+                <button onClick={() => setTab("cardapio")} className="mt-4 px-6 py-2 rounded-xl text-sm font-medium" style={{ color: store.primaryColor, border: `2px solid ${store.primaryColor}` }}>
+                  ← Voltar ao cardápio
+                </button>
               </div>
             ) : (
               <>
+                <button onClick={() => setTab("cardapio")} className="mb-4 flex items-center gap-2 text-sm font-medium" style={{ color: store.primaryColor }}>
+                  ← Continuar comprando
+                </button>
                 <div className="space-y-3 mb-6">
                   {cart.map((item, i) => (
                     <div key={i} className="bg-white p-3 rounded-xl shadow-sm">
