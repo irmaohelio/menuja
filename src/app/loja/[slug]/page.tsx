@@ -274,7 +274,7 @@ export default function LojaPage() {
                   <div className="flex-1 h-px bg-gradient-to-r from-gray-200 to-transparent ml-2" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  {cat.name === 'Sorvete' ? (
+                  {cat.type === 'sorvete' ? (
                     <div className="col-span-2">
                       <button
                         onClick={() => setShowSorveteBuilder(true)}
