@@ -181,10 +181,10 @@ export default function LojaPage() {
         </header>
 
         {/* Category Tabs - below header, inside sticky */}
-        {tab === "cardapio" && store.categories?.filter((c: any) => c.products.length > 0).length > 1 && (
+        {tab === "cardapio" && store.categories?.filter((c: any) => c.products.length > 0 || c.type === 'sorvete').length > 1 && (
           <div className="bg-white/95 backdrop-blur-sm border-t border-gray-100">
             <div className="max-w-lg mx-auto px-4 flex gap-2 overflow-x-auto py-2.5 scrollbar-hide">
-              {store.categories?.filter((c: any) => c.products.length > 0).map((cat: any) => (
+              {store.categories?.filter((c: any) => c.products.length > 0 || c.type === 'sorvete').map((cat: any) => (
                 <button key={cat.id} onClick={() => {
                   setActiveCategory(cat.id)
                   const el = document.getElementById(`cat-${cat.id}`);
@@ -262,14 +262,14 @@ export default function LojaPage() {
             )}
 
             {/* Categorias e Produtos */}
-            {store.categories?.filter((c: any) => c.products.length > 0).map((cat: any) => (
+            {store.categories?.filter((c: any) => c.products.length > 0 || c.type === 'sorvete').map((cat: any) => (
               <div key={cat.id} id={`cat-${cat.id}`} className="mb-8 scroll-mt-24">
                 {/* Category Header */}
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: store.primaryColor }} />
                   <div>
                     <h2 className="text-xl font-extrabold text-gray-900 tracking-tight">{cat.name}</h2>
-                    <p className="text-xs text-gray-400 mt-0.5">{cat.products.length} {cat.products.length === 1 ? 'produto' : 'produtos'}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{cat.type === 'sorvete' ? 'Monte seu sorvete' : `${cat.products.length} ${cat.products.length === 1 ? 'produto' : 'produtos'}`}</p>
                   </div>
                   <div className="flex-1 h-px bg-gradient-to-r from-gray-200 to-transparent ml-2" />
                 </div>
