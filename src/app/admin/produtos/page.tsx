@@ -4,8 +4,6 @@ import { useState, useEffect } from "react"
 type Adicional = { name: string; price: string }
 type PizzaSize = { name: string; price: string }
 type CategoryTemplate = { [categoryId: string]: Adicional[] }
-type SorveteSabor = { name: string; color: string }
-type SorveteCobertura = { name: string; color: string }
 
 // Componente de imagem com fallback
 function ProductImage({ src, alt, className }: { src?: string; alt: string; className?: string }) {
@@ -37,12 +35,6 @@ export default function ProdutosPage() {
   const [editAddName, setEditAddName] = useState("")
   const [editAddPrice, setEditAddPrice] = useState("")
   const [pizzaSizes, setPizzaSizes] = useState<PizzaSize[]>([])
-  const [sorveteSabores, setSorveteSabores] = useState<SorveteSabor[]>([])
-  const [sorveteCoberturas, setSorveteCoberturas] = useState<SorveteCobertura[]>([])
-  const [saborName, setSaborName] = useState("")
-  const [saborColor, setSaborColor] = useState("#CCCCCC")
-  const [coberturaName, setCoberturaName] = useState("")
-  const [coberturaColor, setCoberturaColor] = useState("#CCCCCC")
   const [sizeName, setSizeName] = useState("")
   const [sizePrice, setSizePrice] = useState("")
 
@@ -112,33 +104,8 @@ export default function ProdutosPage() {
     return cat?.type === "sorvete"
   }
 
-  const loadSorveteConfig = async () => {
-    try {
-      const res = await fetch("/api/auth/me", { credentials: "include", cache: "no-store" })
-      const data = await res.json()
-      if (data.store?.sorveteConfig) {
-        const cfg = data.store.sorveteConfig
-        if (cfg.sabores) setSorveteSabores(cfg.sabores)
-        if (cfg.coberturas) setSorveteCoberturas(cfg.coberturas)
-      }
-    } catch {}
-  }
-
-  const saveSorveteConfig = async () => {
-    try {
-      await fetch("/api/sorvete-config", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ config: { sabores: sorveteSabores, coberturas: sorveteCoberturas } }),
-      })
-    } catch {}
-  }
-
   const handleCategoryChange = async (categoryId: string) => {
     setForm(f => ({ ...f, categoryId }))
-    if (isSorveteCategory(categoryId)) {
-      loadSorveteConfig()
-    }
     
     // Buscar extras da API (banco de dados)
     try {
@@ -240,9 +207,6 @@ export default function ProdutosPage() {
     })
     setAdicionais(p.optionGroups?.[0]?.options?.map((o: any) => ({ name: o.name, price: String(o.price) })) || [])
     setPizzaSizes(p.pizzaSizes?.map((s: any) => ({ name: s.name, price: String(s.price) })) || [])
-    if (p.categoryId && isSorveteCategory(p.categoryId)) {
-      loadSorveteConfig()
-    }
     setShowForm(true)
     setMinimized(false)
   }
@@ -417,7 +381,8 @@ export default function ProdutosPage() {
             onClick={e => e.stopPropagation()}>
             <h3 className="text-xl font-bold mb-4">{editing ? "Editar" : "Novo"} produto</h3>
             <div className="space-y-4">
-              {/* Foto */}
+              {/* Foto - escondido para sorvete */}
+              {!isSorveteCategory(form.categoryId) && (
               <div>
                 <label className="block text-sm font-medium mb-1">Foto</label>
                 <div className="flex items-center gap-3">
@@ -439,27 +404,32 @@ export default function ProdutosPage() {
                   </div>
                 </div>
               </div>
+              )}
 
               {/* Nome */}
               <div>
                 <label className="block text-sm font-medium mb-1">Nome *</label>
                 <input value={form.name} onChange={e => setForm({...form, name: e.target.value})}
-                  className="w-full px-4 py-3 border rounded-xl" placeholder="Ex: Hambúrguer Clássico" />
+                  className="w-full px-4 py-3 border rounded-xl" placeholder={isSorveteCategory(form.categoryId) ? "Ex: 1 Bola" : "Ex: Hambúrguer Clássico"} />
               </div>
 
-              {/* Descrição */}
+              {/* Descrição - escondida para sorvete */}
+              {!isSorveteCategory(form.categoryId) && (
               <div>
                 <label className="block text-sm font-medium mb-1">Descrição</label>
                 <textarea value={form.description} onChange={e => setForm({...form, description: e.target.value})}
                   className="w-full px-4 py-3 border rounded-xl" rows={2} placeholder="Ingredientes, etc." />
               </div>
+              )}
 
-              {/* Checkboxes */}
+              {/* Checkboxes - Preço por tamanho escondido para sorvete */}
               <div className="flex gap-4">
+                {!isSorveteCategory(form.categoryId) && (
                 <label className="flex items-center gap-2">
                   <input type="checkbox" checked={form.hasSizes} onChange={e => setForm({...form, hasSizes: e.target.checked})} />
                   <span className="text-sm">📐 Preço por tamanho</span>
                 </label>
+                )}
                 <label className="flex items-center gap-2">
                   <input type="checkbox" checked={form.hasExtras} onChange={async (e) => {
                     const checked = e.target.checked
@@ -619,67 +589,6 @@ export default function ProdutosPage() {
                   <button onClick={addAdicional} className="px-4 py-2.5 text-white rounded-xl font-bold text-lg" style={{ backgroundColor: "var(--btn)" }}>+</button>
                 </div>
               </div>
-              )}
-
-              {/* SORVETE - Sabores & Coberturas */}
-              {form.categoryId && isSorveteCategory(form.categoryId) && (
-                <div className="border-t pt-4 space-y-4 bg-pink-50 -mx-2 px-4 py-4 rounded-xl">
-                  <h4 className="font-bold text-sm">🍦 Sabores & Coberturas</h4>
-
-                  {/* Sabores */}
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Sabores</label>
-                    {sorveteSabores.length > 0 && (
-                      <div className="space-y-2 mb-3">
-                        {sorveteSabores.map((s, i) => (
-                          <div key={i} className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border">
-                            <div className="w-6 h-6 rounded-full border" style={{ backgroundColor: s.color }} />
-                            <span className="flex-1 text-sm font-medium">{s.name}</span>
-                            <button onClick={() => setSorveteSabores(sorveteSabores.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-600 text-lg">×</button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    <div className="flex gap-2">
-                      <input type="color" value={saborColor} onChange={e => setSaborColor(e.target.value)} className="w-10 h-10 rounded cursor-pointer border" />
-                      <input value={saborName} onChange={e => setSaborName(e.target.value)}
-                        className="flex-1 px-3 py-2 border rounded-lg text-sm" placeholder="Ex: Chocolate"
-                        onKeyDown={e => { if (e.key === "Enter" && saborName.trim()) { setSorveteSabores([...sorveteSabores, { name: saborName.trim(), color: saborColor }]); setSaborName(""); setSaborColor("#CCCCCC") } }} />
-                      <button onClick={() => { if (saborName.trim()) { setSorveteSabores([...sorveteSabores, { name: saborName.trim(), color: saborColor }]); setSaborName(""); setSaborColor("#CCCCCC") } }}
-                        className="px-4 py-2 text-white rounded-lg font-bold" style={{ backgroundColor: "var(--btn)" }}>+</button>
-                    </div>
-                  </div>
-
-                  {/* Coberturas */}
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Coberturas</label>
-                    {sorveteCoberturas.length > 0 && (
-                      <div className="space-y-2 mb-3">
-                        {sorveteCoberturas.map((c, i) => (
-                          <div key={i} className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border">
-                            <div className="w-6 h-6 rounded-full border" style={{ backgroundColor: c.color }} />
-                            <span className="flex-1 text-sm font-medium">{c.name}</span>
-                            <button onClick={() => setSorveteCoberturas(sorveteCoberturas.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-600 text-lg">×</button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    <div className="flex gap-2">
-                      <input type="color" value={coberturaColor} onChange={e => setCoberturaColor(e.target.value)} className="w-10 h-10 rounded cursor-pointer border" />
-                      <input value={coberturaName} onChange={e => setCoberturaName(e.target.value)}
-                        className="flex-1 px-3 py-2 border rounded-lg text-sm" placeholder="Ex: Calda de Morango"
-                        onKeyDown={e => { if (e.key === "Enter" && coberturaName.trim()) { setSorveteCoberturas([...sorveteCoberturas, { name: coberturaName.trim(), color: coberturaColor }]); setCoberturaName(""); setCoberturaColor("#CCCCCC") } }} />
-                      <button onClick={() => { if (coberturaName.trim()) { setSorveteCoberturas([...sorveteCoberturas, { name: coberturaName.trim(), color: coberturaColor }]); setCoberturaName(""); setCoberturaColor("#CCCCCC") } }}
-                        className="px-4 py-2 text-white rounded-lg font-bold" style={{ backgroundColor: "var(--btn)" }}>+</button>
-                    </div>
-                  </div>
-
-                  <button onClick={saveSorveteConfig} type="button"
-                    className="w-full py-2 text-white rounded-lg font-bold text-sm"
-                    style={{ backgroundColor: "var(--btn)" }}>
-                    💾 Salvar Sabores & Coberturas
-                  </button>
-                </div>
               )}
 
               {/* Botões */}

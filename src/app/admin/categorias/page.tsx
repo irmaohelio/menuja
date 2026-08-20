@@ -12,6 +12,12 @@ export default function CategoriasPage() {
   const [editingExtras, setEditingExtras] = useState<string | null>(null)
   const [extraName, setExtraName] = useState("")
   const [extraPrice, setExtraPrice] = useState("")
+  const [sorveteSabores, setSorveteSabores] = useState<any[]>([])
+  const [sorveteCoberturas, setSorveteCoberturas] = useState<any[]>([])
+  const [saborName, setSaborName] = useState("")
+  const [saborColor, setSaborColor] = useState("#CCCCCC")
+  const [coberturaName, setCoberturaName] = useState("")
+  const [coberturaColor, setCoberturaColor] = useState("#CCCCCC")
 
   const load = () => {
     fetch("/api/categories").then(r => r.json()).then(d => { if (d.success) setCategories(d.categories) })
@@ -30,11 +36,20 @@ export default function CategoriasPage() {
       method, headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, description, type }),
     })
+    if (type === 'sorvete' && (sorveteSabores.length > 0 || sorveteCoberturas.length > 0)) {
+      await fetch("/api/sorvete-config", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ config: { sabores: sorveteSabores, coberturas: sorveteCoberturas } }),
+      })
+    }
     setShowForm(false)
     setEditing(null)
     setName("")
     setDescription("")
     setType("standard")
+    setSorveteSabores([])
+    setSorveteCoberturas([])
     load()
   }
 
@@ -58,6 +73,17 @@ export default function CategoriasPage() {
     setDescription(c.description || "")
     setType(c.type)
     setShowForm(true)
+    if (c.type === 'sorvete') {
+      fetch("/api/auth/me", { credentials: "include", cache: "no-store" })
+        .then(r => r.json())
+        .then(data => {
+          if (data.store?.sorveteConfig) {
+            setSorveteSabores(data.store.sorveteConfig.sabores || [])
+            setSorveteCoberturas(data.store.sorveteConfig.coberturas || [])
+          }
+        })
+        .catch(() => {})
+    }
   }
 
   const addExtra = (catId: string) => {
@@ -204,13 +230,79 @@ export default function CategoriasPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Tipo</label>
-                <select value={type} onChange={e => setType(e.target.value)} className="w-full px-4 py-3 border rounded-xl">
+                <select value={type} onChange={e => {
+                  setType(e.target.value)
+                  if (e.target.value === 'sorvete' && editing) {
+                    fetch("/api/auth/me", { credentials: "include", cache: "no-store" })
+                      .then(r => r.json())
+                      .then(data => {
+                        if (data.store?.sorveteConfig) {
+                          setSorveteSabores(data.store.sorveteConfig.sabores || [])
+                          setSorveteCoberturas(data.store.sorveteConfig.coberturas || [])
+                        }
+                      })
+                      .catch(() => {})
+                  }
+                }} className="w-full px-4 py-3 border rounded-xl">
                   <option value="standard">📁 Padrão</option>
                   <option value="pizza">🍕 Pizza</option>
                   <option value="advanced">🔧 Avançado (com opções)</option>
                   <option value="sorvete">🍦 Sorvete</option>
                 </select>
               </div>
+
+              {type === 'sorvete' && (
+                <div className="border-t pt-4 space-y-4 bg-pink-50 -mx-2 px-4 py-4 rounded-xl">
+                  <h4 className="font-bold text-sm">🍦 Sabores & Coberturas</h4>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Sabores</label>
+                    {sorveteSabores.length > 0 && (
+                      <div className="space-y-2 mb-3">
+                        {sorveteSabores.map((s, i) => (
+                          <div key={i} className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border">
+                            <div className="w-6 h-6 rounded-full border" style={{ backgroundColor: s.color }} />
+                            <span className="flex-1 text-sm font-medium">{s.name}</span>
+                            <button onClick={() => setSorveteSabores(sorveteSabores.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-600 text-lg">×</button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex gap-2">
+                      <input type="color" value={saborColor} onChange={e => setSaborColor(e.target.value)} className="w-10 h-10 rounded cursor-pointer border" />
+                      <input value={saborName} onChange={e => setSaborName(e.target.value)}
+                        className="flex-1 px-3 py-2 border rounded-lg text-sm" placeholder="Ex: Chocolate"
+                        onKeyDown={e => { if (e.key === "Enter" && saborName.trim()) { setSorveteSabores([...sorveteSabores, { name: saborName.trim(), color: saborColor }]); setSaborName(""); setSaborColor("#CCCCCC") } }} />
+                      <button onClick={() => { if (saborName.trim()) { setSorveteSabores([...sorveteSabores, { name: saborName.trim(), color: saborColor }]); setSaborName(""); setSaborColor("#CCCCCC") } }}
+                        className="px-3 py-2 text-white rounded-lg font-bold" style={{ backgroundColor: "var(--btn)" }}>+</button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Coberturas</label>
+                    {sorveteCoberturas.length > 0 && (
+                      <div className="space-y-2 mb-3">
+                        {sorveteCoberturas.map((c, i) => (
+                          <div key={i} className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border">
+                            <div className="w-6 h-6 rounded-full border" style={{ backgroundColor: c.color }} />
+                            <span className="flex-1 text-sm font-medium">{c.name}</span>
+                            <button onClick={() => setSorveteCoberturas(sorveteCoberturas.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-600 text-lg">×</button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex gap-2">
+                      <input type="color" value={coberturaColor} onChange={e => setCoberturaColor(e.target.value)} className="w-10 h-10 rounded cursor-pointer border" />
+                      <input value={coberturaName} onChange={e => setCoberturaName(e.target.value)}
+                        className="flex-1 px-3 py-2 border rounded-lg text-sm" placeholder="Ex: Calda de Morango"
+                        onKeyDown={e => { if (e.key === "Enter" && coberturaName.trim()) { setSorveteCoberturas([...sorveteCoberturas, { name: coberturaName.trim(), color: coberturaColor }]); setCoberturaName(""); setCoberturaColor("#CCCCCC") } }} />
+                      <button onClick={() => { if (coberturaName.trim()) { setSorveteCoberturas([...sorveteCoberturas, { name: coberturaName.trim(), color: coberturaColor }]); setCoberturaName(""); setCoberturaColor("#CCCCCC") } }}
+                        className="px-3 py-2 text-white rounded-lg font-bold" style={{ backgroundColor: "var(--btn)" }}>+</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="flex gap-3">
                 <button onClick={() => { setShowForm(false); setEditing(null) }} className="flex-1 py-3 border rounded-xl">Cancelar</button>
                 <button onClick={save} className="flex-1 py-3 text-white rounded-xl font-bold" style={{ backgroundColor: "var(--btn)" }}>Salvar</button>
