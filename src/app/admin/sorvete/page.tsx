@@ -178,32 +178,6 @@ export default function SorvetePage() {
           </div>
         </div>
 
-        {/* Extras */}
-        <div className="bg-white rounded-2xl shadow-sm p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-bold text-base">✨ Extras</h2>
-            <button onClick={addExtra} className="text-sm font-medium px-3 py-1 rounded-full bg-pink-50 text-pink-600">
-              + Adicionar
-            </button>
-          </div>
-          <div className="space-y-2">
-            {config.extras.map((extra, i) => (
-              <div key={i} className="flex items-center gap-2 p-2 border rounded-xl">
-                <input value={extra.name}
-                  onChange={e => updateExtra(i, 'name', e.target.value)}
-                  className="flex-1 px-2 py-1 border rounded text-sm" />
-                <div className="flex items-center gap-1">
-                  <span className="text-xs text-gray-500">R$</span>
-                  <input type="number" value={extra.price} min={0} step={0.5}
-                    onChange={e => updateExtra(i, 'price', parseFloat(e.target.value) || 0)}
-                    className="w-20 px-2 py-1 border rounded text-sm" />
-                </div>
-                <button onClick={() => removeExtra(i)} className="text-red-400 text-sm">🗑️</button>
-              </div>
-            ))}
-          </div>
-        </div>
-
         {/* Save button */}
         <button
           onClick={save}
