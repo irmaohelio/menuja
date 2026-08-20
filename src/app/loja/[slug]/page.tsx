@@ -335,9 +335,42 @@ export default function LojaPage() {
                           {item.sizeName && <p className="text-xs text-gray-500">Tamanho: {item.sizeName}</p>}
                           {item.crustName && <p className="text-xs text-gray-500">Borda: {item.crustName}</p>}
                           {item.halfHalf && <p className="text-xs text-gray-500">Meio a meio: {item.flavor1} / {item.flavor2}</p>}
-                          {item.options.map((o, j) => (
-                            <p key={j} className="text-xs text-gray-500">+ {o.quantity > 1 ? `${o.quantity}x ` : ""}{o.name} {o.price > 0 ? `(R$ ${(o.price * (o.quantity || 1)).toFixed(2)})` : ""}</p>
-                          ))}
+                          {/* Group options by type for sorvete */}
+                          {item.productId === 'sorvete-custom' ? (
+                            <>
+                              {/* Sabores */}
+                              {item.options.filter((o: any) => o.name.startsWith('Sabor:')).length > 0 && (
+                                <div className="mt-2">
+                                  <p className="text-xs font-semibold text-gray-600">Sabores</p>
+                                  {item.options.filter((o: any) => o.name.startsWith('Sabor:')).map((o: any, j: number) => (
+                                    <p key={j} className="text-xs text-gray-500">{o.quantity}x bola sabor {o.name.replace('Sabor: ', '')} (R$ {(o.price * o.quantity).toFixed(2)})</p>
+                                  ))}
+                                </div>
+                              )}
+                              {/* Cobertura */}
+                              {item.options.filter((o: any) => o.name.startsWith('Cobertura:')).length > 0 && (
+                                <div className="mt-4">
+                                  <p className="text-xs font-semibold text-gray-600">Cobertura</p>
+                                  {item.options.filter((o: any) => o.name.startsWith('Cobertura:')).map((o: any, j: number) => (
+                                    <p key={j} className="text-xs text-gray-500">{o.name.replace('Cobertura: ', '')}</p>
+                                  ))}
+                                </div>
+                              )}
+                              {/* Extras */}
+                              {item.options.filter((o: any) => o.name.startsWith('Extra:')).length > 0 && (
+                                <div className="mt-4">
+                                  <p className="text-xs font-semibold text-gray-600">Extras</p>
+                                  {item.options.filter((o: any) => o.name.startsWith('Extra:')).map((o: any, j: number) => (
+                                    <p key={j} className="text-xs text-gray-500">{o.quantity}x {o.name.replace('Extra: ', '')} (R$ {(o.price * o.quantity).toFixed(2)})</p>
+                                  ))}
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            item.options.map((o, j) => (
+                              <p key={j} className="text-xs text-gray-500">+ {o.quantity > 1 ? `${o.quantity}x ` : ""}{o.name} {o.price > 0 ? `(R$ ${(o.price * (o.quantity || 1)).toFixed(2)})` : ""}</p>
+                            ))
+                          )}
                         </div>
                         <button onClick={() => removeFromCart(i)} className="text-red-400 text-sm">🗑️</button>
                       </div>
