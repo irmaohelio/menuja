@@ -336,7 +336,7 @@ export default function LojaPage() {
                           {item.crustName && <p className="text-xs text-gray-500">Borda: {item.crustName}</p>}
                           {item.halfHalf && <p className="text-xs text-gray-500">Meio a meio: {item.flavor1} / {item.flavor2}</p>}
                           {item.options.map((o, j) => (
-                            <p key={j} className="text-xs text-gray-500">+ {o.name} {o.price > 0 ? `(R$ ${o.price.toFixed(2)})` : ""}</p>
+                            <p key={j} className="text-xs text-gray-500">+ {o.quantity > 1 ? `${o.quantity}x ` : ""}{o.name} {o.price > 0 ? `(R$ ${(o.price * (o.quantity || 1)).toFixed(2)})` : ""}</p>
                           ))}
                         </div>
                         <button onClick={() => removeFromCart(i)} className="text-red-400 text-sm">🗑️</button>
@@ -347,7 +347,7 @@ export default function LojaPage() {
                           <span className="font-medium">{item.quantity}</span>
                           <button onClick={() => updateQty(i, 1)} className="w-7 h-7 bg-gray-100 rounded-full font-bold text-sm">+</button>
                         </div>
-                        <span className="font-bold text-sm">R$ {((item.unitPrice + item.options.reduce((s, o) => s + o.price, 0)) * item.quantity).toFixed(2)}</span>
+                        <span className="font-bold text-sm">R$ {((item.unitPrice + item.options.reduce((s, o) => s + o.price * (o.quantity || 1), 0)) * item.quantity).toFixed(2)}</span>
                       </div>
                     </div>
                   ))}
