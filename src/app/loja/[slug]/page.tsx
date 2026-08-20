@@ -229,8 +229,15 @@ export default function LojaPage() {
           <div>
             {/* Destaques */}
             {store.categories?.some((c: any) => c.products.some((p: any) => p.isFeatured)) && (
-              <div className="mb-6">
-                <h2 className="text-lg font-bold mb-3">⭐ Destaques</h2>
+              <div className="mb-8">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-1.5 h-8 rounded-full bg-yellow-400" />
+                  <div>
+                    <h2 className="text-xl font-extrabold text-gray-900 tracking-tight">⭐ Destaques</h2>
+                    <p className="text-xs text-gray-400 mt-0.5">Os mais pedidos</p>
+                  </div>
+                  <div className="flex-1 h-px bg-gradient-to-r from-gray-200 to-transparent ml-2" />
+                </div>
                 <div className="grid grid-cols-2 gap-3">
                   {store.categories.flatMap((c: any) => c.products).filter((p: any) => p.isFeatured).map((p: any) => (
                     <div key={p.id} onClick={() => setSelectedProduct(p)}
@@ -253,8 +260,16 @@ export default function LojaPage() {
 
             {/* Categorias e Produtos */}
             {store.categories?.filter((c: any) => c.products.length > 0).map((cat: any) => (
-              <div key={cat.id} id={`cat-${cat.id}`} className="mb-6 scroll-mt-24">
-                <h2 className="text-lg font-bold mb-3">{cat.name}</h2>
+              <div key={cat.id} id={`cat-${cat.id}`} className="mb-8 scroll-mt-24">
+                {/* Category Header */}
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: store.primaryColor }} />
+                  <div>
+                    <h2 className="text-xl font-extrabold text-gray-900 tracking-tight">{cat.name}</h2>
+                    <p className="text-xs text-gray-400 mt-0.5">{cat.products.length} {cat.products.length === 1 ? 'produto' : 'produtos'}</p>
+                  </div>
+                  <div className="flex-1 h-px bg-gradient-to-r from-gray-200 to-transparent ml-2" />
+                </div>
                 <div className="grid grid-cols-2 gap-3">
                   {cat.products.map((p: any) => (
                     <div key={p.id} onClick={() => setSelectedProduct(p)}
@@ -543,12 +558,13 @@ function ProductModal({ product, store, onClose, onAdd }: {
   const allPizzas = store.categories?.flatMap((c: any) => c.products).filter((p: any) => p.isPizza) || []
   const otherPizzas = allPizzas.filter((p: any) => p.id !== product.id)
 
-  const toggleOption = (groupId: string, option: any) => {
+  const toggleOption = (groupId: string, option: any, maxQty?: number) => {
     const current = selectedOptions[groupId] || []
     const exists = current.find(o => o.name === option.name)
     if (exists) {
       setSelectedOptions({ ...selectedOptions, [groupId]: current.filter(o => o.name !== option.name) })
     } else {
+      if (maxQty && current.length >= maxQty) return // respeitar maxQty
       setSelectedOptions({ ...selectedOptions, [groupId]: [...current, option] })
     }
   }
@@ -719,6 +735,11 @@ function ProductModal({ product, store, onClose, onAdd }: {
               <div className="flex items-center justify-between mb-3">
                 <h4 className="font-bold text-base">
                   {group.name} {group.required && <span className="text-red-500 text-xs">(obrigatório)</span>}
+                    {group.maxQty > 1 && (
+                      <span className="text-xs text-gray-500 ml-1">
+                        ({(selectedOptions[group.id] || []).length}/{group.maxQty})
+                      </span>
+                    )}
                 </h4>
                 {(selectedOptions[group.id] || []).length > 0 && (
                   <span className="text-xs font-medium" style={{ color: store.primaryColor }}>
@@ -730,7 +751,7 @@ function ProductModal({ product, store, onClose, onAdd }: {
                 {group.options.map((opt: any) => {
                   const isSelected = (selectedOptions[group.id] || []).find((o: any) => o.name === opt.name)
                   return (
-                    <label key={opt.id} onClick={() => toggleOption(group.id, opt)}
+                    <label key={opt.id} onClick={() => toggleOption(group.id, opt, group.maxQty)}
                       className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer border-2 transition ${
                         isSelected ? "border-gray-400 bg-gray-50" : "border-gray-200 hover:border-gray-300"
                       }`}>
