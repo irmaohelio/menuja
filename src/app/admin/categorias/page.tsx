@@ -39,6 +39,7 @@ export default function CategoriasPage() {
     if (type === 'sorvete' && (sorveteSabores.length > 0 || sorveteCoberturas.length > 0)) {
       await fetch("/api/sorvete-config", {
         method: "PUT",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ config: { sabores: sorveteSabores, coberturas: sorveteCoberturas } }),
       })
