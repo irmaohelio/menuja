@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 interface SorveteBuilderProps {
   store: any
@@ -7,38 +7,48 @@ interface SorveteBuilderProps {
   onClose: () => void
 }
 
-const SABORES = [
-  { name: 'Chocolate', color: '#5C3317' },
-  { name: 'Morango', color: '#FF6B6B' },
-  { name: 'Creme', color: '#FFFDD0' },
-  { name: 'Pistache', color: '#93C572' },
-  { name: 'Napolitano', color: '#FFB6C1' },
-]
-
-const COBERTURAS = [
-  { name: 'Calda de Groselha', color: '#8B0000' },
-  { name: 'Calda de Morango', color: '#FF1493' },
-  { name: 'Calda de Chocolate', color: '#3E2723' },
-]
-
-const EXTRAS = [
-  { name: 'Granola', price: 3 },
-  { name: 'Leite Condensado', price: 3 },
-  { name: 'Chocolate Granulado', price: 4 },
-  { name: 'Amendoim', price: 3 },
-  { name: 'Banana', price: 2 },
-]
+const DEFAULT_CONFIG = {
+  sabores: [
+    { name: 'Chocolate', color: '#5C3317' },
+    { name: 'Morango', color: '#FF6B6B' },
+    { name: 'Creme', color: '#FFFDD0' },
+    { name: 'Pistache', color: '#93C572' },
+    { name: 'Napolitano', color: '#FFB6C1' },
+  ],
+  coberturas: [
+    { name: 'Calda de Groselha', color: '#8B0000' },
+    { name: 'Calda de Morango', color: '#FF1493' },
+    { name: 'Calda de Chocolate', color: '#3E2723' },
+  ],
+  extras: [
+    { name: 'Granola', price: 3 },
+    { name: 'Leite Condensado', price: 3 },
+    { name: 'Chocolate Granulado', price: 4 },
+    { name: 'Amendoim', price: 3 },
+    { name: 'Banana', price: 2 },
+  ],
+}
 
 export default function SorveteBuilder({ store, onAdd, onClose }: SorveteBuilderProps) {
+  const [config, setConfig] = useState(DEFAULT_CONFIG)
   const [scoops, setScoops] = useState<Record<string, number>>({})
   const [cobertura, setCobertura] = useState<string | null>(null)
   const [extras, setExtras] = useState<Record<string, number>>({})
   const [notes, setNotes] = useState('')
 
+  useEffect(() => {
+    fetch(`/api/sorvete-config?storeId=${store.id}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.sabores) setConfig(data)
+      })
+      .catch(() => {})
+  }, [store.id])
+
   const totalScoops = Object.values(scoops).reduce((sum, qty) => sum + qty, 0)
   const scoopsPrice = totalScoops * 4
   const extrasPrice = Object.entries(extras).reduce((sum, [name, qty]) => {
-    const extra = EXTRAS.find(e => e.name === name)
+    const extra = config.extras.find(e => e.name === name)
     return sum + (extra ? extra.price * qty : 0)
   }, 0)
   const totalPrice = scoopsPrice + extrasPrice
@@ -114,7 +124,7 @@ export default function SorveteBuilder({ store, onAdd, onClose }: SorveteBuilder
         ...(cobertura ? [{ name: `Cobertura: ${cobertura}`, price: 0, quantity: 1 }] : []),
         ...Object.entries(extras).filter(([_, qty]) => qty > 0).map(([name, qty]) => ({
           name: `Extra: ${name}`,
-          price: EXTRAS.find(e => e.name === name)?.price || 0,
+          price: config.extras.find(e => e.name === name)?.price || 0,
           quantity: qty,
         })),
       ],
@@ -127,7 +137,7 @@ export default function SorveteBuilder({ store, onAdd, onClose }: SorveteBuilder
     let index = 0
     
     Object.entries(scoops).forEach(([flavor, qty]) => {
-      const flavorData = SABORES.find(s => s.name === flavor)
+      const flavorData = config.sabores.find(s => s.name === flavor)
       if (!flavorData) return
       
       for (let i = 0; i < qty; i++) {
@@ -174,7 +184,7 @@ export default function SorveteBuilder({ store, onAdd, onClose }: SorveteBuilder
             const positions: { flavor: string; color: string; x: number; y: number }[] = []
             let idx = 0
             Object.entries(scoops).forEach(([flavor, qty]) => {
-              const flavorData = SABORES.find(s => s.name === flavor)
+              const flavorData = config.sabores.find(s => s.name === flavor)
               if (!flavorData) return
               for (let i = 0; i < qty; i++) {
                 const row = Math.floor(idx / 2)
@@ -212,7 +222,7 @@ export default function SorveteBuilder({ store, onAdd, onClose }: SorveteBuilder
                     <path
                       d={`M${cx - 20} ${potRimY} Q${cx - 15} ${potRimY + 10} ${cx - 20} ${potRimY + 20} M${cx} ${potRimY} Q${cx + 5} ${potRimY + 15} ${cx} ${potRimY + 25} M${cx + 20} ${potRimY} Q${cx + 25} ${potRimY + 10} ${cx + 20} ${potRimY + 20}`}
                       fill="none"
-                      stroke={COBERTURAS.find(c => c.name === cobertura)?.color || '#000'}
+                      stroke={config.coberturas.find(c => c.name === cobertura)?.color || '#000'}
                       strokeWidth="3" strokeLinecap="round"
                     />
                   )}
@@ -235,7 +245,7 @@ export default function SorveteBuilder({ store, onAdd, onClose }: SorveteBuilder
           <div className="mb-6">
             <h4 className="font-bold text-base mb-3">🍫 Sabores</h4>
             <div className="space-y-2">
-              {SABORES.map(sabor => (
+              {config.sabores.map(sabor => (
                 <div key={sabor.name} className="flex items-center justify-between p-3 rounded-xl border-2 border-gray-200">
                   <div className="flex items-center gap-3">
                     <div className="w-6 h-6 rounded-full" style={{ backgroundColor: sabor.color }}/>
@@ -264,10 +274,10 @@ export default function SorveteBuilder({ store, onAdd, onClose }: SorveteBuilder
           </div>
 
           {/* Cobertura */}
-          <div className="mb-6 pt-6 border-t border-gray-200">
+          <div className="mb-6 border-t pt-4">
             <h4 className="font-bold text-base mb-3">🍫 Cobertura (1 por pote)</h4>
             <div className="space-y-2">
-              {COBERTURAS.map(cob => (
+              {config.coberturas.map(cob => (
                 <button
                   key={cob.name}
                   onClick={() => setCobertura(cobertura === cob.name ? null : cob.name)}
@@ -288,10 +298,10 @@ export default function SorveteBuilder({ store, onAdd, onClose }: SorveteBuilder
           </div>
 
           {/* Extras */}
-          <div className="mb-6 pt-6 border-t border-gray-200">
+          <div className="mb-6 border-t pt-4">
             <h4 className="font-bold text-base mb-3">✨ Extras (cobrado por cada)</h4>
             <div className="space-y-2">
-              {EXTRAS.map(extra => (
+              {config.extras.map(extra => (
                 <div key={extra.name} className="flex items-center justify-between p-3 rounded-xl border-2 border-gray-200">
                   <div>
                     <span className="font-medium">{extra.name}</span>

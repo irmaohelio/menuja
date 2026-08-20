@@ -64,6 +64,9 @@ model Store {
   planExpiresAt DateTime? // When paid plan expires (null = no plan)
   isBlocked     Boolean  @default(false) // Manual block by master
 
+  // Sorvete Config (JSON)
+  sorveteConfig Json?
+
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
