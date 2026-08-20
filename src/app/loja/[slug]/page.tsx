@@ -31,6 +31,13 @@ export default function LojaPage() {
     name: "", phone: "", address: "", number: "", complement: "", neighborhood: "", reference: "",
     deliveryType: "delivery", paymentMethod: "cash", changeFor: "", notes: "",
   })
+  const [showProfile, setShowProfile] = useState(false)
+  const [profile, setProfile] = useState(() => {
+    try {
+      const saved = localStorage.getItem("customer_profile")
+      return saved ? JSON.parse(saved) : { name: "", phone: "", address: "", number: "", neighborhood: "", city: "", reference: "" }
+    } catch { return { name: "", phone: "", address: "", number: "", neighborhood: "", city: "", reference: "" } }
+  })
 
   useEffect(() => {
     fetch(`/api/store/${slug}`).then(r => r.json()).then(data => {
@@ -60,14 +67,36 @@ export default function LojaPage() {
     setCart(updated)
   }
 
+  const saveProfile = () => {
+    localStorage.setItem("customer_profile", JSON.stringify(profile))
+    setShowProfile(false)
+    // Auto-fill checkout form
+    setCheckoutForm(prev => ({
+      ...prev,
+      name: profile.name,
+      phone: profile.phone,
+      address: profile.address,
+      number: profile.number,
+      neighborhood: profile.neighborhood,
+      reference: profile.reference,
+    }))
+  }
+
   const cartTotal = cart.reduce((sum, item) => {
     const optsTotal = item.options.reduce((s, o) => s + o.price * (o.quantity || 1), 0)
     return sum + (item.unitPrice + optsTotal) * item.quantity
   }, 0)
 
   const submitOrder = async () => {
-    if (!checkoutForm.name) { alert("Informe seu nome"); return }
     if (cart.length === 0) { alert("Carrinho vazio"); return }
+    if (!checkoutForm.name) { alert("Informe seu nome"); return }
+    if (checkoutForm.deliveryType === "delivery") {
+      if (!checkoutForm.address) { alert("Informe seu endereço"); return }
+      if (!checkoutForm.number) { alert("Informe o número"); return }
+      if (!checkoutForm.neighborhood) { alert("Informe o bairro"); return }
+      if (!profile.city) { alert("Informe a cidade no seu perfil"); setShowProfile(true); return }
+      if (!checkoutForm.reference) { alert("Informe um ponto de referência"); return }
+    }
 
     const res = await fetch("/api/orders/public", {
       method: "POST",
@@ -84,6 +113,7 @@ export default function LojaPage() {
         customerComplement: checkoutForm.complement,
         customerNeighborhood: checkoutForm.neighborhood,
         customerReference: checkoutForm.reference,
+        customerCity: profile.city,
         notes: checkoutForm.notes,
         items: cart.map(item => ({
           productId: item.productId,
@@ -141,6 +171,9 @@ export default function LojaPage() {
                 {isStoreOpen ? "🟢 Aberta" : store.isTempClosed ? "🔴 " + (store.tempClosedMsg || "Fechada temporariamente") : "🔴 Fechada"}
               </span>
             </div>
+            <button onClick={() => setShowProfile(true)} className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white text-lg hover:bg-white/30 transition">
+              👤
+            </button>
           </div>
         </header>
 
@@ -325,6 +358,9 @@ export default function LojaPage() {
                       <input placeholder="Bairro" value={checkoutForm.neighborhood}
                         onChange={e => setCheckoutForm({...checkoutForm, neighborhood: e.target.value})}
                         className="w-full px-4 py-3 border rounded-xl text-sm" />
+                      <input placeholder="Ponto de referência" value={checkoutForm.reference}
+                        onChange={e => setCheckoutForm({...checkoutForm, reference: e.target.value})}
+                        className="w-full px-4 py-3 border rounded-xl text-sm" />
                     </>
                   )}
 
@@ -425,6 +461,49 @@ export default function LojaPage() {
           onClose={() => setSelectedProduct(null)}
           onAdd={addToCart}
         />
+      )}
+
+      {/* Profile Modal */}
+      {showProfile && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center" onClick={() => setShowProfile(false)}>
+          <div className="bg-white rounded-t-3xl w-full max-w-lg max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="sticky top-0 bg-white border-b px-5 py-4 flex items-center justify-between rounded-t-3xl">
+              <h2 className="text-lg font-bold">👤 Seu Perfil</h2>
+              <button onClick={() => setShowProfile(false)} className="text-2xl text-gray-400">×</button>
+            </div>
+            <div className="p-5 space-y-3">
+              <p className="text-xs text-gray-500 mb-2">Preencha seus dados para agilizar seus pedidos</p>
+              <input placeholder="Nome completo *" value={profile.name}
+                onChange={e => setProfile({...profile, name: e.target.value})}
+                className="w-full px-4 py-3 border rounded-xl text-sm" />
+              <input placeholder="Telefone / WhatsApp" value={profile.phone}
+                onChange={e => setProfile({...profile, phone: e.target.value})}
+                className="w-full px-4 py-3 border rounded-xl text-sm" />
+              <input placeholder="Endereço *" value={profile.address}
+                onChange={e => setProfile({...profile, address: e.target.value})}
+                className="w-full px-4 py-3 border rounded-xl text-sm" />
+              <div className="grid grid-cols-2 gap-2">
+                <input placeholder="Número *" value={profile.number}
+                  onChange={e => setProfile({...profile, number: e.target.value})}
+                  className="px-4 py-3 border rounded-xl text-sm" />
+                <input placeholder="Bairro *" value={profile.neighborhood}
+                  onChange={e => setProfile({...profile, neighborhood: e.target.value})}
+                  className="px-4 py-3 border rounded-xl text-sm" />
+              </div>
+              <input placeholder="Cidade *" value={profile.city}
+                onChange={e => setProfile({...profile, city: e.target.value})}
+                className="w-full px-4 py-3 border rounded-xl text-sm" />
+              <input placeholder="Ponto de referência *" value={profile.reference}
+                onChange={e => setProfile({...profile, reference: e.target.value})}
+                className="w-full px-4 py-3 border rounded-xl text-sm" />
+              <button onClick={saveProfile}
+                className="w-full py-3 rounded-xl font-bold text-white mt-4"
+                style={{ backgroundColor: store.primaryColor }}>
+                Salvar perfil
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Bottom Nav */}
