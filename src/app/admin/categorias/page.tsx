@@ -174,6 +174,14 @@ export default function CategoriasPage() {
                   </button>
                 </div>
               )}
+
+              {c.name === 'Sorvete' && (
+                <div className="mt-3 pt-3 border-t border-gray-100">
+                  <Link href="/admin/sorvete" className="text-sm font-medium" style={{ color: "var(--primary)" }}>
+                    🍦 Configurar Sabores & Coberturas →
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         ))}
