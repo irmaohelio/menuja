@@ -264,7 +264,7 @@ export default function SorveteBuilder({ store, onAdd, onClose }: SorveteBuilder
           </div>
 
           {/* Cobertura */}
-          <div className="mb-6">
+          <div className="mb-6 pt-6 border-t border-gray-200">
             <h4 className="font-bold text-base mb-3">🍫 Cobertura (1 por pote)</h4>
             <div className="space-y-2">
               {COBERTURAS.map(cob => (
@@ -288,7 +288,7 @@ export default function SorveteBuilder({ store, onAdd, onClose }: SorveteBuilder
           </div>
 
           {/* Extras */}
-          <div className="mb-6">
+          <div className="mb-6 pt-6 border-t border-gray-200">
             <h4 className="font-bold text-base mb-3">✨ Extras (cobrado por cada)</h4>
             <div className="space-y-2">
               {EXTRAS.map(extra => (
