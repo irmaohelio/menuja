@@ -56,6 +56,7 @@ export default function LojaPage() {
   const addToCart = (item: CartItem) => {
     setCart([...cart, item])
     setSelectedProduct(null)
+    setShowSorveteBuilder(false)
     setTab("carrinho")
   }
 
