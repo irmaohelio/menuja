@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getCurrentStore } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 const DEFAULT_CONFIG = {
@@ -51,16 +52,25 @@ export async function GET(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
-    const body = await req.json()
-    const { storeId, config } = body
-
-    if (!storeId || !config) {
-      return NextResponse.json({ error: 'storeId and config required' }, { status: 400 })
+    const store = await getCurrentStore()
+    if (!store) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const body = await req.json()
+    const { config } = body
+
+    if (!config) {
+      return NextResponse.json({ error: 'config required' }, { status: 400 })
+    }
+
+    // Merge with existing config (preserve extras if not provided)
+    const existing = (store.sorveteConfig as any) || DEFAULT_CONFIG
+    const merged = { ...existing, ...config }
+
     await prisma.store.update({
-      where: { id: storeId },
-      data: { sorveteConfig: config },
+      where: { id: store.id },
+      data: { sorveteConfig: merged },
     })
 
     return NextResponse.json({ success: true })
