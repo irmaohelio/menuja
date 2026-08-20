@@ -406,6 +406,19 @@ export default function ProdutosPage() {
               </div>
               )}
 
+              {/* Categoria - moved above Nome */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Categoria</label>
+                <select value={form.categoryId} onChange={e => handleCategoryChange(e.target.value)}
+                  className="w-full px-4 py-3 border rounded-xl">
+                  <option value="">Selecione</option>
+                  {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+                {!editing && currentCatTemplate && (
+                  <p className="text-xs text-green-600 mt-1">✅ Extras da categoria carregados automaticamente</p>
+                )}
+              </div>
+
               {/* Nome */}
               <div>
                 <label className="block text-sm font-medium mb-1">Nome *</label>
@@ -470,19 +483,6 @@ export default function ProdutosPage() {
                   </div>
                 </div>
               )}
-
-              {/* Categoria */}
-              <div>
-                <label className="block text-sm font-medium mb-1">Categoria</label>
-                <select value={form.categoryId} onChange={e => handleCategoryChange(e.target.value)}
-                  className="w-full px-4 py-3 border rounded-xl">
-                  <option value="">Selecione</option>
-                  {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-                {!editing && currentCatTemplate && (
-                  <p className="text-xs text-green-600 mt-1">✅ Extras da categoria carregados automaticamente</p>
-                )}
-              </div>
 
               {/* Tamanhos por preço */}
               {form.hasSizes && (
