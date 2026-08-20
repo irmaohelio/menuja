@@ -44,10 +44,8 @@ export default function SorvetePage() {
   const [msg, setMsg] = useState('')
 
   useEffect(() => {
-    const token = localStorage.getItem('token')
-    if (!token) { router.push('/login'); return }
-    fetch('/api/dashboard', { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.json())
+    fetch('/api/auth/me', { credentials: 'include', cache: 'no-store' })
+      .then(r => { if (!r.ok) throw new Error('unauthorized'); return r.json() })
       .then(data => {
         if (data.store) {
           setStoreId(data.store.id)
@@ -56,6 +54,7 @@ export default function SorvetePage() {
           }
         }
       })
+      .catch(() => router.push('/login'))
   }, [router])
 
   const save = async () => {
