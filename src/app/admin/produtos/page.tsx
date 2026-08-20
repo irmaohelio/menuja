@@ -240,6 +240,9 @@ export default function ProdutosPage() {
     })
     setAdicionais(p.optionGroups?.[0]?.options?.map((o: any) => ({ name: o.name, price: String(o.price) })) || [])
     setPizzaSizes(p.pizzaSizes?.map((s: any) => ({ name: s.name, price: String(s.price) })) || [])
+    if (p.categoryId && isSorveteCategory(p.categoryId)) {
+      loadSorveteConfig()
+    }
     setShowForm(true)
     setMinimized(false)
   }
