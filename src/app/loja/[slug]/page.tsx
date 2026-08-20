@@ -25,7 +25,12 @@ export default function LojaPage() {
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<"cardapio" | "carrinho" | "pedidos">("cardapio")
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
-  const [cart, setCart] = useState<CartItem[]>([])
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    try {
+      const saved = localStorage.getItem("cart")
+      return saved ? JSON.parse(saved) : []
+    } catch { return [] }
+  })
   const [selectedProduct, setSelectedProduct] = useState<any>(null)
   const [showSorveteBuilder, setShowSorveteBuilder] = useState(false)
   const [orderResult, setOrderResult] = useState<any>(null)
@@ -52,6 +57,11 @@ export default function LojaPage() {
       setLoading(false)
     })
   }, [slug])
+
+  // Save cart to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("cart", JSON.stringify(cart))
+  }, [cart])
 
   const addToCart = (item: CartItem) => {
     setCart([...cart, item])
