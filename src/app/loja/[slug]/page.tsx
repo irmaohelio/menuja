@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import Image from "next/image"
+import SorveteBuilder from "@/components/SorveteBuilder"
 
 type CartItem = {
   productId: string
@@ -26,6 +27,7 @@ export default function LojaPage() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [cart, setCart] = useState<CartItem[]>([])
   const [selectedProduct, setSelectedProduct] = useState<any>(null)
+  const [showSorveteBuilder, setShowSorveteBuilder] = useState(false)
   const [orderResult, setOrderResult] = useState<any>(null)
   const [checkoutForm, setCheckoutForm] = useState({
     name: "", phone: "", address: "", number: "", complement: "", neighborhood: "", reference: "",
@@ -271,24 +273,36 @@ export default function LojaPage() {
                   <div className="flex-1 h-px bg-gradient-to-r from-gray-200 to-transparent ml-2" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  {cat.products.map((p: any) => (
-                    <div key={p.id} onClick={() => setSelectedProduct(p)}
-                      className="bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100">
-                      {p.image && <Image src={p.image} alt={p.name} width={200} height={200} className="w-full aspect-square object-cover" />}
-                      <div className="p-2.5">
-                        <p className="text-sm font-medium truncate">{p.name}</p>
-                        {p.description && <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">{p.description}</p>}
-                        <p className="text-sm font-bold mt-1.5" style={{ color: store.primaryColor }}>
-                          {p.pizzaSizes?.length > 0
-                            ? `a partir de R$ ${Math.min(...p.pizzaSizes.map((s: any) => s.price)).toFixed(2)}`
-                            : p.promoPrice
-                              ? `R$ ${p.promoPrice.toFixed(2)}`
-                              : `R$ ${p.price.toFixed(2)}`
-                          }
-                        </p>
-                      </div>
+                  {cat.name === 'Sorvete' ? (
+                    <div className="col-span-2">
+                      <button
+                        onClick={() => setShowSorveteBuilder(true)}
+                        className="w-full py-4 rounded-2xl font-bold text-white text-lg"
+                        style={{ backgroundColor: store.primaryColor }}
+                      >
+                        🍦 Montar Sorvete
+                      </button>
                     </div>
-                  ))}
+                  ) : (
+                    cat.products.map((p: any) => (
+                      <div key={p.id} onClick={() => setSelectedProduct(p)}
+                        className="bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100">
+                        {p.image && <Image src={p.image} alt={p.name} width={200} height={200} className="w-full aspect-square object-cover" />}
+                        <div className="p-2.5">
+                          <p className="text-sm font-medium truncate">{p.name}</p>
+                          {p.description && <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">{p.description}</p>}
+                          <p className="text-sm font-bold mt-1.5" style={{ color: store.primaryColor }}>
+                            {p.pizzaSizes?.length > 0
+                              ? `a partir de R$ ${Math.min(...p.pizzaSizes.map((s: any) => s.price)).toFixed(2)}`
+                              : p.promoPrice
+                                ? `R$ ${p.promoPrice.toFixed(2)}`
+                                : `R$ ${p.price.toFixed(2)}`
+                            }
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             ))}
@@ -469,6 +483,14 @@ export default function LojaPage() {
       </div>
 
       {/* Product Modal */}
+      {showSorveteBuilder && (
+        <SorveteBuilder
+          store={store}
+          onAdd={addToCart}
+          onClose={() => setShowSorveteBuilder(false)}
+        />
+      )}
+
       {selectedProduct && (
         <ProductModal
           product={selectedProduct}
