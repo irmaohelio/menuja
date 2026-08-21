@@ -111,24 +111,36 @@ export async function POST(req: NextRequest) {
 
     const subscription = await res.json()
 
-    // Get payment info (PIX QR code or boleto URL)
+    // Get the first payment from the subscription
     let paymentInfo: any = {}
     
-    if (paymentMethod === "pix") {
-      // Get PIX QR code
-      const pixRes = await fetch(`${ASAAS_API_URL}/payments/${subscription.id}/pixQrCode`, {
-        headers: { "access_token": apiKey }
-      })
-      if (pixRes.ok) {
-        paymentInfo = await pixRes.json()
-      }
-    } else {
-      // Get boleto URL
-      const boletoRes = await fetch(`${ASAAS_API_URL}/payments/${subscription.id}/identificationField`, {
-        headers: { "access_token": apiKey }
-      })
-      if (boletoRes.ok) {
-        paymentInfo = await boletoRes.json()
+    const paymentsRes = await fetch(`${ASAAS_API_URL}/subscriptions/${subscription.id}/payments`, {
+      headers: { "access_token": apiKey }
+    })
+    
+    if (paymentsRes.ok) {
+      const paymentsData = await paymentsRes.json()
+      const payment = paymentsData.data?.[0]
+      
+      if (payment) {
+        if (paymentMethod === "pix") {
+          // Get PIX QR code from the payment
+          const pixRes = await fetch(`${ASAAS_API_URL}/payments/${payment.id}/pixQrCode`, {
+            headers: { "access_token": apiKey }
+          })
+          if (pixRes.ok) {
+            paymentInfo = await pixRes.json()
+          }
+        } else {
+          // Get boleto URL from the payment
+          const boletoRes = await fetch(`${ASAAS_API_URL}/payments/${payment.id}/identificationField`, {
+            headers: { "access_token": apiKey }
+          })
+          if (boletoRes.ok) {
+            paymentInfo = await boletoRes.json()
+          }
+        }
+        paymentInfo.paymentId = payment.id
       }
     }
 
