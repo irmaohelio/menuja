@@ -18,6 +18,25 @@ export default function CategoriasPage() {
   const [saborColor, setSaborColor] = useState("#CCCCCC")
   const [coberturaName, setCoberturaName] = useState("")
   const [coberturaColor, setCoberturaColor] = useState("#CCCCCC")
+  // Confeitaria (bolos e doces) state
+  const [confeitariaSabores, setConfeitariaSabores] = useState<any[]>([])
+  const [confeitariaRecheios, setConfeitariaRecheios] = useState<any[]>([])
+  const [confeitariaCoberturas, setConfeitariaCoberturas] = useState<any[]>([])
+  const [confeitariaTamanhos, setConfeitariaTamanhos] = useState<any[]>([])
+  const [confSaborName, setConfSaborName] = useState("")
+  const [confRecheioName, setConfRecheioName] = useState("")
+  const [confCoberturaName, setConfCoberturaName] = useState("")
+  const [confTamanhoName, setConfTamanhoName] = useState("")
+  const [confTamanhoFatias, setConfTamanhoFatias] = useState("")
+  const [confTamanhoPreco, setConfTamanhoPreco] = useState("")
+  // Picolé state
+  const [picoleCoberturas, setPicoleCoberturas] = useState<any[]>([])
+  const [picCoberturaName, setPicCoberturaName] = useState("")
+  const [picCoberturaPreco, setPicCoberturaPreco] = useState("")
+  // Bebidas state
+  const [bebidaTamanhos, setBebidaTamanhos] = useState<any[]>([])
+  const [bebTamanhoName, setBebTamanhoName] = useState("")
+  const [bebTamanhoPreco, setBebTamanhoPreco] = useState("")
 
 
   const load = () => {
@@ -45,6 +64,39 @@ export default function CategoriasPage() {
         body: JSON.stringify({ config: { sabores: sorveteSabores, coberturas: sorveteCoberturas } }),
       })
     }
+    if (type === 'confeitaria') {
+      await fetch("/api/sorvete-config", {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ config: {
+          sabores: confeitariaSabores,
+          recheios: confeitariaRecheios,
+          coberturas: confeitariaCoberturas,
+          tamanhos: confeitariaTamanhos,
+        } }),
+      })
+    }
+    if (type === 'picole') {
+      await fetch("/api/sorvete-config", {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ config: {
+          coberturas: picoleCoberturas,
+        } }),
+      })
+    }
+    if (type === 'bebidas') {
+      await fetch("/api/sorvete-config", {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ config: {
+          tamanhos: bebidaTamanhos,
+        } }),
+      })
+    }
 
     setShowForm(false)
     setEditing(null)
@@ -53,6 +105,12 @@ export default function CategoriasPage() {
     setType("standard")
     setSorveteSabores([])
     setSorveteCoberturas([])
+    setConfeitariaSabores([])
+    setConfeitariaRecheios([])
+    setConfeitariaCoberturas([])
+    setConfeitariaTamanhos([])
+    setPicoleCoberturas([])
+    setBebidaTamanhos([])
 
     load()
   }
@@ -77,13 +135,28 @@ export default function CategoriasPage() {
     setDescription(c.description || "")
     setType(c.type)
     setShowForm(true)
-    if (c.type === 'sorvete') {
+    if (c.type === 'sorvete' || c.type === 'confeitaria' || c.type === 'picole' || c.type === 'bebidas') {
       fetch("/api/auth/me", { credentials: "include", cache: "no-store" })
         .then(r => r.json())
         .then(data => {
           if (data.store?.sorveteConfig) {
-            setSorveteSabores(data.store.sorveteConfig.sabores || [])
-            setSorveteCoberturas(data.store.sorveteConfig.coberturas || [])
+            const cfg = data.store.sorveteConfig
+            if (c.type === 'sorvete') {
+              setSorveteSabores(cfg.sabores || [])
+              setSorveteCoberturas(cfg.coberturas || [])
+            }
+            if (c.type === 'confeitaria') {
+              setConfeitariaSabores(cfg.sabores || [])
+              setConfeitariaRecheios(cfg.recheios || [])
+              setConfeitariaCoberturas(cfg.coberturas || [])
+              setConfeitariaTamanhos(cfg.tamanhos || [])
+            }
+            if (c.type === 'picole') {
+              setPicoleCoberturas(cfg.coberturas || [])
+            }
+            if (c.type === 'bebidas') {
+              setBebidaTamanhos(cfg.tamanhos || [])
+            }
           }
         })
         .catch(() => {})
@@ -124,6 +197,9 @@ export default function CategoriasPage() {
     advanced: "🔧 Avançado",
     sorvete: "🍦 Sorvete",
     acai: "🫐 Açaí",
+    confeitaria: "🎂 Bolos e Doces",
+    picole: "🧊 Picolé",
+    bebidas: "🥤 Bebidas",
   }
 
   return (
@@ -238,13 +314,28 @@ export default function CategoriasPage() {
                 <label className="block text-sm font-medium mb-1">Tipo</label>
                 <select value={type} onChange={e => {
                   setType(e.target.value)
-                  if (e.target.value === 'sorvete' && editing) {
+                  if ((e.target.value === 'sorvete' || e.target.value === 'confeitaria' || e.target.value === 'picole' || e.target.value === 'bebidas') && editing) {
                     fetch("/api/auth/me", { credentials: "include", cache: "no-store" })
                       .then(r => r.json())
                       .then(data => {
                         if (data.store?.sorveteConfig) {
-                          setSorveteSabores(data.store.sorveteConfig.sabores || [])
-                          setSorveteCoberturas(data.store.sorveteConfig.coberturas || [])
+                          const cfg = data.store.sorveteConfig
+                          if (e.target.value === 'sorvete') {
+                            setSorveteSabores(cfg.sabores || [])
+                            setSorveteCoberturas(cfg.coberturas || [])
+                          }
+                          if (e.target.value === 'confeitaria') {
+                            setConfeitariaSabores(cfg.sabores || [])
+                            setConfeitariaRecheios(cfg.recheios || [])
+                            setConfeitariaCoberturas(cfg.coberturas || [])
+                            setConfeitariaTamanhos(cfg.tamanhos || [])
+                          }
+                          if (e.target.value === 'picole') {
+                            setPicoleCoberturas(cfg.coberturas || [])
+                          }
+                          if (e.target.value === 'bebidas') {
+                            setBebidaTamanhos(cfg.tamanhos || [])
+                          }
                         }
                       })
                       .catch(() => {})
@@ -256,6 +347,9 @@ export default function CategoriasPage() {
                   <option value="advanced">🔧 Avançado (com opções)</option>
                   <option value="sorvete">🍦 Sorvete</option>
                   <option value="acai">🫐 Açaí</option>
+                  <option value="confeitaria">🎂 Bolos e Doces</option>
+                  <option value="picole">🧊 Picolé</option>
+                  <option value="bebidas">🥤 Bebidas</option>
                 </select>
               </div>
 
@@ -307,6 +401,167 @@ export default function CategoriasPage() {
                       <button onClick={() => { if (coberturaName.trim()) { setSorveteCoberturas([...sorveteCoberturas, { name: coberturaName.trim(), color: coberturaColor }]); setCoberturaName(""); setCoberturaColor("#CCCCCC") } }}
                         className="px-3 py-2 text-white rounded-lg font-bold" style={{ backgroundColor: "var(--btn)" }}>+</button>
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Confeitaria config */}
+              {type === 'confeitaria' && (
+                <div className="border-t pt-4 space-y-4 bg-amber-50 -mx-2 px-4 py-4 rounded-xl">
+                  <h4 className="font-bold text-sm">🎂 Configuração de Bolos e Doces</h4>
+
+                  {/* Sabores de massa */}
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Sabores de Massa</label>
+                    {confeitariaSabores.length > 0 && (
+                      <div className="space-y-2 mb-3">
+                        {confeitariaSabores.map((s, i) => (
+                          <div key={i} className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border">
+                            <span className="flex-1 text-sm font-medium">{s.name}</span>
+                            <button onClick={() => setConfeitariaSabores(confeitariaSabores.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-600 text-lg">×</button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex gap-2">
+                      <input value={confSaborName} onChange={e => setConfSaborName(e.target.value)}
+                        className="flex-1 px-3 py-2 border rounded-lg text-sm" placeholder="Ex: Chocolate, Baunilha, Red Velvet..."
+                        onKeyDown={e => { if (e.key === "Enter" && confSaborName.trim()) { setConfeitariaSabores([...confeitariaSabores, { name: confSaborName.trim() }]); setConfSaborName("") } }} />
+                      <button onClick={() => { if (confSaborName.trim()) { setConfeitariaSabores([...confeitariaSabores, { name: confSaborName.trim() }]); setConfSaborName("") } }}
+                        className="px-3 py-2 text-white rounded-lg font-bold" style={{ backgroundColor: "var(--btn)" }}>+</button>
+                    </div>
+                  </div>
+
+                  {/* Recheios */}
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Recheios</label>
+                    {confeitariaRecheios.length > 0 && (
+                      <div className="space-y-2 mb-3">
+                        {confeitariaRecheios.map((s, i) => (
+                          <div key={i} className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border">
+                            <span className="flex-1 text-sm font-medium">{s.name}</span>
+                            <button onClick={() => setConfeitariaRecheios(confeitariaRecheios.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-600 text-lg">×</button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex gap-2">
+                      <input value={confRecheioName} onChange={e => setConfRecheioName(e.target.value)}
+                        className="flex-1 px-3 py-2 border rounded-lg text-sm" placeholder="Ex: Brigadeiro, Doce de Leite, Nutella..."
+                        onKeyDown={e => { if (e.key === "Enter" && confRecheioName.trim()) { setConfeitariaRecheios([...confeitariaRecheios, { name: confRecheioName.trim() }]); setConfRecheioName("") } }} />
+                      <button onClick={() => { if (confRecheioName.trim()) { setConfeitariaRecheios([...confeitariaRecheios, { name: confRecheioName.trim() }]); setConfRecheioName("") } }}
+                        className="px-3 py-2 text-white rounded-lg font-bold" style={{ backgroundColor: "var(--btn)" }}>+</button>
+                    </div>
+                  </div>
+
+                  {/* Coberturas */}
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Coberturas</label>
+                    {confeitariaCoberturas.length > 0 && (
+                      <div className="space-y-2 mb-3">
+                        {confeitariaCoberturas.map((s, i) => (
+                          <div key={i} className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border">
+                            <span className="flex-1 text-sm font-medium">{s.name}</span>
+                            <button onClick={() => setConfeitariaCoberturas(confeitariaCoberturas.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-600 text-lg">×</button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex gap-2">
+                      <input value={confCoberturaName} onChange={e => setConfCoberturaName(e.target.value)}
+                        className="flex-1 px-3 py-2 border rounded-lg text-sm" placeholder="Ex: Chantilly, Fondant, Buttercream..."
+                        onKeyDown={e => { if (e.key === "Enter" && confCoberturaName.trim()) { setConfeitariaCoberturas([...confeitariaCoberturas, { name: confCoberturaName.trim() }]); setConfCoberturaName("") } }} />
+                      <button onClick={() => { if (confCoberturaName.trim()) { setConfeitariaCoberturas([...confeitariaCoberturas, { name: confCoberturaName.trim() }]); setConfCoberturaName("") } }}
+                        className="px-3 py-2 text-white rounded-lg font-bold" style={{ backgroundColor: "var(--btn)" }}>+</button>
+                    </div>
+                  </div>
+
+                  {/* Tamanhos por fatias */}
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Tamanhos (por fatias)</label>
+                    {confeitariaTamanhos.length > 0 && (
+                      <div className="space-y-2 mb-3">
+                        {confeitariaTamanhos.map((s, i) => (
+                          <div key={i} className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border">
+                            <span className="flex-1 text-sm font-medium">{s.name} ({s.fatias} fatias)</span>
+                            <span className="text-sm text-green-600 font-medium">R$ {parseFloat(s.price).toFixed(2)}</span>
+                            <button onClick={() => setConfeitariaTamanhos(confeitariaTamanhos.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-600 text-lg">×</button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex gap-2">
+                      <input value={confTamanhoName} onChange={e => setConfTamanhoName(e.target.value)}
+                        className="flex-1 px-3 py-2 border rounded-lg text-sm" placeholder="Nome (Pequeno, Médio...)" />
+                      <input type="number" value={confTamanhoFatias} onChange={e => setConfTamanhoFatias(e.target.value)}
+                        className="w-20 px-3 py-2 border rounded-lg text-sm" placeholder="Fatias" />
+                      <input type="number" step="0.01" value={confTamanhoPreco} onChange={e => setConfTamanhoPreco(e.target.value)}
+                        className="w-24 px-3 py-2 border rounded-lg text-sm" placeholder="R$ 0,00" />
+                      <button onClick={() => { if (confTamanhoName.trim()) { setConfeitariaTamanhos([...confeitariaTamanhos, { name: confTamanhoName.trim(), fatias: confTamanhoFatias || "0", price: confTamanhoPreco || "0" }]); setConfTamanhoName(""); setConfTamanhoFatias(""); setConfTamanhoPreco("") } }}
+                        className="px-3 py-2 text-white rounded-lg font-bold" style={{ backgroundColor: "var(--btn)" }}>+</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Picolé config */}
+              {type === 'picole' && (
+                <div className="border-t pt-4 space-y-4 bg-cyan-50 -mx-2 px-4 py-4 rounded-xl">
+                  <h4 className="font-bold text-sm">🧊 Coberturas do Picolé</h4>
+                  <p className="text-xs text-gray-500">Coberturas que o cliente pode adicionar no picolé (ex: banho de chocolate)</p>
+
+                  {picoleCoberturas.length > 0 && (
+                    <div className="space-y-2 mb-3">
+                      {picoleCoberturas.map((s, i) => (
+                        <div key={i} className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border">
+                          <span className="flex-1 text-sm font-medium">{s.name}</span>
+                          <span className="text-sm text-green-600 font-medium">
+                            {parseFloat(s.price) > 0 ? `+R$ ${parseFloat(s.price).toFixed(2)}` : "grátis"}
+                          </span>
+                          <button onClick={() => setPicoleCoberturas(picoleCoberturas.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-600 text-lg">×</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <input value={picCoberturaName} onChange={e => setPicCoberturaName(e.target.value)}
+                      className="flex-1 px-3 py-2 border rounded-lg text-sm" placeholder="Ex: Banho de Chocolate"
+                      onKeyDown={e => { if (e.key === "Enter" && picCoberturaName.trim()) { setPicoleCoberturas([...picoleCoberturas, { name: picCoberturaName.trim(), price: picCoberturaPreco || "0" }]); setPicCoberturaName(""); setPicCoberturaPreco("") } }} />
+                    <input type="number" step="0.01" value={picCoberturaPreco} onChange={e => setPicCoberturaPreco(e.target.value)}
+                      className="w-24 px-3 py-2 border rounded-lg text-sm" placeholder="R$ 0,00"
+                      onKeyDown={e => { if (e.key === "Enter" && picCoberturaName.trim()) { setPicoleCoberturas([...picoleCoberturas, { name: picCoberturaName.trim(), price: picCoberturaPreco || "0" }]); setPicCoberturaName(""); setPicCoberturaPreco("") } }} />
+                    <button onClick={() => { if (picCoberturaName.trim()) { setPicoleCoberturas([...picoleCoberturas, { name: picCoberturaName.trim(), price: picCoberturaPreco || "0" }]); setPicCoberturaName(""); setPicCoberturaPreco("") } }}
+                      className="px-3 py-2 text-white rounded-lg font-bold" style={{ backgroundColor: "var(--btn)" }}>+</button>
+                  </div>
+                </div>
+              )}
+
+              {/* Bebidas config */}
+              {type === 'bebidas' && (
+                <div className="border-t pt-4 space-y-4 bg-sky-50 -mx-2 px-4 py-4 rounded-xl">
+                  <h4 className="font-bold text-sm">🥤 Tamanhos de Bebidas</h4>
+                  <p className="text-xs text-gray-500">Tamanhos disponíveis para bebidas (ex: 300ml, 500ml, 1L)</p>
+
+                  {bebidaTamanhos.length > 0 && (
+                    <div className="space-y-2 mb-3">
+                      {bebidaTamanhos.map((s, i) => (
+                        <div key={i} className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border">
+                          <span className="flex-1 text-sm font-medium">{s.name}</span>
+                          <span className="text-sm text-green-600 font-medium">R$ {parseFloat(s.price).toFixed(2)}</span>
+                          <button onClick={() => setBebidaTamanhos(bebidaTamanhos.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-600 text-lg">×</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <input value={bebTamanhoName} onChange={e => setBebTamanhoName(e.target.value)}
+                      className="flex-1 px-3 py-2 border rounded-lg text-sm" placeholder="Ex: 300ml, 500ml, 1L"
+                      onKeyDown={e => { if (e.key === "Enter" && bebTamanhoName.trim()) { setBebidaTamanhos([...bebidaTamanhos, { name: bebTamanhoName.trim(), price: bebTamanhoPreco || "0" }]); setBebTamanhoName(""); setBebTamanhoPreco("") } }} />
+                    <input type="number" step="0.01" value={bebTamanhoPreco} onChange={e => setBebTamanhoPreco(e.target.value)}
+                      className="w-24 px-3 py-2 border rounded-lg text-sm" placeholder="R$ 0,00"
+                      onKeyDown={e => { if (e.key === "Enter" && bebTamanhoName.trim()) { setBebidaTamanhos([...bebidaTamanhos, { name: bebTamanhoName.trim(), price: bebTamanhoPreco || "0" }]); setBebTamanhoName(""); setBebTamanhoPreco("") } }} />
+                    <button onClick={() => { if (bebTamanhoName.trim()) { setBebidaTamanhos([...bebidaTamanhos, { name: bebTamanhoName.trim(), price: bebTamanhoPreco || "0" }]); setBebTamanhoName(""); setBebTamanhoPreco("") } }}
+                      className="px-3 py-2 text-white rounded-lg font-bold" style={{ backgroundColor: "var(--btn)" }}>+</button>
                   </div>
                 </div>
               )}
