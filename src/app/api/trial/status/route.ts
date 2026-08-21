@@ -56,6 +56,7 @@ export async function GET(req: NextRequest) {
     }
 
     return success({
+      storeId: store.id,
       plan: store.plan,
       trialStartsAt: store.trialStartsAt,
       trialEndsAt: store.trialEndsAt,
