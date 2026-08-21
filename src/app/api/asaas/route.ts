@@ -132,12 +132,11 @@ export async function POST(req: NextRequest) {
             paymentInfo = await pixRes.json()
           }
         } else {
-          // Get boleto URL from the payment
-          const boletoRes = await fetch(`${ASAAS_API_URL}/payments/${payment.id}/identificationField`, {
-            headers: { "access_token": apiKey }
-          })
-          if (boletoRes.ok) {
-            paymentInfo = await boletoRes.json()
+          // Boleto URL is already in the payment object
+          paymentInfo = {
+            bankSlipUrl: payment.bankSlipUrl,
+            invoiceUrl: payment.invoiceUrl,
+            dueDate: payment.dueDate
           }
         }
         paymentInfo.paymentId = payment.id
