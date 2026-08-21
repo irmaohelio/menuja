@@ -18,9 +18,7 @@ export default function CategoriasPage() {
   const [saborColor, setSaborColor] = useState("#CCCCCC")
   const [coberturaName, setCoberturaName] = useState("")
   const [coberturaColor, setCoberturaColor] = useState("#CCCCCC")
-  const [acaiComplementos, setAcaiComplementos] = useState<any[]>([])
-  const [acaiCompName, setAcaiCompName] = useState("")
-  const [acaiCompPrice, setAcaiCompPrice] = useState("")
+
 
   const load = () => {
     fetch("/api/categories").then(r => r.json()).then(d => { if (d.success) setCategories(d.categories) })
@@ -47,14 +45,7 @@ export default function CategoriasPage() {
         body: JSON.stringify({ config: { sabores: sorveteSabores, coberturas: sorveteCoberturas } }),
       })
     }
-    if (type === 'acai' && acaiComplementos.length > 0) {
-      await fetch("/api/sorvete-config", {
-        method: "PUT",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ config: { complementos: acaiComplementos } }),
-      })
-    }
+
     setShowForm(false)
     setEditing(null)
     setName("")
@@ -62,7 +53,7 @@ export default function CategoriasPage() {
     setType("standard")
     setSorveteSabores([])
     setSorveteCoberturas([])
-    setAcaiComplementos([])
+
     load()
   }
 
@@ -97,16 +88,7 @@ export default function CategoriasPage() {
         })
         .catch(() => {})
     }
-    if (c.type === 'acai') {
-      fetch("/api/auth/me", { credentials: "include", cache: "no-store" })
-        .then(r => r.json())
-        .then(data => {
-          if (data.store?.sorveteConfig?.complementos) {
-            setAcaiComplementos(data.store.sorveteConfig.complementos || [])
-          }
-        })
-        .catch(() => {})
-    }
+
   }
 
   const addExtra = (catId: string) => {
@@ -267,16 +249,7 @@ export default function CategoriasPage() {
                       })
                       .catch(() => {})
                   }
-                  if (e.target.value === 'acai' && editing) {
-                    fetch("/api/auth/me", { credentials: "include", cache: "no-store" })
-                      .then(r => r.json())
-                      .then(data => {
-                        if (data.store?.sorveteConfig?.complementos) {
-                          setAcaiComplementos(data.store.sorveteConfig.complementos || [])
-                        }
-                      })
-                      .catch(() => {})
-                  }
+
                 }} className="w-full px-4 py-3 border rounded-xl">
                   <option value="standard">📁 Padrão</option>
                   <option value="pizza">🍕 Pizza</option>
@@ -338,35 +311,7 @@ export default function CategoriasPage() {
                 </div>
               )}
 
-              {type === 'acai' && (
-                <div className="border-t pt-4 space-y-4 bg-purple-50 -mx-2 px-4 py-4 rounded-xl">
-                  <h4 className="font-bold text-sm">🫐 Complementos do Açaí</h4>
 
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Complementos</label>
-                    {acaiComplementos.length > 0 && (
-                      <div className="space-y-2 mb-3">
-                        {acaiComplementos.map((c, i) => (
-                          <div key={i} className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border">
-                            <span className="flex-1 text-sm font-medium">{c.name}</span>
-                            <span className="text-sm text-gray-500">R$ {parseFloat(c.price).toFixed(2)}</span>
-                            <button onClick={() => setAcaiComplementos(acaiComplementos.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-600 text-lg">×</button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    <div className="flex gap-2">
-                      <input value={acaiCompName} onChange={e => setAcaiCompName(e.target.value)}
-                        className="flex-1 px-3 py-2 border rounded-lg text-sm" placeholder="Ex: Granola"
-                        onKeyDown={e => { if (e.key === "Enter" && acaiCompName.trim()) { setAcaiComplementos([...acaiComplementos, { name: acaiCompName.trim(), price: acaiCompPrice || "0" }]); setAcaiCompName(""); setAcaiCompPrice("") } }} />
-                      <input value={acaiCompPrice} onChange={e => setAcaiCompPrice(e.target.value)}
-                        className="w-24 px-3 py-2 border rounded-lg text-sm" placeholder="R$ 0,00" type="number" step="0.01" />
-                      <button onClick={() => { if (acaiCompName.trim()) { setAcaiComplementos([...acaiComplementos, { name: acaiCompName.trim(), price: acaiCompPrice || "0" }]); setAcaiCompName(""); setAcaiCompPrice("") } }}
-                        className="px-3 py-2 text-white rounded-lg font-bold" style={{ backgroundColor: "var(--btn)" }}>+</button>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               <div className="flex gap-3">
                 <button onClick={() => { setShowForm(false); setEditing(null) }} className="flex-1 py-3 border rounded-xl">Cancelar</button>
