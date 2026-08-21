@@ -471,6 +471,19 @@ export default function LojaPage() {
                       className="w-full px-4 py-3 border rounded-xl text-sm" />
                   )}
 
+                  {checkoutForm.paymentMethod === "pix" && store.settings?.pixKey && (
+                    <div className="bg-green-50 border border-green-200 rounded-xl p-3">
+                      <p className="text-xs text-green-700 font-medium mb-1">📱 Chave PIX:</p>
+                      <p className="text-sm font-mono text-green-900 break-all select-all">{store.settings.pixKey}</p>
+                      <button
+                        onClick={() => navigator.clipboard.writeText(store.settings.pixKey)}
+                        className="mt-2 text-xs text-green-600 underline"
+                      >
+                        Copiar chave
+                      </button>
+                    </div>
+                  )}
+
                   <textarea placeholder="Observações" value={checkoutForm.notes}
                     onChange={e => setCheckoutForm({...checkoutForm, notes: e.target.value})}
                     className="w-full px-4 py-3 border rounded-xl text-sm" rows={2} />
