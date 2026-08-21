@@ -64,6 +64,11 @@ model Store {
   planExpiresAt DateTime? // When paid plan expires (null = no plan)
   isBlocked     Boolean  @default(false) // Manual block by master
 
+  // Asaas Payment
+  asaasCustomerId      String?  // Asaas customer ID
+  asaasSubscriptionId  String?  // Asaas subscription ID
+  planStatus           String?  // pending, active, cancelled, overdue
+
   // Sorvete Config (JSON)
   sorveteConfig Json?
 

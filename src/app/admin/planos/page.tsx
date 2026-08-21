@@ -64,26 +64,55 @@ export default function PlanosPage() {
   const [trial, setTrial] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null)
+  const [showPayment, setShowPayment] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState<"pix" | "boleto">("pix")
+  const [processing, setProcessing] = useState(false)
+  const [paymentData, setPaymentData] = useState<any>(null)
+  const [storeId, setStoreId] = useState<string | null>(null)
 
   useEffect(() => {
     fetch("/api/trial/status").then(r => r.json()).then(data => {
       if (data.success) {
         setTrial(data)
         setSelectedPlan(data.plan !== "trial" ? data.plan : null)
+        setStoreId(data.storeId)
       }
       setLoading(false)
     })
   }, [])
 
   const handleSelectPlan = async (planId: string) => {
-    const plan = plans.find(p => p.id === planId)
     setSelectedPlan(planId)
+    setShowPayment(true)
+    setPaymentData(null)
+  }
+
+  const handlePayment = async () => {
+    if (!selectedPlan || !storeId) return
     
-    const confirmed = confirm(`Deseja assinar o plano ${plan?.name} por ${plan?.total}?\n\nEm produção, isso abriria o pagamento via Pix ou cartão.`)
-    
-    if (confirmed) {
-      alert("Plano ativado com sucesso! (Simulação)\n\nEm produção, o plano seria ativado após confirmação do pagamento.")
-      router.push("/admin")
+    setProcessing(true)
+    try {
+      const res = await fetch("/api/asaas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          storeId,
+          planId: selectedPlan,
+          paymentMethod
+        })
+      })
+
+      const data = await res.json()
+      
+      if (data.success) {
+        setPaymentData(data)
+      } else {
+        alert("Erro ao processar pagamento: " + (data.error || "Tente novamente"))
+      }
+    } catch (err) {
+      alert("Erro de conexão. Tente novamente.")
+    } finally {
+      setProcessing(false)
     }
   }
 
@@ -91,6 +120,134 @@ export default function PlanosPage() {
     return (
       <div className="animate-pulse space-y-4">
         {[1,2,3].map(i => <div key={i} className="h-64 bg-gray-200 rounded-2xl" />)}
+      </div>
+    )
+  }
+
+  // Show payment confirmation
+  if (showPayment && selectedPlan) {
+    const plan = plans.find(p => p.id === selectedPlan)
+    
+    return (
+      <div className="max-w-lg mx-auto">
+        <button 
+          onClick={() => { setShowPayment(false); setPaymentData(null) }}
+          className="mb-4 text-gray-500 hover:text-gray-700 flex items-center gap-1"
+        >
+          ← Voltar aos planos
+        </button>
+
+        <div className="bg-white rounded-2xl shadow-sm border p-6">
+          <h2 className="text-xl font-bold mb-4">Confirmar Assinatura</h2>
+          
+          <div className="bg-gray-50 rounded-xl p-4 mb-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="font-medium">{plan?.name}</p>
+                <p className="text-sm text-gray-500">{plan?.total}</p>
+              </div>
+              <span className="text-2xl">{plan?.icon}</span>
+            </div>
+          </div>
+
+          {!paymentData ? (
+            <>
+              <p className="text-sm text-gray-600 mb-4">Escolha a forma de pagamento:</p>
+              
+              <div className="space-y-3 mb-6">
+                <label className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition ${
+                  paymentMethod === "pix" ? "border-green-500 bg-green-50" : "border-gray-200 hover:border-gray-300"
+                }`}>
+                  <input
+                    type="radio"
+                    name="payment"
+                    value="pix"
+                    checked={paymentMethod === "pix"}
+                    onChange={() => setPaymentMethod("pix")}
+                    className="w-4 h-4 text-green-600"
+                  />
+                  <div>
+                    <p className="font-medium">PIX</p>
+                    <p className="text-sm text-gray-500">Pagamento instantâneo</p>
+                  </div>
+                </label>
+
+                <label className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition ${
+                  paymentMethod === "boleto" ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:border-gray-300"
+                }`}>
+                  <input
+                    type="radio"
+                    name="payment"
+                    value="boleto"
+                    checked={paymentMethod === "boleto"}
+                    onChange={() => setPaymentMethod("boleto")}
+                    className="w-4 h-4 text-blue-600"
+                  />
+                  <div>
+                    <p className="font-medium">Boleto Bancário</p>
+                    <p className="text-sm text-gray-500">Vencimento em 3 dias</p>
+                  </div>
+                </label>
+              </div>
+
+              <button
+                onClick={handlePayment}
+                disabled={processing}
+                className="w-full py-3 bg-rose-600 text-white rounded-xl font-bold hover:bg-rose-700 transition disabled:opacity-50"
+              >
+                {processing ? "Processando..." : `Pagar ${plan?.total}`}
+              </button>
+            </>
+          ) : (
+            <div className="text-center">
+              {paymentMethod === "pix" ? (
+                <>
+                  <p className="text-sm text-gray-600 mb-4">Escaneie o QR Code para pagar:</p>
+                  {paymentData.payment?.encodedImage ? (
+                    <img 
+                      src={`data:image/png;base64,${paymentData.payment.encodedImage}`}
+                      alt="PIX QR Code"
+                      className="mx-auto mb-4 w-48 h-48"
+                    />
+                  ) : (
+                    <div className="bg-gray-100 p-4 rounded-xl mb-4">
+                      <p className="text-sm font-mono break-all">{paymentData.payment?.payload}</p>
+                    </div>
+                  )}
+                  <p className="text-xs text-gray-500">Ou copie o código PIX acima</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm text-gray-600 mb-4">Boleto gerado com sucesso!</p>
+                  {paymentData.payment?.bankSlipUrl && (
+                    <a 
+                      href={paymentData.payment.bankSlipUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition"
+                    >
+                      Visualizar Boleto
+                    </a>
+                  )}
+                </>
+              )}
+              
+              <div className="mt-6 p-4 bg-yellow-50 rounded-xl">
+                <p className="text-sm text-yellow-800">
+                  ⏳ Aguardando confirmação do pagamento. 
+                  Seu plano será ativado automaticamente após a confirmação.
+                </p>
+              </div>
+
+              <button
+                onClick={() => router.push("/admin")}
+                className="mt-4 text-sm text-gray-500 hover:text-gray-700"
+              >
+                Voltar ao painel
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     )
   }
@@ -150,16 +307,16 @@ export default function PlanosPage() {
 
               <button
                 onClick={() => handleSelectPlan(plan.id)}
-                disabled={selectedPlan === plan.id}
+                disabled={selectedPlan === plan.id && trial?.isPaid}
                 className={`w-full py-3 rounded-xl font-bold transition ${
-                  selectedPlan === plan.id
+                  selectedPlan === plan.id && trial?.isPaid
                     ? 'bg-green-100 text-green-700 cursor-default'
                     : plan.popular
                       ? 'bg-rose-600 text-white hover:bg-rose-700'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                {selectedPlan === plan.id ? '✓ Plano Atual' : 'Selecionar Plano'}
+                {selectedPlan === plan.id && trial?.isPaid ? '✓ Plano Atual' : 'Selecionar Plano'}
               </button>
             </div>
           </div>
@@ -168,7 +325,7 @@ export default function PlanosPage() {
 
       {/* Info */}
       <div className="mt-8 text-center text-sm text-gray-500">
-        <p>Pagamento seguro via Pix ou cartão de crédito</p>
+        <p>Pagamento seguro via Pix ou Boleto Bancário</p>
         <p className="mt-1">Cancele a qualquer momento sem multa</p>
       </div>
     </div>
