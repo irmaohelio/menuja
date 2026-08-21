@@ -191,10 +191,10 @@ export default function LojaPage() {
         </header>
 
         {/* Category Tabs - below header, inside sticky */}
-        {tab === "cardapio" && store.categories?.filter((c: any) => c.products.length > 0 || c.type === 'sorvete').length > 1 && (
+        {tab === "cardapio" && store.categories?.filter((c: any) => c.products.length > 0 || c.type === 'sorvete' || c.type === 'acai').length > 1 && (
           <div className="bg-white/95 backdrop-blur-sm border-t border-gray-100">
             <div className="max-w-lg mx-auto px-4 flex gap-2 overflow-x-auto py-2.5 scrollbar-hide">
-              {store.categories?.filter((c: any) => c.products.length > 0 || c.type === 'sorvete').map((cat: any) => (
+              {store.categories?.filter((c: any) => c.products.length > 0 || c.type === 'sorvete' || c.type === 'acai').map((cat: any) => (
                 <button key={cat.id} onClick={() => {
                   setActiveCategory(cat.id)
                   const el = document.getElementById(`cat-${cat.id}`);
@@ -272,7 +272,7 @@ export default function LojaPage() {
             )}
 
             {/* Categorias e Produtos */}
-            {store.categories?.filter((c: any) => c.products.length > 0 || c.type === 'sorvete').map((cat: any) => (
+            {store.categories?.filter((c: any) => c.products.length > 0 || c.type === 'sorvete' || c.type === 'acai').map((cat: any) => (
               <div key={cat.id} id={`cat-${cat.id}`} className="mb-8 scroll-mt-24">
                 {/* Category Header */}
                 <div className="flex items-center gap-3 mb-4">
