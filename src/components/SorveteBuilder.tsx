@@ -94,20 +94,13 @@ export default function SorveteBuilder({ store, onAdd, onClose }: SorveteBuilder
     })
   }
 
-  const addExtra = (extra: string) => {
-    setExtras(prev => ({
-      ...prev,
-      [extra]: (prev[extra] || 0) + 1
-    }))
-  }
-
-  const removeExtra = (extra: string) => {
+  const toggleExtra = (extra: string) => {
     setExtras(prev => {
       const newExtras = { ...prev }
-      if (newExtras[extra] > 1) {
-        newExtras[extra]--
-      } else {
+      if (newExtras[extra]) {
         delete newExtras[extra]
+      } else {
+        newExtras[extra] = 1
       }
       return newExtras
     })
@@ -323,31 +316,36 @@ export default function SorveteBuilder({ store, onAdd, onClose }: SorveteBuilder
           <div className="mb-6 border-t pt-4">
             <h4 className="font-bold text-base mb-3">✨ Extras (cobrado por cada)</h4>
             <div className="space-y-2">
-              {extrasList.map((extra: any) => (
-                <div key={extra.name} className="flex items-center justify-between p-3 rounded-xl border-2 border-gray-200">
-                  <div>
-                    <span className="font-medium">{extra.name}</span>
-                    <span className="text-sm text-gray-500 ml-2">R$ {extra.price.toFixed(2)}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => removeExtra(extra.name)}
-                      disabled={!extras[extra.name]}
-                      className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center disabled:opacity-30"
-                    >
-                      -
-                    </button>
-                    <span className="w-6 text-center font-bold">{extras[extra.name] || 0}</span>
-                    <button
-                      onClick={() => addExtra(extra.name)}
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-white"
-                      style={{ backgroundColor: store.primaryColor }}
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-              ))}
+              {extrasList.map((extra: any) => {
+                const isSelected = !!extras[extra.name]
+                return (
+                  <button
+                    key={extra.name}
+                    onClick={() => toggleExtra(extra.name)}
+                    className={`flex items-center justify-between w-full p-3 rounded-xl border-2 transition ${
+                      isSelected 
+                        ? 'border-green-500 bg-green-50' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition ${
+                        isSelected 
+                          ? 'bg-green-500 border-green-500' 
+                          : 'border-gray-300'
+                      }`}>
+                        {isSelected && (
+                          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                      <span className="font-medium">{extra.name}</span>
+                    </div>
+                    <span className="text-sm text-gray-500">R$ {extra.price.toFixed(2)}</span>
+                  </button>
+                )
+              })}
             </div>
           </div>
 
