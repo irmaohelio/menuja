@@ -4,50 +4,58 @@ import { useRouter } from "next/navigation"
 
 const plans = [
   {
-    id: "basic",
-    name: "Básico",
-    price: 49.90,
+    id: "monthly",
+    name: "Mensal",
+    price: 34.90,
     period: "mês",
-    icon: "🚀",
+    total: "R$ 34.90/mês",
+    icon: "📅",
     features: [
-      "Até 50 produtos",
+      "Produtos ilimitados",
       "Pedidos ilimitados",
       "Link da loja personalizado",
       "Suporte por WhatsApp",
+      "Relatórios de vendas",
+      "Sem marca d'água",
     ],
     popular: false,
+    savings: null,
   },
   {
-    id: "pro",
-    name: "Profissional",
-    price: 99.90,
-    period: "mês",
+    id: "semiannual",
+    name: "Semestral",
+    price: 199.90,
+    period: "6 meses",
+    total: "R$ 199,90/semestre",
     icon: "⭐",
     features: [
       "Produtos ilimitados",
       "Pedidos ilimitados",
-      "Domínio próprio",
-      "Relatórios avançados",
+      "Link da loja personalizado",
       "Suporte prioritário",
+      "Relatórios avançados",
       "Sem marca d'água",
     ],
     popular: true,
+    savings: "Economia de R$ 9,50/mês",
   },
   {
-    id: "enterprise",
-    name: "Empresarial",
-    price: 199.90,
-    period: "mês",
+    id: "annual",
+    name: "Anual",
+    price: 399.90,
+    period: "ano",
+    total: "R$ 399,90/ano",
     icon: "🏢",
     features: [
-      "Tudo do Profissional",
-      "Múltiplas filiais",
-      "API para integrações",
-      "Gerente de conta",
-      "SLA de suporte",
-      "Personalização completa",
+      "Produtos ilimitados",
+      "Pedidos ilimitados",
+      "Domínio próprio",
+      "Suporte prioritário",
+      "Relatórios avançados",
+      "Sem marca d'água",
     ],
     popular: false,
+    savings: "Economia de R$ 1,58/mês",
   },
 ]
 
@@ -68,14 +76,12 @@ export default function PlanosPage() {
   }, [])
 
   const handleSelectPlan = async (planId: string) => {
-    // For now, just simulate payment - in production you'd integrate with Stripe/Pix
+    const plan = plans.find(p => p.id === planId)
     setSelectedPlan(planId)
     
-    // Show confirmation
-    const confirmed = confirm(`Deseja assinar o plano ${plans.find(p => p.id === planId)?.name} por R$ ${plans.find(p => p.id === planId)?.price}/mês?\n\nEm produção, isso abriria o pagamento via Pix ou cartão.`)
+    const confirmed = confirm(`Deseja assinar o plano ${plan?.name} por ${plan?.total}?\n\nEm produção, isso abriria o pagamento via Pix ou cartão.`)
     
     if (confirmed) {
-      // Simulate API call to activate plan
       alert("Plano ativado com sucesso! (Simulação)\n\nEm produção, o plano seria ativado após confirmação do pagamento.")
       router.push("/admin")
     }
@@ -128,6 +134,9 @@ export default function PlanosPage() {
                   <span className="text-3xl font-bold">R$ {plan.price.toFixed(2)}</span>
                   <span className="text-gray-500">/{plan.period}</span>
                 </div>
+                {plan.savings && (
+                  <p className="text-xs text-green-600 font-medium mt-1">{plan.savings}</p>
+                )}
               </div>
 
               <ul className="space-y-3 mb-6">
