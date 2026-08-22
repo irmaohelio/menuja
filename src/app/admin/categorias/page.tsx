@@ -215,6 +215,7 @@ export default function CategoriasPage() {
     confeitaria: "🎂 Bolos e Doces",
     picole: "🧊 Picolé",
     bebidas: "🥤 Bebidas",
+    lanche: "🍔 Lanche",
   }
 
   return (
