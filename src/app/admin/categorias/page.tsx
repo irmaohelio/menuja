@@ -37,6 +37,10 @@ export default function CategoriasPage() {
   const [bebidaTamanhos, setBebidaTamanhos] = useState<any[]>([])
   const [bebTamanhoName, setBebTamanhoName] = useState("")
   const [bebTamanhoPreco, setBebTamanhoPreco] = useState("")
+  // Lanche state
+  const [lancheExtras, setLancheExtras] = useState<any[]>([])
+  const [lanExtraName, setLanExtraName] = useState("")
+  const [lanExtraPreco, setLanExtraPreco] = useState("")
 
 
   const load = () => {
@@ -97,6 +101,16 @@ export default function CategoriasPage() {
         } }),
       })
     }
+    if (type === 'lanche') {
+      await fetch("/api/sorvete-config", {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ config: {
+          extras: lancheExtras,
+        } }),
+      })
+    }
 
     setShowForm(false)
     setEditing(null)
@@ -111,6 +125,7 @@ export default function CategoriasPage() {
     setConfeitariaTamanhos([])
     setPicoleCoberturas([])
     setBebidaTamanhos([])
+    setLancheExtras([])
 
     load()
   }
@@ -314,7 +329,7 @@ export default function CategoriasPage() {
                 <label className="block text-sm font-medium mb-1">Tipo</label>
                 <select value={type} onChange={e => {
                   setType(e.target.value)
-                  if ((e.target.value === 'sorvete' || e.target.value === 'confeitaria' || e.target.value === 'picole' || e.target.value === 'bebidas') && editing) {
+                  if ((e.target.value === 'sorvete' || e.target.value === 'confeitaria' || e.target.value === 'picole' || e.target.value === 'bebidas' || e.target.value === 'lanche') && editing) {
                     fetch("/api/auth/me", { credentials: "include", cache: "no-store" })
                       .then(r => r.json())
                       .then(data => {
@@ -334,8 +349,11 @@ export default function CategoriasPage() {
                             setPicoleCoberturas(cfg.coberturas || [])
                           }
                           if (e.target.value === 'bebidas') {
-                            setBebidaTamanhos(cfg.tamanhos || [])
-                          }
+                                    setBebidaTamanhos(cfg.tamanhos || [])
+                                  }
+                                  if (e.target.value === 'lanche') {
+                                    setLancheExtras(cfg.extras || [])
+                                  }
                         }
                       })
                       .catch(() => {})
@@ -350,6 +368,7 @@ export default function CategoriasPage() {
                   <option value="confeitaria">🎂 Bolos e Doces</option>
                   <option value="picole">🧊 Picolé</option>
                   <option value="bebidas">🥤 Bebidas</option>
+                  <option value="lanche">🍔 Lanche</option>
                 </select>
               </div>
 
@@ -566,6 +585,35 @@ export default function CategoriasPage() {
                 </div>
               )}
 
+              {/* Lanche config */}
+              {type === 'lanche' && (
+                <div className="border-t pt-4 space-y-4 bg-amber-50 -mx-2 px-4 py-4 rounded-xl">
+                  <h4 className="font-bold text-sm">🍔 Extras do Lanche</h4>
+                  <p className="text-xs text-gray-500">Adicionais que o cliente pode incluir no lanche (ex: ovo, bacon, queijo extra)</p>
+
+                  {lancheExtras.length > 0 && (
+                    <div className="space-y-2 mb-3">
+                      {lancheExtras.map((s, i) => (
+                        <div key={i} className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border">
+                          <span className="flex-1 text-sm font-medium">{s.name}</span>
+                          <span className="text-sm text-green-600 font-medium">R$ {parseFloat(s.price).toFixed(2)}</span>
+                          <button onClick={() => setLancheExtras(lancheExtras.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-600 text-lg">×</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <input value={lanExtraName} onChange={e => setLanExtraName(e.target.value)}
+                      className="flex-1 px-3 py-2 border rounded-lg text-sm" placeholder="Ex: Ovo, Bacon, Queijo Extra"
+                      onKeyDown={e => { if (e.key === "Enter" && lanExtraName.trim()) { setLancheExtras([...lancheExtras, { name: lanExtraName.trim(), price: lanExtraPreco || "0" }]); setLanExtraName(""); setLanExtraPreco("") } }} />
+                    <input type="number" step="0.01" value={lanExtraPreco} onChange={e => setLanExtraPreco(e.target.value)}
+                      className="w-24 px-3 py-2 border rounded-lg text-sm" placeholder="R$ 0,00"
+                      onKeyDown={e => { if (e.key === "Enter" && lanExtraName.trim()) { setLancheExtras([...lancheExtras, { name: lanExtraName.trim(), price: lanExtraPreco || "0" }]); setLanExtraName(""); setLanExtraPreco("") } }} />
+                    <button onClick={() => { if (lanExtraName.trim()) { setLancheExtras([...lancheExtras, { name: lanExtraName.trim(), price: lanExtraPreco || "0" }]); setLanExtraName(""); setLanExtraPreco("") } }}
+                      className="px-3 py-2 text-white rounded-lg font-bold" style={{ backgroundColor: "var(--btn)" }}>+</button>
+                  </div>
+                </div>
+              )}
 
 
               <div className="flex gap-3">
