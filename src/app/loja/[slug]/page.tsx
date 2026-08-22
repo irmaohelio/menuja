@@ -193,12 +193,28 @@ export default function LojaPage() {
             const customer = data.customer
             setGoogleUser(customer)
             localStorage.setItem('google_user', JSON.stringify(customer))
-            // Pre-fill checkout form
+            
+            // Pré-preencher com dados do cliente
             setCheckoutForm(prev => ({
               ...prev,
               name: customer.name || prev.name,
               phone: customer.phone || prev.phone,
             }))
+
+            // Se tiver endereço salvo, pré-preencher
+            if (customer.addresses && customer.addresses.length > 0) {
+              const addr = customer.addresses.find((a: any) => a.isDefault) || customer.addresses[0]
+              setCheckoutForm(prev => ({
+                ...prev,
+                address: addr.address || prev.address,
+                number: addr.number || prev.number,
+                complement: addr.complement || prev.complement,
+                neighborhood: addr.neighborhood || prev.neighborhood,
+                city: addr.city || prev.city,
+                state: addr.state || prev.state,
+                reference: addr.reference || prev.reference,
+              }))
+            }
           }
         } catch (err) {
           console.error('Google login error:', err)
@@ -221,7 +237,8 @@ export default function LojaPage() {
       if (!checkoutForm.address) { alert("Informe seu endereço"); return }
       if (!checkoutForm.number) { alert("Informe o número"); return }
       if (!checkoutForm.neighborhood) { alert("Informe o bairro"); return }
-      if (!profile.city) { alert("Informe a cidade no seu perfil"); setShowProfile(true); return }
+      if (!checkoutForm.city) { alert("Informe a cidade"); return }
+      if (!checkoutForm.state) { alert("Informe o estado"); return }
       if (!checkoutForm.reference) { alert("Informe um ponto de referência"); return }
     }
 

@@ -109,6 +109,33 @@ export async function POST(req: NextRequest) {
       include: { items: { include: { options: true } } },
     })
 
+    // Salvar endereço do cliente
+    if (customer && customerAddress) {
+      const existingAddress = await prisma.customerAddress.findFirst({
+        where: {
+          customerId: customer.id,
+          address: customerAddress,
+          number: customerNumber || null,
+        },
+      })
+
+      if (!existingAddress) {
+        await prisma.customerAddress.create({
+          data: {
+            customerId: customer.id,
+            address: customerAddress,
+            number: customerNumber,
+            complement: customerComplement,
+            neighborhood: customerNeighborhood,
+            city: customerCity,
+            state: customerState,
+            reference: customerReference,
+            isDefault: true,
+          },
+        })
+      }
+    }
+
     // Notificação
     await prisma.notification.create({
       data: {

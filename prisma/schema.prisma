@@ -257,6 +257,8 @@ model CustomerAddress {
   number       String?
   complement   String?
   neighborhood String?
+  city         String?
+  state        String?
   reference    String?
   isDefault    Boolean @default(false)
 
