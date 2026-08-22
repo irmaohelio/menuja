@@ -288,7 +288,7 @@ export default function LojaPage() {
                   {featured.map((p: any) => (
                     <div key={p.id}
                       onClick={() => setSelectedProduct(p)}
-                      className={"min-w-[28vw] snap-start bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100"}>
+                      className={"w-[28vw] flex-shrink-0 snap-start bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100"}>
                       {p.image && <div className="aspect-[3/4] overflow-hidden"><img src={p.image} alt={p.name} className="w-full h-full object-cover" /></div>}
                       <div className="p-2">
                         <p className="text-xs font-medium truncate">{p.name}</p>
