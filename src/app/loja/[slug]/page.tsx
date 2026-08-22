@@ -45,6 +45,8 @@ export default function LojaPage() {
       return saved ? JSON.parse(saved) : { name: "", phone: "", address: "", number: "", neighborhood: "", city: "", reference: "" }
     } catch { return { name: "", phone: "", address: "", number: "", neighborhood: "", city: "", reference: "" } }
   })
+  const featuredScrollRef = useRef<HTMLDivElement>(null)
+  const scrollPausedRef = useRef(false)
 
   useEffect(() => {
     fetch(`/api/store/${slug}`).then(r => r.json()).then(data => {
@@ -57,6 +59,31 @@ export default function LojaPage() {
       setLoading(false)
     })
   }, [slug])
+
+  // Auto-scroll featured carousel
+  useEffect(() => {
+    const el = featuredScrollRef.current
+    if (!el) return
+    let animId: number
+    let lastTime = 0
+    const speed = 40 // px per second
+    const animate = (time: number) => {
+      if (lastTime === 0) lastTime = time
+      const delta = time - lastTime
+      lastTime = time
+      if (!scrollPausedRef.current) {
+        el.scrollLeft += (speed * delta) / 1000
+        // When we've scrolled past the first set, jump back
+        const oneSetWidth = el.scrollWidth / 2
+        if (el.scrollLeft >= oneSetWidth) {
+          el.scrollLeft -= oneSetWidth
+        }
+      }
+      animId = requestAnimationFrame(animate)
+    }
+    animId = requestAnimationFrame(animate)
+    return () => cancelAnimationFrame(animId)
+  }, [store])
 
   // Save cart to localStorage whenever it changes
   useEffect(() => {
@@ -255,8 +282,12 @@ export default function LojaPage() {
                   <div className="flex-1 h-px bg-gradient-to-r from-gray-200 to-transparent ml-2" />
                 </div>
                 <div
-                  className={hasScroll ? "featured-scroll flex pb-2" : "flex gap-3 pb-2 flex-wrap justify-center"}
-                  style={hasScroll ? { width: `calc(${featured.length} * 2 * (120px + 12px))` } : undefined}
+                  ref={featuredScrollRef}
+                  className={hasScroll ? "flex pb-2 overflow-hidden" : "flex gap-3 pb-2 flex-wrap justify-center"}
+                  onTouchStart={() => { scrollPausedRef.current = true }}
+                  onTouchEnd={() => { scrollPausedRef.current = false }}
+                  onMouseEnter={() => { scrollPausedRef.current = true }}
+                  onMouseLeave={() => { scrollPausedRef.current = false }}
                 >
                   {(hasScroll ? [...featured, ...featured] : featured).map((p: any, idx: number) => (
                     <div key={p.id + '-' + idx}
