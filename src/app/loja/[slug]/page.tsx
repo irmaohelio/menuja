@@ -288,6 +288,7 @@ export default function LojaPage() {
                   onTouchEnd={() => { scrollPausedRef.current = false }}
                   onMouseEnter={() => { scrollPausedRef.current = true }}
                   onMouseLeave={() => { scrollPausedRef.current = false }}
+                  style={{ userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none', touchAction: 'pan-y' } as React.CSSProperties}
                 >
                   {(hasScroll ? [...featured, ...featured] : featured).map((p: any, idx: number) => (
                     <div key={p.id + '-' + idx}
