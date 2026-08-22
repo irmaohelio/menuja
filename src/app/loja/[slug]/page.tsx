@@ -255,13 +255,14 @@ export default function LojaPage() {
                   <div className="flex-1 h-px bg-gradient-to-r from-gray-200 to-transparent ml-2" />
                 </div>
                 <div
-                  className={hasScroll ? "featured-scroll flex gap-3 pb-2" : "flex gap-3 pb-2 flex-wrap justify-center"}
+                  className={hasScroll ? "featured-scroll flex pb-2" : "flex gap-3 pb-2 flex-wrap justify-center"}
+                  style={hasScroll ? { width: `calc(${featured.length} * 2 * (120px + 12px))` } : undefined}
                 >
                   {(hasScroll ? [...featured, ...featured] : featured).map((p: any, idx: number) => (
                     <div key={p.id + '-' + idx}
                       onClick={() => setSelectedProduct(p)}
                       className="flex-shrink-0 bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100"
-                      style={{ width: '120px', maxWidth: '120px', minWidth: '120px', flex: '0 0 120px' }}>
+                      style={{ width: '120px', maxWidth: '120px', minWidth: '120px', flex: '0 0 120px', marginRight: '12px' }}>
                       {p.image && <div className="aspect-[3/4] overflow-hidden"><img src={p.image} alt={p.name} className="w-full h-full object-cover" /></div>}
                       <div className="p-2">
                         <p className="text-xs font-medium truncate">{p.name}</p>
