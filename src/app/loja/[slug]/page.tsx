@@ -274,17 +274,15 @@ export default function LojaPage() {
           <div className="relative rounded-2xl overflow-hidden shadow-lg" style={{ aspectRatio: '780/160', maxHeight: '140px' }}>
             <Image src={store.banner} alt={store.name} fill className="object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent" />
-            <div className="absolute inset-0 text-left">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                <h2 className="text-white font-bold text-xl drop-shadow-lg">{store.name}</h2>
-                {store.description && (
-                  <div className="text-white/90 text-xs mt-0.5 drop-shadow">
-                    {store.description.split('\n').map((line: string, i: number) => (
-                      <p key={i}>{line || '\u00A0'}</p>
-                    ))}
-                  </div>
-                )}
-              </div>
+            <div className="absolute inset-0 flex flex-col justify-center items-start pl-4">
+              <h2 className="text-white font-bold text-xl drop-shadow-lg">{store.name}</h2>
+              {store.description && (
+                <div className="text-white/90 text-xs mt-0.5 drop-shadow">
+                  {store.description.split('\n').map((line: string, i: number) => (
+                    <p key={i}>{line || '\u00A0'}</p>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
