@@ -308,12 +308,12 @@ export default function LojaPage() {
 
             {/* Categorias e Produtos */}
             {store.categories?.filter((c: any) => c.products.length > 0 || c.type === 'sorvete' || c.type === 'acai').map((cat: any) => (
-              <div key={cat.id} id={`cat-${cat.id}`} className="mb-8 scroll-mt-24">
-                {/* Category Header */}
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: store.primaryColor }} />
-                  <div>
-                    <h2 className="text-xl font-extrabold text-gray-900 tracking-tight">{cat.name}</h2>
+              <div key={cat.id} id={`cat-${cat.id}`} className="mb-5 scroll-mt-24">
+                  {/* Category Header */}
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-1 h-6 rounded-full" style={{ backgroundColor: store.primaryColor }} />
+                    <div>
+                      <h2 className="text-lg font-extrabold text-gray-900 tracking-tight">{cat.name}</h2>
                     <p className="text-xs text-gray-400 mt-0.5">{cat.type === 'sorvete' ? 'Monte seu sorvete' : `${cat.products.length} ${cat.products.length === 1 ? 'produto' : 'produtos'}`}</p>
                   </div>
                   <div className="flex-1 h-px bg-gradient-to-r from-gray-200 to-transparent ml-2" />
