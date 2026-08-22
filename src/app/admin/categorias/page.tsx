@@ -343,8 +343,8 @@ export default function CategoriasPage() {
 
                 }} className="w-full px-4 py-3 border rounded-xl">
                   <option value="standard">📁 Padrão</option>
-                  <option value="pizza">🍕 Pizza</option>
                   <option value="advanced">🔧 Avançado (com opções)</option>
+                  <option value="pizza">🍕 Pizza</option>
                   <option value="sorvete">🍦 Sorvete</option>
                   <option value="acai">🫐 Açaí</option>
                   <option value="confeitaria">🎂 Bolos e Doces</option>
