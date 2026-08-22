@@ -39,35 +39,6 @@ export default function LojaPage() {
     deliveryType: "delivery", paymentMethod: "cash", changeFor: "", notes: "",
   })
   const [showProfile, setShowProfile] = useState(false)
-  const featuredScrollRef = useRef<HTMLDivElement>(null)
-  const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null)
-  const isPausedRef = useRef(false)
-
-  // Auto-scroll for featured items
-  useEffect(() => {
-    const el = featuredScrollRef.current
-    if (!el) return
-    // Wait for layout to settle
-    const timer = setTimeout(() => {
-      if (el.scrollWidth <= el.clientWidth) return
-      const speed = 1
-      const interval = 30
-      scrollIntervalRef.current = setInterval(() => {
-        if (isPausedRef.current) return
-        el.scrollLeft += speed
-        if (el.scrollLeft >= el.scrollWidth - el.clientWidth - 1) {
-          el.scrollLeft = 0
-        }
-      }, interval)
-    }, 500)
-    return () => {
-      clearTimeout(timer)
-      if (scrollIntervalRef.current) clearInterval(scrollIntervalRef.current)
-    }
-  }, [store])
-
-  const handleTouchStart = () => { isPausedRef.current = true }
-  const handleTouchEnd = () => { isPausedRef.current = false }
   const [profile, setProfile] = useState(() => {
     try {
       const saved = localStorage.getItem("customer_profile")
@@ -284,19 +255,13 @@ export default function LojaPage() {
                   <div className="flex-1 h-px bg-gradient-to-r from-gray-200 to-transparent ml-2" />
                 </div>
                 <div
-                  ref={featuredScrollRef}
-                  className={hasScroll ? "flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide" : "flex gap-3 overflow-x-auto pb-2 scrollbar-hide"}
-                  onTouchStart={hasScroll ? handleTouchStart : undefined}
-                  onTouchEnd={hasScroll ? handleTouchEnd : undefined}
-                  onMouseDown={hasScroll ? handleTouchStart : undefined}
-                  onMouseUp={hasScroll ? handleTouchEnd : undefined}
-                  style={{ WebkitOverflowScrolling: 'touch' }}
+                  className={hasScroll ? "featured-scroll flex gap-3 pb-2" : "flex gap-3 pb-2 flex-wrap justify-center"}
                 >
-                  {featured.map((p: any) => (
-                    <div key={p.id}
+                  {(hasScroll ? [...featured, ...featured] : featured).map((p: any, idx: number) => (
+                    <div key={p.id + '-' + idx}
                       onClick={() => setSelectedProduct(p)}
-                      className="snap-start bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100"
-                      style={{ flex: '0 0 120px' }}>
+                      className="flex-shrink-0 bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100"
+                      style={{ width: 'calc(50% - 6px)' }}>
                       {p.image && <div className="aspect-[3/4] overflow-hidden"><img src={p.image} alt={p.name} className="w-full h-full object-cover" /></div>}
                       <div className="p-2">
                         <p className="text-xs font-medium truncate">{p.name}</p>

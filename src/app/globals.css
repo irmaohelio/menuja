@@ -18,3 +18,17 @@ body {
 /* Hide scrollbar but keep scroll */
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Featured carousel auto-scroll */
+@keyframes featured-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.featured-scroll {
+  overflow: hidden;
+  animation: featured-scroll 20s linear infinite;
+}
+.featured-scroll:hover,
+.featured-scroll:active {
+  animation-play-state: paused;
+}
