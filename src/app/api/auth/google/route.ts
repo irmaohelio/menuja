@@ -13,10 +13,20 @@ export async function POST(req: NextRequest) {
     // Verify Google token
     const ticketRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${credential}`)
     if (!ticketRes.ok) {
+      const errText = await ticketRes.text()
+      console.error('Google token verification failed:', errText)
       return error('Invalid Google token', 401)
     }
 
     const ticket = await ticketRes.json()
+    
+    // Verify the token was issued for our client ID
+    const clientId = process.env.GOOGLE_CLIENT_ID
+    if (clientId && ticket.aud !== clientId) {
+      console.error('Google token audience mismatch:', ticket.aud, '!=', clientId)
+      return error('Invalid Google token audience', 401)
+    }
+
     const { email, name, picture } = ticket
 
     if (!email) {
