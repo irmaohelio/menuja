@@ -110,7 +110,7 @@ export default function SorveteBuilder({ store, onAdd, onClose }: SorveteBuilder
     if (totalScoops === 0) return
 
     const scoopsList = Object.entries(scoops)
-      .map(([name, qty]) => `${qty}x ${name}`)
+      .map(([name, qty]) => `${qty}x bola${qty > 1 ? 's' : ''} de ${name}`)
       .join(', ')
 
     const extrasListStr = Object.entries(extras)
@@ -201,7 +201,7 @@ export default function SorveteBuilder({ store, onAdd, onClose }: SorveteBuilder
                         <div key={name} className="flex items-center justify-between text-sm py-0.5">
                           <div className="flex items-center gap-2">
                             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: sabor?.color || '#ccc' }} />
-                            <span className="font-medium">{qty}x {name}</span>
+                            <span className="font-medium">{qty}x bola{qty > 1 ? 's' : ''} de {name}</span>
                           </div>
                           <span className="text-gray-500">R$ {((sabor?.price || 0) * qty).toFixed(2)}</span>
                         </div>
