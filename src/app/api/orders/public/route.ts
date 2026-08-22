@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
     const {
       storeSlug, customerName, customerPhone, deliveryType, paymentMethod,
       changeFor, items, customerAddress, customerNumber, customerComplement,
-      customerNeighborhood, customerCity, customerReference, notes
+      customerNeighborhood, customerCity, customerState, customerReference, notes
     } = body
 
     if (!storeSlug || !customerName || !items?.length) {
@@ -94,6 +94,7 @@ export async function POST(req: NextRequest) {
         customerComplement,
         customerNeighborhood,
         customerCity,
+        customerState,
         customerReference,
         deliveryType: deliveryType || 'delivery',
         paymentMethod: paymentMethod || 'cash',

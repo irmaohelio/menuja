@@ -35,7 +35,7 @@ export default function LojaPage() {
   const [showSorveteBuilder, setShowSorveteBuilder] = useState(false)
   const [orderResult, setOrderResult] = useState<any>(null)
   const [checkoutForm, setCheckoutForm] = useState({
-    name: "", phone: "", address: "", number: "", complement: "", neighborhood: "", reference: "",
+    name: "", phone: "", address: "", number: "", complement: "", neighborhood: "", reference: "", city: "", state: "",
     deliveryType: "delivery", paymentMethod: "cash", changeFor: "", notes: "",
   })
   const [showProfile, setShowProfile] = useState(false)
@@ -241,7 +241,8 @@ export default function LojaPage() {
         customerComplement: checkoutForm.complement,
         customerNeighborhood: checkoutForm.neighborhood,
         customerReference: checkoutForm.reference,
-        customerCity: profile.city,
+        customerCity: checkoutForm.city || profile.city,
+        customerState: checkoutForm.state,
         notes: checkoutForm.notes,
         items: cart.map(item => ({
           productId: item.productId,
@@ -605,6 +606,14 @@ export default function LojaPage() {
                       <input placeholder="Bairro" value={checkoutForm.neighborhood}
                         onChange={e => setCheckoutForm({...checkoutForm, neighborhood: e.target.value})}
                         className="w-full px-4 py-3 border rounded-xl text-sm" />
+                      <div className="grid grid-cols-2 gap-2">
+                        <input placeholder="Cidade" value={checkoutForm.city}
+                          onChange={e => setCheckoutForm({...checkoutForm, city: e.target.value})}
+                          className="px-4 py-3 border rounded-xl text-sm" />
+                        <input placeholder="Estado" value={checkoutForm.state}
+                          onChange={e => setCheckoutForm({...checkoutForm, state: e.target.value})}
+                          className="px-4 py-3 border rounded-xl text-sm" />
+                      </div>
                       <input placeholder="Ponto de referência" value={checkoutForm.reference}
                         onChange={e => setCheckoutForm({...checkoutForm, reference: e.target.value})}
                         className="w-full px-4 py-3 border rounded-xl text-sm" />

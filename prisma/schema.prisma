@@ -276,6 +276,7 @@ model Order {
   customerComplement   String?
   customerNeighborhood String?
   customerCity         String?
+  customerState        String?
   customerReference    String?
   deliveryType         String   @default("delivery")
   paymentMethod        String   @default("cash")
