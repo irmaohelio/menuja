@@ -180,7 +180,7 @@ export default function LojaPage() {
     }
 
     gsi.initialize({
-      client_id: '660067542235-qhb1s1dtqa4i8b03lvtp88blnaj5qp4.apps.googleusercontent.com',
+      client_id: '660067542235-qhb1sf1dtqa4i8b03lvtp88blnaj5qp4.apps.googleusercontent.com',
       callback: async (response: any) => {
         try {
           const res = await fetch('/api/auth/google', {
