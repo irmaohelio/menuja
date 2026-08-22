@@ -37,9 +37,18 @@ export async function GET(req: NextRequest) {
     if (!isTrialExpired && !isPaid) {
       const diffMs = trialEndsAt.getTime() - now.getTime()
       daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
-    } else if (isPaid && store.planExpiresAt && !isPlanExpired) {
-      const diffMs = new Date(store.planExpiresAt).getTime() - now.getTime()
-      daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+    } else if (isPaid) {
+      // Paid plan — use planExpiresAt if available, otherwise assume active
+      if (store.planExpiresAt && !isPlanExpired) {
+        const diffMs = new Date(store.planExpiresAt).getTime() - now.getTime()
+        daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+      } else if (!store.planExpiresAt) {
+        // planExpiresAt not set yet (e.g. just subscribed) — assume30 days from trial start
+        const estimatedEnd = new Date(store.trialStartsAt)
+        estimatedEnd.setDate(estimatedEnd.getDate() + 30)
+        const diffMs = estimatedEnd.getTime() - now.getTime()
+        daysRemaining = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)))
+      }
     }
 
     // Determine if store should be blocked

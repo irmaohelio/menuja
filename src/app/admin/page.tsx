@@ -54,7 +54,9 @@ export default function AdminDashboard() {
                 {trial.isBlocked 
                   ? 'Para continuar usando o MenuJá, escolha um plano abaixo.'
                   : trial.isPaid 
-                    ? `Seu plano expira em ${new Date(trial.planExpiresAt).toLocaleDateString('pt-BR')}`
+                    ? trial.planExpiresAt
+                      ? `Seu plano expira em ${new Date(trial.planExpiresAt).toLocaleDateString('pt-BR')}`
+                      : `Seu plano ${trial.plan} está ativo`
                     : `Seu teste gratuito expira em ${new Date(trial.trialEndsAt).toLocaleDateString('pt-BR')}`}
               </p>
             </div>
