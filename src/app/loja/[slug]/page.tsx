@@ -261,7 +261,7 @@ export default function LojaPage() {
                     <div key={p.id + '-' + idx}
                       onClick={() => setSelectedProduct(p)}
                       className="flex-shrink-0 bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100"
-                      style={{ width: '25vw', maxWidth: '25vw', minWidth: '25vw', flex: '0 0 25vw' }}>
+                      style={{ width: '120px', maxWidth: '120px', minWidth: '120px', flex: '0 0 120px' }}>
                       {p.image && <div className="aspect-[3/4] overflow-hidden"><img src={p.image} alt={p.name} className="w-full h-full object-cover" /></div>}
                       <div className="p-2">
                         <p className="text-xs font-medium truncate">{p.name}</p>
