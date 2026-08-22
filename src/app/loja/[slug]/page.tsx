@@ -275,10 +275,10 @@ export default function LojaPage() {
             <Image src={store.banner} alt={store.name} fill className="object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent" />
             <div className="absolute inset-0 text-left">
-              <div className="absolute left-4 top-1/2 -translate-y-[calc(50%+1.5rem)]">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2">
                 <h2 className="text-white font-bold text-xl drop-shadow-lg">{store.name}</h2>
                 {store.description && (
-                  <div className="text-white/90 text-xs mt-1 drop-shadow">
+                  <div className="text-white/90 text-xs mt-0.5 drop-shadow">
                     {store.description.split('\n').map((line: string, i: number) => (
                       <p key={i}>{line || '\u00A0'}</p>
                     ))}
