@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useParams } from "next/navigation"
 import Image from "next/image"
 import SorveteBuilder from "@/components/SorveteBuilder"
@@ -39,6 +39,28 @@ export default function LojaPage() {
     deliveryType: "delivery", paymentMethod: "cash", changeFor: "", notes: "",
   })
   const [showProfile, setShowProfile] = useState(false)
+  const featuredScrollRef = useRef<HTMLDivElement>(null)
+  const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const isPausedRef = useRef(false)
+
+  // Auto-scroll for featured items
+  useEffect(() => {
+    const el = featuredScrollRef.current
+    if (!el || el.scrollWidth <= el.clientWidth) return
+    const speed = 1 // px per frame
+    const interval = 30 // ms
+    scrollIntervalRef.current = setInterval(() => {
+      if (isPausedRef.current) return
+      el.scrollLeft += speed
+      if (el.scrollLeft >= el.scrollWidth - el.clientWidth) {
+        el.scrollLeft = 0
+      }
+    }, interval)
+    return () => { if (scrollIntervalRef.current) clearInterval(scrollIntervalRef.current) }
+  }, [store])
+
+  const handleTouchStart = () => { isPausedRef.current = true }
+  const handleTouchEnd = () => { isPausedRef.current = false }
   const [profile, setProfile] = useState(() => {
     try {
       const saved = localStorage.getItem("customer_profile")
@@ -241,7 +263,10 @@ export default function LojaPage() {
         {tab === "cardapio" && (
           <div>
             {/* Destaques */}
-            {store.categories?.some((c: any) => c.products.some((p: any) => p.isFeatured)) && (
+            {store.categories?.some((c: any) => c.products.some((p: any) => p.isFeatured)) && (() => {
+              const featured = store.categories.flatMap((c: any) => c.products).filter((p: any) => p.isFeatured)
+              const hasScroll = featured.length > 2
+              return (
               <div className="mb-8">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-1.5 h-8 rounded-full bg-yellow-400" />
@@ -251,10 +276,19 @@ export default function LojaPage() {
                   </div>
                   <div className="flex-1 h-px bg-gradient-to-r from-gray-200 to-transparent ml-2" />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  {store.categories.flatMap((c: any) => c.products).filter((p: any) => p.isFeatured).map((p: any) => (
-                    <div key={p.id} onClick={() => setSelectedProduct(p)}
-                      className="bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100">
+                <div
+                  ref={featuredScrollRef}
+                  className={hasScroll ? "flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide" : "grid grid-cols-2 gap-3"}
+                  onTouchStart={hasScroll ? handleTouchStart : undefined}
+                  onTouchEnd={hasScroll ? handleTouchEnd : undefined}
+                  onMouseDown={hasScroll ? handleTouchStart : undefined}
+                  onMouseUp={hasScroll ? handleTouchEnd : undefined}
+                  style={{ WebkitOverflowScrolling: 'touch' }}
+                >
+                  {featured.map((p: any) => (
+                    <div key={p.id}
+                      onClick={() => setSelectedProduct(p)}
+                      className={hasScroll ? "min-w-[45vw] snap-start bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100" : "bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100"}>
                       {p.image && <Image src={p.image} alt={p.name} width={200} height={200} className="w-full aspect-square object-cover" />}
                       <div className="p-2.5">
                         <p className="text-sm font-medium truncate">{p.name}</p>
@@ -269,7 +303,8 @@ export default function LojaPage() {
                   ))}
                 </div>
               </div>
-            )}
+              )
+            })()}
 
             {/* Categorias e Produtos */}
             {store.categories?.filter((c: any) => c.products.length > 0 || c.type === 'sorvete' || c.type === 'acai').map((cat: any) => (
