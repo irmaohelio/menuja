@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { cookies } from "next/headers"
+import { getCurrentUser } from "@/lib/auth"
 
 async function getStore() {
-  const cookieStore = await cookies()
-  const userId = cookieStore.get("userId")?.value
-  if (!userId) return null
-  const user = await prisma.user.findUnique({ where: { id: userId }, include: { store: true } })
-  return user?.store
+  const user = await getCurrentUser()
+  if (!user) return null
+  const store = await prisma.store.findFirst({ where: { userId: user.id as string } })
+  return store
 }
 
 export async function PUT(req: NextRequest) {
