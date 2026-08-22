@@ -411,7 +411,7 @@ export default function LojaPage() {
                         <div className="flex-1">
                           <p className="font-medium">{item.productName}</p>
                           {item.sizeName && <p className="text-xs text-gray-500">Tamanho: {item.sizeName}</p>}
-                          {item.crustName && <p className="text-xs text-gray-500">Borda: {item.crustName}</p>}
+                          {/* Borda já aparece nos options com preço, não duplicar */}
                           {item.halfHalf && <p className="text-xs text-gray-500">Meio a meio: {item.flavor1} / {item.flavor2}</p>}
                           {/* Group options by type for sorvete */}
                           {item.productId === 'sorvete-custom' ? (
