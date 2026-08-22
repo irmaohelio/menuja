@@ -26,7 +26,7 @@ body {
 }
 .featured-scroll {
   overflow: hidden;
-  animation: featured-scroll 20s linear infinite;
+  animation: featured-scroll 30s linear infinite;
 }
 .featured-scroll:hover,
 .featured-scroll:active {
