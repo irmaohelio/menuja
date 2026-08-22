@@ -46,17 +46,24 @@ export default function LojaPage() {
   // Auto-scroll for featured items
   useEffect(() => {
     const el = featuredScrollRef.current
-    if (!el || el.scrollWidth <= el.clientWidth) return
-    const speed = 1 // px per frame
-    const interval = 30 // ms
-    scrollIntervalRef.current = setInterval(() => {
-      if (isPausedRef.current) return
-      el.scrollLeft += speed
-      if (el.scrollLeft >= el.scrollWidth - el.clientWidth) {
-        el.scrollLeft = 0
-      }
-    }, interval)
-    return () => { if (scrollIntervalRef.current) clearInterval(scrollIntervalRef.current) }
+    if (!el) return
+    // Wait for layout to settle
+    const timer = setTimeout(() => {
+      if (el.scrollWidth <= el.clientWidth) return
+      const speed = 1
+      const interval = 30
+      scrollIntervalRef.current = setInterval(() => {
+        if (isPausedRef.current) return
+        el.scrollLeft += speed
+        if (el.scrollLeft >= el.scrollWidth - el.clientWidth - 1) {
+          el.scrollLeft = 0
+        }
+      }, interval)
+    }, 500)
+    return () => {
+      clearTimeout(timer)
+      if (scrollIntervalRef.current) clearInterval(scrollIntervalRef.current)
+    }
   }, [store])
 
   const handleTouchStart = () => { isPausedRef.current = true }
