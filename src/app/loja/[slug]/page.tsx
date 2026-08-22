@@ -288,11 +288,11 @@ export default function LojaPage() {
                   {featured.map((p: any) => (
                     <div key={p.id}
                       onClick={() => setSelectedProduct(p)}
-                      className={hasScroll ? "min-w-[28vw] snap-start bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100" : "bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100"}>
-                      {p.image && <img src={p.image} alt={p.name} className="w-full h-24 object-cover" />}
-                      <div className="p-2.5">
-                        <p className="text-sm font-medium truncate">{p.name}</p>
-                        <p className="text-sm font-bold mt-1.5" style={{ color: store.primaryColor }}>
+                      className={hasScroll ? "min-w-[22vw] snap-start bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100" : "bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100"}>
+                      {p.image && <img src={p.image} alt={p.name} className="w-full h-20 object-cover" />}
+                      <div className="p-1.5">
+                        <p className="text-xs font-medium truncate">{p.name}</p>
+                        <p className="text-xs font-bold mt-1" style={{ color: store.primaryColor }}>
                           {p.pizzaSizes?.length > 0
                             ? `a partir de R$ ${Math.min(...p.pizzaSizes.map((s: any) => s.price)).toFixed(2)}`
                             : `R$ ${(p.promoPrice || p.price).toFixed(2)}`
