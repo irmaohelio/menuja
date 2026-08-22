@@ -106,6 +106,11 @@ export default function ProdutosPage() {
     return cat?.type === "sorvete"
   }
 
+  const isLancheCategory = (catId: string) => {
+    const cat = categories.find(c => c.id === catId)
+    return cat?.type === "lanche"
+  }
+
   const handleCategoryChange = async (categoryId: string) => {
     setForm(f => ({ ...f, categoryId }))
     
@@ -437,9 +442,9 @@ export default function ProdutosPage() {
               </div>
               )}
 
-              {/* Checkboxes - Preço por tamanho escondido para sorvete */}
+              {/* Checkboxes - Preço por tamanho escondido para sorvete e lanche */}
               <div className="flex gap-4">
-                {!isSorveteCategory(form.categoryId) && (
+                {!isSorveteCategory(form.categoryId) && !isLancheCategory(form.categoryId) && (
                 <label className="flex items-center gap-2">
                   <input type="checkbox" checked={form.hasSizes} onChange={e => setForm({...form, hasSizes: e.target.checked})} />
                   <span className="text-sm">📐 Preço por tamanho</span>
