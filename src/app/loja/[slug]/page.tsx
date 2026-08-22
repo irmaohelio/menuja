@@ -288,8 +288,8 @@ export default function LojaPage() {
                   {featured.map((p: any) => (
                     <div key={p.id}
                       onClick={() => setSelectedProduct(p)}
-                      className={hasScroll ? "min-w-[25vw] snap-start bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100" : "bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100"}>
-                      {p.image && <img src={p.image} alt={p.name} className="w-full h-32 object-cover" />}
+                      className={hasScroll ? "min-w-[30vw] snap-start bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100" : "bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100"}>
+                      {p.image && <div className="aspect-[3/4] overflow-hidden"><img src={p.image} alt={p.name} className="w-full h-full object-cover" /></div>}
                       <div className="p-2">
                         <p className="text-xs font-medium truncate">{p.name}</p>
                         <p className="text-xs font-bold mt-0.5" style={{ color: store.primaryColor }}>
