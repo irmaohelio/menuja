@@ -190,45 +190,58 @@ export default function SorveteBuilder({ store, onAdd, onClose }: SorveteBuilder
             {totalScoops === 0 && !cobertura && Object.keys(extras).length === 0 ? (
               <p className="text-sm text-gray-400 text-center py-4">Escolha os sabores abaixo para montar seu sorvete</p>
             ) : (
-              <div className="space-y-2">
-                {/* Sabores */}
-                {Object.entries(scoops).filter(([_, qty]) => qty > 0).map(([name, qty]) => {
-                  const sabor = sabores.find((s: any) => s.name === name)
-                  return (
-                    <div key={name} className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: sabor?.color || '#ccc' }} />
-                        <span className="font-medium">{qty}x {name}</span>
-                      </div>
-                      <span className="text-gray-500">R$ {((sabor?.price || 0) * qty).toFixed(2)}</span>
-                    </div>
-                  )
-                })}
-
-                {/* Cobertura */}
-                {cobertura && (
-                  <div className="flex items-center justify-between text-sm pt-1 border-t border-gray-200">
-                    <div className="flex items-center gap-2">
-                      <span>🍫</span>
-                      <span className="font-medium">{cobertura}</span>
-                    </div>
-                    <span className="text-gray-500">incluso</span>
+              <div className="space-y-3">
+                {/* Sorvete */}
+                {Object.entries(scoops).filter(([_, qty]) => qty > 0).length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-gray-400 uppercase mb-1">Sorvete</p>
+                    {Object.entries(scoops).filter(([_, qty]) => qty > 0).map(([name, qty]) => {
+                      const sabor = sabores.find((s: any) => s.name === name)
+                      return (
+                        <div key={name} className="flex items-center justify-between text-sm py-0.5">
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: sabor?.color || '#ccc' }} />
+                            <span className="font-medium">{qty}x {name}</span>
+                          </div>
+                          <span className="text-gray-500">R$ {((sabor?.price || 0) * qty).toFixed(2)}</span>
+                        </div>
+                      )
+                    })}
                   </div>
                 )}
 
-                {/* Extras */}
-                {Object.entries(extras).filter(([_, qty]) => qty > 0).map(([name, qty]) => {
-                  const extra = extrasList.find((e: any) => e.name === name)
-                  return (
-                    <div key={name} className="flex items-center justify-between text-sm">
+                {/* Cobertura */}
+                {cobertura && (
+                  <div>
+                    <p className="text-xs font-semibold text-gray-400 uppercase mb-1">Cobertura</p>
+                    <div className="flex items-center justify-between text-sm py-0.5">
                       <div className="flex items-center gap-2">
-                        <span>✨</span>
-                        <span className="font-medium">{qty}x {name}</span>
+                        <span>🍫</span>
+                        <span className="font-medium">{cobertura}</span>
                       </div>
-                      <span className="text-gray-500">R$ {((extra?.price || 0) * qty).toFixed(2)}</span>
+                      <span className="text-gray-500">incluso</span>
                     </div>
-                  )
-                })}
+                  </div>
+                )}
+
+                {/* Adicionais */}
+                {Object.entries(extras).filter(([_, qty]) => qty > 0).length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-gray-400 uppercase mb-1">Adicionais</p>
+                    {Object.entries(extras).filter(([_, qty]) => qty > 0).map(([name, qty]) => {
+                      const extra = extrasList.find((e: any) => e.name === name)
+                      return (
+                        <div key={name} className="flex items-center justify-between text-sm py-0.5">
+                          <div className="flex items-center gap-2">
+                            <span>✨</span>
+                            <span className="font-medium">{qty}x {name}</span>
+                          </div>
+                          <span className="text-gray-500">R$ {((extra?.price || 0) * qty).toFixed(2)}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
 
                 {/* Total */}
                 <div className="flex items-center justify-between pt-2 border-t border-gray-300">
