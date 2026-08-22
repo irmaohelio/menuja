@@ -411,7 +411,7 @@ export default function LojaPage() {
                         <div className="flex-1">
                           <p className="font-medium">{item.productName}</p>
                           {item.sizeName && <p className="text-xs text-gray-500">Tamanho: {item.sizeName}</p>}
-                          {/* Borda já aparece nos options com preço, não duplicar */}
+                          {item.crustName && <p className="text-xs text-gray-500">Borda: {item.crustName} (R$ {((item.options.find((o: any) => o.name.startsWith('Borda:'))?.price) || 0).toFixed(2)})</p>}
                           {item.halfHalf && <p className="text-xs text-gray-500">Meio a meio: {item.flavor1} / {item.flavor2}</p>}
                           {/* Group options by type for sorvete */}
                           {item.productId === 'sorvete-custom' ? (
@@ -445,7 +445,7 @@ export default function LojaPage() {
                               )}
                             </>
                           ) : (
-                            item.options.map((o, j) => (
+                            item.options.filter(o => !o.name.startsWith('Borda:')).map((o, j) => (
                               <p key={j} className="text-xs text-gray-500">+ {o.quantity > 1 ? `${o.quantity}x ` : ""}{o.name} {o.price > 0 ? `(R$ ${(o.price * (o.quantity || 1)).toFixed(2)})` : ""}</p>
                             ))
                           )}
