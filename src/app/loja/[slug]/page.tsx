@@ -90,9 +90,37 @@ export default function LojaPage() {
     localStorage.setItem("cart", JSON.stringify(cart))
   }, [cart])
 
+  // Track if modal was closed by code (not by back button)
+  const closingByCodeRef = useRef(false)
+
+  // Push history state when product modal opens, pop to close it
+  useEffect(() => {
+    if (selectedProduct) {
+      window.history.pushState({ modal: 'product' }, '')
+      closingByCodeRef.current = false
+    }
+  }, [selectedProduct])
+
+  useEffect(() => {
+    const handlePopState = () => {
+      if (selectedProduct && !closingByCodeRef.current) {
+        setSelectedProduct(null)
+      }
+      closingByCodeRef.current = false
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [selectedProduct])
+
+  const closeProductModal = () => {
+    closingByCodeRef.current = true
+    setSelectedProduct(null)
+    window.history.back()
+  }
+
   const addToCart = (item: CartItem) => {
     setCart([...cart, item])
-    setSelectedProduct(null)
+    closeProductModal()
     setShowSorveteBuilder(false)
     setTab("carrinho")
   }
@@ -600,7 +628,7 @@ export default function LojaPage() {
         <ProductModal
           product={selectedProduct}
           store={store}
-          onClose={() => setSelectedProduct(null)}
+          onClose={closeProductModal}
           onAdd={addToCart}
         />
       )}
