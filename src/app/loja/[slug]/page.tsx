@@ -289,13 +289,14 @@ export default function LojaPage() {
                   onMouseEnter={() => { scrollPausedRef.current = true }}
                   onMouseLeave={() => { scrollPausedRef.current = false }}
                   style={{ userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none', touchAction: 'pan-y' } as React.CSSProperties}
+                  onContextMenu={(e) => e.preventDefault()}
                 >
                   {(hasScroll ? [...featured, ...featured] : featured).map((p: any, idx: number) => (
                     <div key={p.id + '-' + idx}
                       onClick={() => setSelectedProduct(p)}
                       className="flex-shrink-0 bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100"
                       style={{ width: '120px', maxWidth: '120px', minWidth: '120px', flex: '0 0 120px', marginRight: '12px' }}>
-                      {p.image && <div className="aspect-[3/4] overflow-hidden"><img src={p.image} alt={p.name} className="w-full h-full object-cover" /></div>}
+                      {p.image && <div className="aspect-[3/4] overflow-hidden"><img src={p.image} alt={p.name} className="w-full h-full object-cover" draggable={false} style={{ WebkitTouchCallout: 'none', userSelect: 'none' } as React.CSSProperties} onContextMenu={(e) => e.preventDefault()} /></div>}
                       <div className="p-2">
                         <p className="text-xs font-medium truncate">{p.name}</p>
                         <p className="text-xs font-bold mt-0.5" style={{ color: store.primaryColor }}>
