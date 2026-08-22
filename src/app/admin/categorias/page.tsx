@@ -18,6 +18,7 @@ export default function CategoriasPage() {
   const [saborColor, setSaborColor] = useState("#CCCCCC")
   const [coberturaName, setCoberturaName] = useState("")
   const [coberturaColor, setCoberturaColor] = useState("#CCCCCC")
+  const [sorveteImage, setSorveteImage] = useState("")
   // Confeitaria (bolos e doces) state
   const [confeitariaSabores, setConfeitariaSabores] = useState<any[]>([])
   const [confeitariaRecheios, setConfeitariaRecheios] = useState<any[]>([])
@@ -60,12 +61,12 @@ export default function CategoriasPage() {
       method, headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, description, type }),
     })
-    if (type === 'sorvete' && (sorveteSabores.length > 0 || sorveteCoberturas.length > 0)) {
+    if (type === 'sorvete' && (sorveteSabores.length > 0 || sorveteCoberturas.length > 0 || sorveteImage)) {
       await fetch("/api/sorvete-config", {
         method: "PUT",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ config: { sabores: sorveteSabores, coberturas: sorveteCoberturas } }),
+        body: JSON.stringify({ config: { sabores: sorveteSabores, coberturas: sorveteCoberturas, image: sorveteImage } }),
       })
     }
     if (type === 'confeitaria') {
@@ -119,6 +120,7 @@ export default function CategoriasPage() {
     setType("standard")
     setSorveteSabores([])
     setSorveteCoberturas([])
+    setSorveteImage("")
     setConfeitariaSabores([])
     setConfeitariaRecheios([])
     setConfeitariaCoberturas([])
@@ -159,6 +161,7 @@ export default function CategoriasPage() {
             if (c.type === 'sorvete') {
               setSorveteSabores(cfg.sabores || [])
               setSorveteCoberturas(cfg.coberturas || [])
+              setSorveteImage(cfg.image || "")
             }
             if (c.type === 'confeitaria') {
               setConfeitariaSabores(cfg.sabores || [])
@@ -376,6 +379,30 @@ export default function CategoriasPage() {
               {type === 'sorvete' && (
                 <div className="border-t pt-4 space-y-4 bg-pink-50 -mx-2 px-4 py-4 rounded-xl">
                   <h4 className="font-bold text-sm">🍦 Sabores & Coberturas</h4>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Imagem do Sorvete</label>
+                    <div className="flex items-center gap-3">
+                      {sorveteImage && (
+                        <img src={sorveteImage} alt="Sorvete" className="w-16 h-16 object-cover rounded-lg border" />
+                      )}
+                      <label className="cursor-pointer px-3 py-2 text-white rounded-lg font-bold text-sm" style={{ backgroundColor: "var(--btn)" }}>
+                        {sorveteImage ? "Trocar imagem" : "Selecionar imagem"}
+                        <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                          const file = e.target.files?.[0]
+                          if (!file) return
+                          const fd = new FormData()
+                          fd.append("file", file)
+                          const res = await fetch("/api/upload", { method: "POST", body: fd })
+                          const data = await res.json()
+                          if (data.success) setSorveteImage(data.url)
+                        }} />
+                      </label>
+                      {sorveteImage && (
+                        <button onClick={() => setSorveteImage("")} className="text-red-400 hover:text-red-600 text-sm">Remover</button>
+                      )}
+                    </div>
+                  </div>
 
                   <div>
                     <label className="block text-sm font-medium mb-2">Sabores</label>

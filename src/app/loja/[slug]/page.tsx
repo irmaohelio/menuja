@@ -358,8 +358,12 @@ export default function LojaPage() {
                         onClick={() => setShowSorveteBuilder(true)}
                         className="w-full bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100 text-left"
                       >
-                        <div className="w-full h-40 bg-gradient-to-br from-pink-100 via-purple-50 to-blue-50 flex items-center justify-center">
-                          <span className="text-7xl">🍦</span>
+                        <div className="w-full h-40 bg-gradient-to-br from-pink-100 via-purple-50 to-blue-50 flex items-center justify-center overflow-hidden">
+                          {store.sorveteConfig?.image ? (
+                            <img src={store.sorveteConfig.image} alt="Sorvete" className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-7xl">🍦</span>
+                          )}
                         </div>
                         <div className="p-2.5">
                           <p className="text-sm font-medium">Montar Sorvete</p>
