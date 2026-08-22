@@ -183,72 +183,60 @@ export default function SorveteBuilder({ store, onAdd, onClose }: SorveteBuilder
             <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl">×</button>
           </div>
 
-          {/* Pot Visualization - Dynamic height based on scoops */}
-          {(() => {
-            const rows = Math.max(1, Math.ceil(totalScoops / 2))
-            const scoopR = 18
-            const scoopD = scoopR * 2
-            const potRimY = 40
-            const potBottomY = potRimY + rows * scoopD + 10
-            const svgH = potBottomY + 20
-            const potTopW = 70
-            const potBotW = 50
-            const cx = 50
+          {/* Resumo do Pedido */}
+          <div className="mb-6 bg-gray-50 rounded-xl p-4 border border-gray-200">
+            <h4 className="font-bold text-sm text-gray-500 mb-3 uppercase tracking-wide">📋 Seu Pedido</h4>
 
-            const positions: { flavor: string; color: string; x: number; y: number }[] = []
-            let idx = 0
-            Object.entries(scoops).forEach(([flavor, qty]) => {
-              const flavorData = sabores.find((s: any) => s.name === flavor)
-              if (!flavorData) return
-              for (let i = 0; i < qty; i++) {
-                const row = Math.floor(idx / 2)
-                const col = idx % 2
-                const y = potBottomY - 10 - row * scoopD - scoopR
-                const rowProgress = row / Math.max(1, rows - 1)
-                const rowHalfW = potBotW + (potTopW - potBotW) * (1 - rowProgress) - scoopR
-                const x = col === 0 ? cx - rowHalfW * 0.4 : cx + rowHalfW * 0.4
-                positions.push({ flavor, color: flavorData.color, x, y })
-                idx++
-              }
-            })
+            {totalScoops === 0 && !cobertura && Object.keys(extras).length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-4">Escolha os sabores abaixo para montar seu sorvete</p>
+            ) : (
+              <div className="space-y-2">
+                {/* Sabores */}
+                {Object.entries(scoops).filter(([_, qty]) => qty > 0).map(([name, qty]) => {
+                  const sabor = sabores.find((s: any) => s.name === name)
+                  return (
+                    <div key={name} className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: sabor?.color || '#ccc' }} />
+                        <span className="font-medium">{qty}x {name}</span>
+                      </div>
+                      <span className="text-gray-500">R$ {((sabor?.price || 0) * qty).toFixed(2)}</span>
+                    </div>
+                  )
+                })}
 
-            return (
-              <div className="flex justify-center mb-6">
-                <svg width="160" height={svgH} viewBox={`0 0 100 ${svgH}`}>
-                  <path
-                    d={`M${cx - potTopW} ${potRimY} L${cx - potBotW} ${potBottomY} L${cx + potBotW} ${potBottomY} L${cx + potTopW} ${potRimY} Z`}
-                    fill="#E8E8E8" stroke="#CCC" strokeWidth="2"
-                  />
-                  <ellipse cx={cx} cy={potRimY} rx={potTopW} ry="8" fill="#D4D4D4" stroke="#CCC" strokeWidth="2"/>
+                {/* Cobertura */}
+                {cobertura && (
+                  <div className="flex items-center justify-between text-sm pt-1 border-t border-gray-200">
+                    <div className="flex items-center gap-2">
+                      <span>🍫</span>
+                      <span className="font-medium">{cobertura}</span>
+                    </div>
+                    <span className="text-gray-500">incluso</span>
+                  </div>
+                )}
 
-                  {positions.map((scoop, i) => (
-                    <g key={i}>
-                      <circle cx={scoop.x} cy={scoop.y} r={scoopR} fill={scoop.color} stroke="#00000020" strokeWidth="1"/>
-                      <circle cx={scoop.x - 5} cy={scoop.y - 5} r="4" fill="#FFFFFF40"/>
-                    </g>
-                  ))}
+                {/* Extras */}
+                {Object.entries(extras).filter(([_, qty]) => qty > 0).map(([name, qty]) => {
+                  const extra = extrasList.find((e: any) => e.name === name)
+                  return (
+                    <div key={name} className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <span>✨</span>
+                        <span className="font-medium">{qty}x {name}</span>
+                      </div>
+                      <span className="text-gray-500">R$ {((extra?.price || 0) * qty).toFixed(2)}</span>
+                    </div>
+                  )
+                })}
 
-                  {cobertura && (
-                    <path
-                      d={`M${cx - 20} ${potRimY} Q${cx - 15} ${potRimY + 10} ${cx - 20} ${potRimY + 20} M${cx} ${potRimY} Q${cx + 5} ${potRimY + 15} ${cx} ${potRimY + 25} M${cx + 20} ${potRimY} Q${cx + 25} ${potRimY + 10} ${cx + 20} ${potRimY + 20}`}
-                      fill="none"
-                      stroke={coberturas.find((c: any) => c.name === cobertura)?.color || '#000'}
-                      strokeWidth="3" strokeLinecap="round"
-                    />
-                  )}
-                </svg>
+                {/* Total */}
+                <div className="flex items-center justify-between pt-2 border-t border-gray-300">
+                  <span className="font-bold">Total</span>
+                  <span className="font-bold text-lg" style={{ color: store.primaryColor }}>R$ {totalPrice.toFixed(2)}</span>
+                </div>
               </div>
-            )
-          })()}
-
-          {/* Total display */}
-          <div className="text-center mb-6">
-            <div className="text-sm text-gray-500">
-              {totalScoops} bola{totalScoops !== 1 ? 's' : ''} • R$ {scoopsPrice.toFixed(2)}
-            </div>
-            <div className="text-2xl font-bold" style={{ color: store.primaryColor }}>
-              R$ {totalPrice.toFixed(2)}
-            </div>
+            )}
           </div>
 
           {/* Sabores - from products in Sorvete category */}
