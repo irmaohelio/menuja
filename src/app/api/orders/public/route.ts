@@ -66,7 +66,12 @@ export async function POST(req: NextRequest) {
 
     // Buscar ou criar cliente
     let customer = null
-    if (customerPhone) {
+    if (body.customerId) {
+      customer = await prisma.customer.findUnique({
+        where: { id: body.customerId },
+      })
+    }
+    if (!customer && customerPhone) {
       customer = await prisma.customer.findFirst({
         where: { storeId: store.id, phone: customerPhone },
       })
