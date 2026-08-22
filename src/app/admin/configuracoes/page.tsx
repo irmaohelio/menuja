@@ -9,6 +9,10 @@ export default function ConfiguracoesPage() {
   const [hours, setHours] = useState<any[]>([])
   const [saving, setSaving] = useState(false)
   const [tab, setTab] = useState("loja")
+  // Pizza crusts state
+  const [pizzaCrusts, setPizzaCrusts] = useState<any[]>([])
+  const [crustName, setCrustName] = useState("")
+  const [crustPrice, setCrustPrice] = useState("")
 
   useEffect(() => {
     fetch("/api/store/settings").then(r => r.json()).then(data => {
@@ -16,6 +20,7 @@ export default function ConfiguracoesPage() {
         setStore(data.store)
         setSettings(data.settings || {})
         setHours(data.businessHours || [])
+        setPizzaCrusts(data.store?.pizzaCrusts || [])
       }
     })
   }, [])
@@ -78,11 +83,27 @@ export default function ConfiguracoesPage() {
     if (data.success) setStore({ ...store, banner: data.url })
   }
 
+  const saveC = async () => {
+    // Save pizza crusts
+    const res = await fetch("/api/pizza-crusts", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ crusts: pizzaCrusts }),
+    })
+    const data = await res.json()
+    if (data.success) {
+      alert("Bordas salvas!")
+    } else {
+      alert("Erro ao salvar bordas")
+    }
+  }
+
   const tabs = [
     { id: "loja", label: "🏪 Loja" },
     { id: "horarios", label: "⏰ Horários" },
     { id: "entrega", label: "🚗 Entrega" },
     { id: "pagamento", label: "💳 Pagamento" },
+    { id: "pizza", label: "🍕 Pizza" },
   ]
 
   return (
@@ -287,6 +308,39 @@ export default function ConfiguracoesPage() {
             <input type="checkbox" checked={settings.cardEnabled ?? false}
               onChange={e => setSettings({...settings, cardEnabled: e.target.checked})} />
           </label>
+        </div>
+      )}
+
+      {/* Pizza - Bordas */}
+      {tab === "pizza" && (
+        <div className="bg-white p-6 rounded-2xl shadow-sm space-y-4">
+          <h3 className="font-bold text-lg">🍕 Bordas de Pizza</h3>
+          <p className="text-sm text-gray-500">Configure as opções de borda recheada que aparecem para o cliente</p>
+
+          {pizzaCrusts.length > 0 && (
+            <div className="space-y-2 mb-3">
+              {pizzaCrusts.map((c, i) => (
+                <div key={i} className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg border">
+                  <span className="flex-1 text-sm font-medium">{c.name}</span>
+                  <span className="text-sm text-green-600 font-medium">+R$ {parseFloat(c.price).toFixed(2)}</span>
+                  <button onClick={() => setPizzaCrusts(pizzaCrusts.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-600 text-lg">×</button>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <input value={crustName} onChange={e => setCrustName(e.target.value)}
+              className="flex-1 px-3 py-2 border rounded-lg text-sm" placeholder="Ex: Borda de Catupiry"
+              onKeyDown={e => { if (e.key === "Enter" && crustName.trim()) { setPizzaCrusts([...pizzaCrusts, { name: crustName.trim(), price: parseFloat(crustPrice) || 0 }]); setCrustName(""); setCrustPrice("") } }} />
+            <input type="number" step="0.01" value={crustPrice} onChange={e => setCrustPrice(e.target.value)}
+              className="w-24 px-3 py-2 border rounded-lg text-sm" placeholder="R$ 0,00"
+              onKeyDown={e => { if (e.key === "Enter" && crustName.trim()) { setPizzaCrusts([...pizzaCrusts, { name: crustName.trim(), price: parseFloat(crustPrice) || 0 }]); setCrustName(""); setCrustPrice("") } }} />
+            <button onClick={() => { if (crustName.trim()) { setPizzaCrusts([...pizzaCrusts, { name: crustName.trim(), price: parseFloat(crustPrice) || 0 }]); setCrustName(""); setCrustPrice("") } }}
+              className="px-3 py-2 text-white rounded-lg font-bold" style={{ backgroundColor: "var(--btn)" }}>+</button>
+          </div>
+          <button onClick={saveC} className="w-full py-3 text-white rounded-xl font-bold" style={{ backgroundColor: "var(--btn)" }}>
+            Salvar Bordas
+          </button>
         </div>
       )}
     </div>
