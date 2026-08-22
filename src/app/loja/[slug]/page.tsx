@@ -356,10 +356,18 @@ export default function LojaPage() {
                     <div className="col-span-2">
                       <button
                         onClick={() => setShowSorveteBuilder(true)}
-                        className="w-full py-4 rounded-2xl font-bold text-white text-lg"
-                        style={{ backgroundColor: store.primaryColor }}
+                        className="w-full bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100 text-left"
                       >
-                        🍦 Montar Sorvete
+                        <div className="w-full aspect-square bg-gradient-to-br from-pink-100 via-purple-50 to-blue-50 flex items-center justify-center">
+                          <span className="text-8xl">🍦</span>
+                        </div>
+                        <div className="p-2.5">
+                          <p className="text-sm font-medium">Montar Sorvete</p>
+                          <p className="text-xs text-gray-500 mt-0.5">Escolha os sabores e coberturas</p>
+                          <p className="text-sm font-bold mt-1.5" style={{ color: store.primaryColor }}>
+                            Monte o seu
+                          </p>
+                        </div>
                       </button>
                     </div>
                   ) : (
