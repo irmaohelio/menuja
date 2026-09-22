@@ -482,7 +482,7 @@ export default function LojaPage() {
                   activeCategory === cat.id
                     ? "text-white shadow-sm"
                     : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700"
-                } active:scale-95`} style={activeCategory === cat.id ? { backgroundColor: store.primaryColor } : {}}>
+                } active:scale-95`} style={activeCategory === cat.id ? { backgroundColor: store.buttonColor || store.primaryColor } : {}}>
                 {cat.name}
               </button>
             ))}
