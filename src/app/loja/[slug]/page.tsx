@@ -443,28 +443,61 @@ export default function LojaPage() {
       {/* Header - sticky */}
       <div className="sticky top-0 z-30">
         <header style={{ background: `linear-gradient(135deg, ${store.primaryColor || '#e74c3c'}, ${store.secondaryColor || store.primaryColor || '#c0392b'})` }}>
-          <div className="max-w-lg mx-auto px-4 py-4 flex items-center gap-3">
-            {store.logo && <Image src={store.logo} alt={store.name} width={48} height={48} className="rounded-full object-cover border-2 border-white/30 shadow-lg" />}
-            <div className="flex-1 min-w-0">
-              <h1 className="font-bold text-lg truncate drop-shadow-md" style={{ color: store.headerTextColor || '#ffffff' }}>{store.name}</h1>
-              <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full mt-1 ${isStoreOpen ? "bg-white/20 text-white" : "bg-red-900/30 text-red-200"}`}>
-                {isStoreOpen ? "🟢 Aberta" : store.isTempClosed ? "🔴 " + (store.tempClosedMsg || "Fechada temporariamente") : "🔴 Fechada"}
-              </span>
+          <div className="max-w-lg mx-auto px-3 py-3">
+            <div className="flex items-center gap-2">
+              {store.logo && <Image src={store.logo} alt={store.name} width={40} height={40} className="rounded-full object-cover border-2 border-white/30 shadow-lg" />}
+              <div className="flex-1 min-w-0">
+                <h1 className="font-bold text-base truncate drop-shadow-md" style={{ color: store.headerTextColor || '#ffffff' }}>{store.name}</h1>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${isStoreOpen ? "bg-white/20 text-white" : "bg-red-900/30 text-red-200"}`}>
+                    {isStoreOpen ? "🟢 Aberta" : store.isTempClosed ? "🔴 " + (store.tempClosedMsg || "Fechada temporariamente") : "🔴 Fechada"}
+                  </span>
+                  {store.businessHours && store.businessHours.length > 0 && (() => {
+                    const today = new Date().getDay()
+                    const todayHours = store.businessHours.find((h: any) => h.dayOfWeek === today)
+                    if (todayHours && !todayHours.isClosed) {
+                      return (
+                        <span className="text-xs text-white/80">
+                          ⏰ {todayHours.openTime} - {todayHours.closeTime}
+                        </span>
+                      )
+                    }
+                    return null
+                  })()}
+                </div>
+              </div>
+              <button onClick={() => setShowProfile(true)} className={`w-9 h-9 rounded-full flex items-center justify-center text-white text-sm transition ${isProfileComplete ? 'bg-white/20 hover:bg-white/30' : 'bg-amber-500/80 hover:bg-amber-500 animate-pulse'}`}>
+                {isProfileComplete ? '👤' : '⚠️'}
+              </button>
+              <button onClick={() => {
+                const url = window.location.href
+                if (navigator.share) {
+                  navigator.share({ title: store.name, url })
+                } else {
+                  navigator.clipboard.writeText(url)
+                  alert('Link copiado!')
+                }
+              }} className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white text-sm hover:bg-white/30 transition">
+                📤
+              </button>
             </div>
-            <button onClick={() => setShowProfile(true)} className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-lg transition ${isProfileComplete ? 'bg-white/20 hover:bg-white/30' : 'bg-amber-500/80 hover:bg-amber-500 animate-pulse'}`}>
-              {isProfileComplete ? '👤' : '⚠️'}
-            </button>
-            <button onClick={() => {
-              const url = window.location.href
-              if (navigator.share) {
-                navigator.share({ title: store.name, url })
-              } else {
-                navigator.clipboard.writeText(url)
-                alert('Link copiado!')
-              }
-            }} className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white text-lg hover:bg-white/30 transition">
-              📤
-            </button>
+            {/* Business Hours Summary */}
+            {store.businessHours && store.businessHours.length > 0 && (
+              <div className="mt-2 flex gap-1 overflow-x-auto scrollbar-hide pb-1">
+                {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day, i) => {
+                  const hours = store.businessHours.find((h: any) => h.dayOfWeek === i)
+                  const isToday = new Date().getDay() === i
+                  return (
+                    <div key={i} className={`flex flex-col items-center px-1.5 py-1 rounded-lg text-xs ${isToday ? 'bg-white/20' : ''}`}>
+                      <span className={`font-medium ${isToday ? 'text-white' : 'text-white/70'}`}>{day}</span>
+                      <span className={`text-center ${isToday ? 'text-white' : 'text-white/60'}`}>
+                        {hours && !hours.isClosed ? hours.openTime?.substring(0, 5) : 'Fechado'}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
         </header>
       </div>
