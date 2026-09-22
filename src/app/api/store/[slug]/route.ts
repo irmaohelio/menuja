@@ -32,6 +32,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
       headerTextColor: true,
       bannerTextColor: true,
       backgroundColor: true,
+      tabBgColor: true,
       sorveteConfig: true,
       settings: true,
       businessHours: { orderBy: { dayOfWeek: 'asc' } },

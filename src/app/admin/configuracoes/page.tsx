@@ -428,6 +428,23 @@ export default function ConfiguracoesPage() {
             </div>
           </div>
 
+          {/* Cor de fundo dos botões do menu */}
+          <div>
+            <label className="block text-sm font-medium mb-2">Cor de fundo dos botões do menu</label>
+            <div className="flex items-center gap-3">
+              <input type="color" value={store.tabBgColor || '#f3f4f6'}
+                onChange={e => setStore({...store, tabBgColor: e.target.value})}
+                className="w-12 h-12 rounded-lg cursor-pointer border" />
+              <input type="text" value={store.tabBgColor || '#f3f4f6'}
+                onChange={e => setStore({...store, tabBgColor: e.target.value})}
+                className="flex-1 px-3 py-2 border rounded-lg text-sm font-mono" />
+              <div className="px-4 py-1.5 rounded-full text-sm font-medium"
+                style={{ backgroundColor: store.tabBgColor || '#f3f4f6' }}>
+                Botão
+              </div>
+            </div>
+          </div>
+
           {/* Presets */}
           <div>
             <label className="block text-sm font-medium mb-2">Temas prontos</label>

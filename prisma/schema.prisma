@@ -59,6 +59,7 @@ model Store {
   headerTextColor String @default("#ffffff")
   bannerTextColor String @default("#ffffff")
   backgroundColor String @default("#f9fafb")
+  tabBgColor     String  @default("#f3f4f6")
 
   // Trial & Plan
   plan          String   @default("trial") // trial, basic, pro, enterprise

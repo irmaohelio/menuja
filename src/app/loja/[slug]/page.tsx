@@ -502,8 +502,8 @@ export default function LojaPage() {
                 className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
                   activeCategory === cat.id
                     ? "text-white shadow-sm"
-                    : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700"
-                } active:scale-95`} style={activeCategory === cat.id ? { backgroundColor: store.buttonColor || store.primaryColor } : {}}>
+                    : "text-gray-500 hover:text-gray-700"
+                } active:scale-95`} style={activeCategory === cat.id ? { backgroundColor: store.buttonColor || store.primaryColor } : { backgroundColor: store.tabBgColor || '#f3f4f6' }}>
                 {cat.name}
               </button>
             ))}
