@@ -491,7 +491,7 @@ export default function LojaPage() {
 
       {/* Category Tabs - below banner */}
       {tab === "cardapio" && store.categories?.filter((c: any) => c.products.length > 0 || c.type === 'sorvete' || c.type === 'acai').length > 1 && (
-        <div className="bg-white/95 backdrop-blur-sm border-t border-gray-100 sticky top-0 z-20">
+        <div className="backdrop-blur-sm border-t border-gray-100 sticky top-0 z-20" style={{ backgroundColor: store.tabBgColor || '#ffffff' }}>
           <div className="max-w-lg mx-auto px-4 flex gap-2 overflow-x-auto py-2.5 scrollbar-hide">
             {store.categories?.filter((c: any) => c.products.length > 0 || c.type === 'sorvete' || c.type === 'acai').map((cat: any) => (
               <button key={cat.id} onClick={() => {
@@ -502,8 +502,8 @@ export default function LojaPage() {
                 className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
                   activeCategory === cat.id
                     ? "text-white shadow-sm"
-                    : "text-gray-500 hover:text-gray-700"
-                } active:scale-95`} style={activeCategory === cat.id ? { backgroundColor: store.buttonColor || store.primaryColor } : { backgroundColor: store.tabBgColor || '#f3f4f6' }}>
+                    : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700"
+                } active:scale-95`} style={activeCategory === cat.id ? { backgroundColor: store.buttonColor || store.primaryColor } : {}}>
                 {cat.name}
               </button>
             ))}
