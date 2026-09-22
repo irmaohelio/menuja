@@ -8,7 +8,31 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
 
   const store = await prisma.store.findUnique({
     where: { slug, isActive: true },
-    include: {
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      description: true,
+      logo: true,
+      banner: true,
+      phone: true,
+      whatsapp: true,
+      address: true,
+      city: true,
+      state: true,
+      zipCode: true,
+      segment: true,
+      isOpen: true,
+      isTempClosed: true,
+      tempClosedMsg: true,
+      isBlocked: true,
+      primaryColor: true,
+      secondaryColor: true,
+      buttonColor: true,
+      headerTextColor: true,
+      bannerTextColor: true,
+      backgroundColor: true,
+      sorveteConfig: true,
       settings: true,
       businessHours: { orderBy: { dayOfWeek: 'asc' } },
       categories: {
@@ -31,5 +55,19 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
 
   if (!store) return error('Loja não encontrada', 404)
 
-  return success({ store })
+  if (store.isBlocked) {
+    return success({ store: { name: store.name, slug: store.slug, logo: store.logo, isBlocked: true } })
+  }
+
+  // Filter categories by availableDays (current day of week)
+  const today = new Date().getDay() // 0=Sun, 1=Mon, ..., 6=Sat
+  const filteredStore = {
+    ...store,
+    categories: store.categories.filter((cat: any) => {
+      if (!cat.availableDays || cat.availableDays.length === 0) return true
+      return cat.availableDays.includes(today)
+    }),
+  }
+
+  return success({ store: filteredStore })
 }

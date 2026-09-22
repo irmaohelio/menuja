@@ -1,5 +1,6 @@
 "use client"
 import { useState, useEffect } from "react"
+import { formatCpfCnpj, getCpfCnpjError } from "@/lib/validators"
 
 const days = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"]
 
@@ -9,10 +10,6 @@ export default function ConfiguracoesPage() {
   const [hours, setHours] = useState<any[]>([])
   const [saving, setSaving] = useState(false)
   const [tab, setTab] = useState("loja")
-  // Pizza crusts state
-  const [pizzaCrusts, setPizzaCrusts] = useState<any[]>([])
-  const [crustName, setCrustName] = useState("")
-  const [crustPrice, setCrustPrice] = useState("")
 
   useEffect(() => {
     fetch("/api/store/settings").then(r => r.json()).then(data => {
@@ -20,7 +17,6 @@ export default function ConfiguracoesPage() {
         setStore(data.store)
         setSettings(data.settings || {})
         setHours(data.businessHours || [])
-        setPizzaCrusts(data.store?.pizzaCrusts || [])
       }
     })
   }, [])
@@ -83,27 +79,12 @@ export default function ConfiguracoesPage() {
     if (data.success) setStore({ ...store, banner: data.url })
   }
 
-  const saveC = async () => {
-    // Save pizza crusts
-    const res = await fetch("/api/pizza-crusts", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ crusts: pizzaCrusts }),
-    })
-    const data = await res.json()
-    if (data.success) {
-      alert("Bordas salvas!")
-    } else {
-      alert("Erro ao salvar bordas")
-    }
-  }
-
   const tabs = [
     { id: "loja", label: "🏪 Loja" },
     { id: "horarios", label: "⏰ Horários" },
     { id: "entrega", label: "🚗 Entrega" },
     { id: "pagamento", label: "💳 Pagamento" },
-    { id: "pizza", label: "🍕 Pizza" },
+    { id: "aparencia", label: "🎨 Aparência" },
   ]
 
   return (
@@ -192,6 +173,21 @@ export default function ConfiguracoesPage() {
               <label className="block text-sm font-medium mb-1">WhatsApp</label>
               <input value={store.whatsapp || ""} onChange={e => setStore({...store, whatsapp: e.target.value})}
                 className="w-full px-4 py-3 border rounded-xl" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">CPF/CNPJ</label>
+              <input 
+                value={store.cpfCnpj || ""} 
+                onChange={e => {
+                  const formatted = formatCpfCnpj(e.target.value)
+                  setStore({...store, cpfCnpj: formatted})
+                }}
+                className={`w-full px-4 py-3 border rounded-xl ${getCpfCnpjError(store.cpfCnpj || "") ? 'border-red-400' : ''}`} 
+                placeholder="000.000.000-00" 
+              />
+              {getCpfCnpjError(store.cpfCnpj || "") && (
+                <p className="text-xs text-red-500 mt-1">{getCpfCnpjError(store.cpfCnpj || "")}</p>
+              )}
             </div>
           </div>
           <div>
@@ -297,11 +293,18 @@ export default function ConfiguracoesPage() {
               onChange={e => setSettings({...settings, pixEnabled: e.target.checked})} />
           </label>
           {settings.pixEnabled && (
-            <div>
-              <label className="block text-sm font-medium mb-1">Chave PIX</label>
-              <input value={settings.pixKey || ""} onChange={e => setSettings({...settings, pixKey: e.target.value})}
-                className="w-full px-4 py-3 border rounded-xl" placeholder="Sua chave PIX" />
-            </div>
+            <>
+              <div>
+                <label className="block text-sm font-medium mb-1">Chave PIX</label>
+                <input value={settings.pixKey || ""} onChange={e => setSettings({...settings, pixKey: e.target.value})}
+                  className="w-full px-4 py-3 border rounded-xl" placeholder="Sua chave PIX" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Nome do titular</label>
+                <input value={settings.pixName || ""} onChange={e => setSettings({...settings, pixName: e.target.value})}
+                  className="w-full px-4 py-3 border rounded-xl" placeholder="Nome que aparece no PIX" />
+              </div>
+            </>
           )}
           <label className="flex items-center justify-between">
             <span>💳 Cartão</span>
@@ -311,36 +314,143 @@ export default function ConfiguracoesPage() {
         </div>
       )}
 
-      {/* Pizza - Bordas */}
-      {tab === "pizza" && (
-        <div className="bg-white p-6 rounded-2xl shadow-sm space-y-4">
-          <h3 className="font-bold text-lg">🍕 Bordas de Pizza</h3>
-          <p className="text-sm text-gray-500">Configure as opções de borda recheada que aparecem para o cliente</p>
+      {/* Aparência */}
+      {tab === "aparencia" && (
+        <div className="bg-white p-6 rounded-2xl shadow-sm space-y-6">
+          <div>
+            <h3 className="font-bold text-lg mb-2">🎨 Cores do Cabeçalho</h3>
+            <p className="text-sm text-gray-500 mb-4">Personalize as cores do topo da página da loja</p>
+          </div>
 
-          {pizzaCrusts.length > 0 && (
-            <div className="space-y-2 mb-3">
-              {pizzaCrusts.map((c, i) => (
-                <div key={i} className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg border">
-                  <span className="flex-1 text-sm font-medium">{c.name}</span>
-                  <span className="text-sm text-green-600 font-medium">+R$ {parseFloat(c.price).toFixed(2)}</span>
-                  <button onClick={() => setPizzaCrusts(pizzaCrusts.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-600 text-lg">×</button>
-                </div>
+          {/* Preview */}
+          <div className="rounded-xl overflow-hidden shadow-md">
+            <div className="p-4 flex items-center gap-3"
+              style={{ background: `linear-gradient(135deg, ${store.primaryColor || '#e74c3c'}, ${store.secondaryColor || store.primaryColor || '#c0392b'})` }}>
+              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-lg" style={{ color: store.headerTextColor || '#ffffff' }}>🏪</div>
+              <div>
+                <p className="font-bold text-sm" style={{ color: store.headerTextColor || '#ffffff' }}>{store.name || 'Sua Loja'}</p>
+                <span className="text-xs" style={{ color: store.headerTextColor || '#ffffff', opacity: 0.8 }}>🟢 Aberta</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Cores */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Cor principal</label>
+              <div className="flex items-center gap-3">
+                <input type="color" value={store.primaryColor || '#e74c3c'}
+                  onChange={e => setStore({...store, primaryColor: e.target.value})}
+                  className="w-12 h-12 rounded-lg cursor-pointer border" />
+                <input type="text" value={store.primaryColor || '#e74c3c'}
+                  onChange={e => setStore({...store, primaryColor: e.target.value})}
+                  className="flex-1 px-3 py-2 border rounded-lg text-sm font-mono" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Cor secundária</label>
+              <div className="flex items-center gap-3">
+                <input type="color" value={store.secondaryColor || store.primaryColor || '#c0392b'}
+                  onChange={e => setStore({...store, secondaryColor: e.target.value})}
+                  className="w-12 h-12 rounded-lg cursor-pointer border" />
+                <input type="text" value={store.secondaryColor || store.primaryColor || '#c0392b'}
+                  onChange={e => setStore({...store, secondaryColor: e.target.value})}
+                  className="flex-1 px-3 py-2 border rounded-lg text-sm font-mono" />
+              </div>
+            </div>
+          </div>
+
+          {/* Cor do botão */}
+          <div>
+            <label className="block text-sm font-medium mb-2">Cor dos botões</label>
+            <div className="flex items-center gap-3">
+              <input type="color" value={store.buttonColor || store.primaryColor || '#e74c3c'}
+                onChange={e => setStore({...store, buttonColor: e.target.value})}
+                className="w-12 h-12 rounded-lg cursor-pointer border" />
+              <input type="text" value={store.buttonColor || store.primaryColor || '#e74c3c'}
+                onChange={e => setStore({...store, buttonColor: e.target.value})}
+                className="flex-1 px-3 py-2 border rounded-lg text-sm font-mono" />
+              <button className="px-4 py-2 text-white rounded-lg text-sm font-medium"
+                style={{ backgroundColor: store.buttonColor || store.primaryColor || '#e74c3c' }}>
+                Preview
+              </button>
+            </div>
+          </div>
+
+          {/* Cor do texto do cabeçalho */}
+          <div>
+            <label className="block text-sm font-medium mb-2">Cor do texto do cabeçalho</label>
+            <div className="flex items-center gap-3">
+              <input type="color" value={store.headerTextColor || '#ffffff'}
+                onChange={e => setStore({...store, headerTextColor: e.target.value})}
+                className="w-12 h-12 rounded-lg cursor-pointer border" />
+              <input type="text" value={store.headerTextColor || '#ffffff'}
+                onChange={e => setStore({...store, headerTextColor: e.target.value})}
+                className="flex-1 px-3 py-2 border rounded-lg text-sm font-mono" />
+              <div className="px-4 py-2 rounded-lg text-sm font-medium"
+                style={{ backgroundColor: store.primaryColor || '#e74c3c', color: store.headerTextColor || '#ffffff' }}>
+                Texto
+              </div>
+            </div>
+          </div>
+
+          {/* Cor do texto do banner */}
+          <div>
+            <label className="block text-sm font-medium mb-2">Cor do texto do banner</label>
+            <div className="flex items-center gap-3">
+              <input type="color" value={store.bannerTextColor || '#ffffff'}
+                onChange={e => setStore({...store, bannerTextColor: e.target.value})}
+                className="w-12 h-12 rounded-lg cursor-pointer border" />
+              <input type="text" value={store.bannerTextColor || '#ffffff'}
+                onChange={e => setStore({...store, bannerTextColor: e.target.value})}
+                className="flex-1 px-3 py-2 border rounded-lg text-sm font-mono" />
+              <div className="px-4 py-2 rounded-lg text-sm font-medium"
+                style={{ backgroundColor: store.secondaryColor || store.primaryColor || '#c0392b', color: store.bannerTextColor || '#ffffff' }}>
+                Banner
+              </div>
+            </div>
+          </div>
+
+          {/* Cor de fundo */}
+          <div>
+            <label className="block text-sm font-medium mb-2">Cor de fundo da loja</label>
+            <div className="flex items-center gap-3">
+              <input type="color" value={store.backgroundColor || '#f9fafb'}
+                onChange={e => setStore({...store, backgroundColor: e.target.value})}
+                className="w-12 h-12 rounded-lg cursor-pointer border" />
+              <input type="text" value={store.backgroundColor || '#f9fafb'}
+                onChange={e => setStore({...store, backgroundColor: e.target.value})}
+                className="flex-1 px-3 py-2 border rounded-lg text-sm font-mono" />
+              <div className="px-4 py-2 rounded-lg text-sm font-medium border"
+                style={{ backgroundColor: store.backgroundColor || '#f9fafb' }}>
+                Fundo
+              </div>
+            </div>
+          </div>
+
+          {/* Presets */}
+          <div>
+            <label className="block text-sm font-medium mb-2">Temas prontos</label>
+            <div className="grid grid-cols-4 gap-2">
+              {[
+                { name: "Vermelho", primary: "#e74c3c", secondary: "#c0392b" },
+                { name: "Roxo", primary: "#8b5cf6", secondary: "#6d28d9" },
+                { name: "Azul", primary: "#3b82f6", secondary: "#1d4ed8" },
+                { name: "Verde", primary: "#10b981", secondary: "#059669" },
+                { name: "Laranja", primary: "#f97316", secondary: "#ea580c" },
+                { name: "Rosa", primary: "#ec4899", secondary: "#db2777" },
+                { name: "Marinho", primary: "#1e3a5f", secondary: "#0f172a" },
+                { name: "Dourado", primary: "#d4a017", secondary: "#b8860b" },
+              ].map(preset => (
+                <button key={preset.name}
+                  onClick={() => setStore({...store, primaryColor: preset.primary, secondaryColor: preset.secondary})}
+                  className="p-2 rounded-lg text-xs font-medium text-white text-center"
+                  style={{ background: `linear-gradient(135deg, ${preset.primary}, ${preset.secondary})` }}>
+                  {preset.name}
+                </button>
               ))}
             </div>
-          )}
-          <div className="flex gap-2">
-            <input value={crustName} onChange={e => setCrustName(e.target.value)}
-              className="flex-1 px-3 py-2 border rounded-lg text-sm" placeholder="Ex: Borda de Catupiry"
-              onKeyDown={e => { if (e.key === "Enter" && crustName.trim()) { setPizzaCrusts([...pizzaCrusts, { name: crustName.trim(), price: parseFloat(crustPrice) || 0 }]); setCrustName(""); setCrustPrice("") } }} />
-            <input type="number" step="0.01" value={crustPrice} onChange={e => setCrustPrice(e.target.value)}
-              className="w-24 px-3 py-2 border rounded-lg text-sm" placeholder="R$ 0,00"
-              onKeyDown={e => { if (e.key === "Enter" && crustName.trim()) { setPizzaCrusts([...pizzaCrusts, { name: crustName.trim(), price: parseFloat(crustPrice) || 0 }]); setCrustName(""); setCrustPrice("") } }} />
-            <button onClick={() => { if (crustName.trim()) { setPizzaCrusts([...pizzaCrusts, { name: crustName.trim(), price: parseFloat(crustPrice) || 0 }]); setCrustName(""); setCrustPrice("") } }}
-              className="px-3 py-2 text-white rounded-lg font-bold" style={{ backgroundColor: "var(--btn)" }}>+</button>
           </div>
-          <button onClick={saveC} className="w-full py-3 text-white rounded-xl font-bold" style={{ backgroundColor: "var(--btn)" }}>
-            Salvar Bordas
-          </button>
         </div>
       )}
     </div>

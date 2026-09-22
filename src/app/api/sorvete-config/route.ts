@@ -3,25 +3,9 @@ import { getCurrentStore } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 const DEFAULT_CONFIG = {
-  sabores: [
-    { name: 'Chocolate', color: '#5C3317' },
-    { name: 'Morango', color: '#FF6B6B' },
-    { name: 'Creme', color: '#FFFDD0' },
-    { name: 'Pistache', color: '#93C572' },
-    { name: 'Napolitano', color: '#FFB6C1' },
-  ],
-  coberturas: [
-    { name: 'Calda de Groselha', color: '#8B0000' },
-    { name: 'Calda de Morango', color: '#FF1493' },
-    { name: 'Calda de Chocolate', color: '#3E2723' },
-  ],
-  extras: [
-    { name: 'Granola', price: 3 },
-    { name: 'Leite Condensado', price: 3 },
-    { name: 'Chocolate Granulado', price: 4 },
-    { name: 'Amendoim', price: 3 },
-    { name: 'Banana', price: 2 },
-  ],
+  sabores: [],
+  coberturas: [],
+  extras: [],
 }
 
 export async function GET(req: NextRequest) {

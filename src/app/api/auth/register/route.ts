@@ -8,7 +8,7 @@ import { slugify } from '@/lib/utils'
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { name, email, phone, password, storeName, segment } = body
+    const { name, email, phone, password, storeName, segment, referralCode } = body
 
     if (!name || !email || !password || !storeName) {
       return error('Preencha todos os campos obrigatórios')
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
             name: storeName,
             segment: segment || 'outros',
             trialStartsAt: new Date(),
-            trialEndsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+            trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days from now
             settings: { create: {} },
             businessHours: {
               create: [
@@ -54,6 +54,34 @@ export async function POST(req: NextRequest) {
     })
 
     const token = await signToken({ userId: user.id, role: user.role })
+
+    // Apply referral code if provided
+    if (referralCode) {
+      const referrerStore = await prisma.store.findUnique({
+        where: { referralCode: referralCode.toUpperCase() },
+      })
+      
+      if (referrerStore) {
+        // Get the new user's store
+        const newStore = await prisma.store.findUnique({
+          where: { userId: user.id },
+        })
+        
+        if (newStore && referrerStore.id !== newStore.id) {
+          // Link this store to the referrer
+          await prisma.store.update({
+            where: { id: newStore.id },
+            data: { referredBy: referrerStore.id },
+          })
+          
+          // Give credit to the referrer
+          await prisma.store.update({
+            where: { id: referrerStore.id },
+            data: { referralCredits: { increment: 1 } },
+          })
+        }
+      }
+    }
 
     const response = success({ user: { id: user.id, name: user.name, email: user.email }, slug })
     response.cookies.set('token', token, {

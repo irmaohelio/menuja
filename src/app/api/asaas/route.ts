@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
     const plans: Record<string, { name: string; value: number; cycle: string }> = {
       monthly: { name: "Plano Mensal", value: 34.90, cycle: "MONTHLY" },
       semiannual: { name: "Plano Semestral", value: 199.90, cycle: "SEMIANNUALLY" },
-      annual: { name: "Plano Anual", value: 399.90, cycle: "YEARLY" }
+      annual: { name: "Plano Anual", value: 374.90, cycle: "YEARLY" }
     }
 
     const plan = plans[planId]

@@ -33,9 +33,20 @@ export default function LandingPage() {
             <div className="w-9 h-9 bg-gradient-to-br from-rose-500 to-pink-600 rounded-xl flex items-center justify-center text-white text-lg shadow-md">📋</div>
             <span className="text-xl font-extrabold bg-gradient-to-r from-rose-600 to-pink-500 bg-clip-text text-transparent tracking-tight">MenuJá</span>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
             <Link href="/login" className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-rose-600 transition">Entrar</Link>
             <Link href="/cadastro" className="px-4 py-2 text-sm font-medium bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition">Criar minha loja</Link>
+            <button onClick={() => {
+              const url = window.location.origin
+              if (navigator.share) {
+                navigator.share({ title: 'MenuJá - Crie sua loja online', url })
+              } else {
+                navigator.clipboard.writeText(url)
+                alert('Link copiado!')
+              }
+            }} className="w-9 h-9 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 transition" title="Compartilhar">
+              📤
+            </button>
           </div>
         </div>
       </header>
@@ -43,7 +54,7 @@ export default function LandingPage() {
       {/* Hero */}
       <section className="bg-gradient-to-br from-rose-600 to-pink-500 text-white py-20 px-4">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-block bg-white/20 px-4 py-1.5 rounded-full text-sm font-bold mb-4">🎁 Teste grátis por 7 dias</div>
+          <div className="inline-block bg-white/20 px-4 py-1.5 rounded-full text-sm font-bold mb-4">🎁 Teste grátis por 14 dias</div>
           <h1 className="text-4xl md:text-5xl font-bold mb-6">Crie sua loja online e venda para seus clientes</h1>
           <p className="text-xl text-rose-100 mb-8">Simples, rápido e sem complicação. Tenha seu próprio cardápio digital em minutos.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -97,10 +108,48 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Depoimentos */}
+      <section className="py-16 px-4">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-2xl font-bold text-center mb-12">O que nossos clientes dizem</h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              { name: "Maria Silva", business: "Pizzaria do Zé", text: "Aumentei 40% nas vendas depois que comecei a usar o MenuJá. Meus clientes adoram o cardápio digital!", avatar: "👩" },
+              { name: "João Santos", business: "Açaí Tropical", text: "Muito prático! Em 10 minutos minha loja estava pronta. Recomendo para todos os empreendedores.", avatar: "👨" },
+              { name: "Ana Oliveira", business: "Lanche Express", text: "O melhor custo-benefício do mercado. Suporte rápido e sistema muito fácil de usar.", avatar: "👩‍🍳" },
+            ].map((t, i) => (
+              <div key={i} className="bg-white p-6 rounded-xl shadow-sm">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-3xl">{t.avatar}</span>
+                  <div>
+                    <p className="font-bold">{t.name}</p>
+                    <p className="text-sm text-gray-500">{t.business}</p>
+                  </div>
+                </div>
+                <p className="text-gray-600">"{t.text}"</p>
+                <div className="mt-3 text-yellow-400">⭐⭐⭐⭐⭐</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Final */}
+      <section className="py-16 px-4 bg-gray-900 text-white">
+        <div className="max-w-3xl mx-auto text-center">
+          <h2 className="text-3xl font-bold mb-4">Pronto para aumentar suas vendas?</h2>
+          <p className="text-gray-300 text-lg mb-8">Junte-se a centenas de lojistas que já estão vendendo mais com o MenuJá.</p>
+          <Link href="/cadastro" className="inline-block px-10 py-4 bg-rose-600 text-white rounded-xl font-bold text-xl hover:bg-rose-700 transition shadow-lg">
+            🚀 Começar agora - É grátis!
+          </Link>
+          <p className="mt-4 text-gray-400 text-sm">Sem cartão de crédito • Cancele quando quiser</p>
+        </div>
+      </section>
+
       {/* Preço */}
       <section className="py-16 px-4 bg-gradient-to-br from-rose-600 to-pink-500 text-white">
         <div className="max-w-md mx-auto text-center">
-          <div className="inline-block bg-white/20 px-4 py-1.5 rounded-full text-sm font-bold mb-4">🎁 7 dias grátis para testar</div>
+          <div className="inline-block bg-white/20 px-4 py-1.5 rounded-full text-sm font-bold mb-4">🎁 14 dias grátis para testar</div>
           <h2 className="text-2xl font-bold mb-4">Plano Mensal</h2>
           <div className="text-6xl font-extrabold mb-2">R$34,99</div>
           <p className="text-rose-100 text-lg mb-8">/mês • sem taxa de adesão • cancele quando quiser</p>

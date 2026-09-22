@@ -42,9 +42,9 @@ const plans = [
   {
     id: "annual",
     name: "Anual",
-    price: 399.90,
+    price: 374.90,
     period: "ano",
-    total: "R$ 399,90/ano",
+    total: "R$ 374,90/ano",
     icon: "🏢",
     features: [
       "Produtos ilimitados",
@@ -55,7 +55,7 @@ const plans = [
       "Sem marca d'água",
     ],
     popular: false,
-    savings: "Economia de R$ 1,58/mês",
+    savings: "Economia de R$ 2,08/mês",
   },
 ]
 
@@ -69,6 +69,7 @@ export default function PlanosPage() {
   const [processing, setProcessing] = useState(false)
   const [paymentData, setPaymentData] = useState<any>(null)
   const [storeId, setStoreId] = useState<string | null>(null)
+  const [hasCpf, setHasCpf] = useState(true)
 
   useEffect(() => {
     fetch("/api/trial/status").then(r => r.json()).then(data => {
@@ -76,6 +77,7 @@ export default function PlanosPage() {
         setTrial(data)
         setSelectedPlan(data.plan !== "trial" ? data.plan : null)
         setStoreId(data.storeId)
+        setHasCpf(data.hasCpf)
       }
       setLoading(false)
     })
@@ -190,9 +192,18 @@ export default function PlanosPage() {
                 </label>
               </div>
 
+              {!hasCpf && (
+                <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                  <p className="text-sm text-amber-800">
+                    ⚠️ <strong>CPF/CNPJ não cadastrado.</strong> Para gerar boleto ou PIX, preencha seu CPF nas{" "}
+                    <a href="/admin/configuracoes" className="underline font-medium">Configurações da loja</a>.
+                  </p>
+                </div>
+              )}
+
               <button
                 onClick={handlePayment}
-                disabled={processing}
+                disabled={processing || !hasCpf}
                 className="w-full py-3 bg-rose-600 text-white rounded-xl font-bold hover:bg-rose-700 transition disabled:opacity-50"
               >
                 {processing ? "Processando..." : `Pagar ${plan?.total}`}
@@ -261,7 +272,7 @@ export default function PlanosPage() {
             ? "Seu período de teste expirou. Escolha um plano para continuar."
             : trial?.isPaid 
               ? `Seu plano atual: ${trial.plan.toUpperCase()}`
-              : "Você está no período de teste gratuito de 7 dias."}
+              : "Você está no período de teste gratuito de 14 dias."}
         </p>
       </div>
 

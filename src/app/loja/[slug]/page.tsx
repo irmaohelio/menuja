@@ -15,6 +15,7 @@ type CartItem = {
   flavor1?: string
   flavor2?: string
   notes?: string
+  scheduledDate?: string
   options: { name: string; price: number; quantity: number }[]
 }
 
@@ -23,17 +24,34 @@ export default function LojaPage() {
   const slug = params.slug as string
   const [store, setStore] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState<"cardapio" | "carrinho" | "pedidos">("cardapio")
+  const [tab, setTab] = useState<"cardapio" | "carrinho" | "pedidos">(() => {
+    try {
+      const saved = localStorage.getItem(`active_tab_${slug}`)
+      if (saved === "carrinho" || saved === "pedidos") return saved
+    } catch {}
+    return "cardapio"
+  })
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [cart, setCart] = useState<CartItem[]>(() => {
     try {
-      const saved = localStorage.getItem("cart")
+      const saved = localStorage.getItem(`cart_${slug}`)
       return saved ? JSON.parse(saved) : []
     } catch { return [] }
   })
   const [selectedProduct, setSelectedProduct] = useState<any>(null)
   const [showSorveteBuilder, setShowSorveteBuilder] = useState(false)
-  const [orderResult, setOrderResult] = useState<any>(null)
+  const [orderResult, setOrderResult] = useState<any>(() => {
+    try {
+      const saved = localStorage.getItem(`last_order_${slug}`)
+      return saved ? JSON.parse(saved) : null
+    } catch { return null }
+  })
+  const [orderHistory, setOrderHistory] = useState<any[]>(() => {
+    try {
+      const saved = localStorage.getItem(`order_history_${slug}`)
+      return saved ? JSON.parse(saved) : []
+    } catch { return [] }
+  })
   const [checkoutForm, setCheckoutForm] = useState({
     name: "", phone: "", address: "", number: "", complement: "", neighborhood: "", reference: "", city: "", state: "",
     deliveryType: "delivery", paymentMethod: "cash", changeFor: "", notes: "",
@@ -41,26 +59,77 @@ export default function LojaPage() {
   const [showProfile, setShowProfile] = useState(false)
   const [googleUser, setGoogleUser] = useState<any>(() => {
     try {
-      const saved = localStorage.getItem("google_user")
+      const saved = localStorage.getItem(`google_user_${slug}`)
       return saved ? JSON.parse(saved) : null
     } catch { return null }
   })
   const [profile, setProfile] = useState(() => {
     try {
-      const saved = localStorage.getItem("customer_profile")
-      return saved ? JSON.parse(saved) : { name: "", phone: "", address: "", number: "", neighborhood: "", city: "", reference: "" }
-    } catch { return { name: "", phone: "", address: "", number: "", neighborhood: "", city: "", reference: "" } }
+      const saved = localStorage.getItem(`customer_profile_${slug}`)
+      return saved ? JSON.parse(saved) : { name: "", phone: "", address: "", number: "", complement: "", neighborhood: "", city: "", state: "", reference: "" }
+    } catch { return { name: "", phone: "", address: "", number: "", complement: "", neighborhood: "", city: "", state: "", reference: "" } }
   })
+
+  // Pré-preencher checkout com dados do perfil
+  useEffect(() => {
+    if (profile.name || profile.address) {
+      setCheckoutForm(prev => ({
+        ...prev,
+        name: profile.name || prev.name,
+        phone: profile.phone || prev.phone,
+        address: profile.address || prev.address,
+        number: profile.number || prev.number,
+        complement: profile.complement || prev.complement,
+        neighborhood: profile.neighborhood || prev.neighborhood,
+        city: profile.city || prev.city,
+        state: profile.state || prev.state,
+        reference: profile.reference || prev.reference,
+      }))
+    }
+  }, [profile])
+
+  // Atualizar status dos pedidos no histórico
+  useEffect(() => {
+    if (orderHistory.length > 0) {
+      const updateHistory = async () => {
+        const updated = await Promise.all(
+          orderHistory.map(async (order: any) => {
+            try {
+              const res = await fetch(`/api/orders/track?id=${order.id}`)
+              const data = await res.json()
+              if (data.success) {
+                return { ...order, status: data.order.status }
+              }
+            } catch {}
+            return order
+          })
+        )
+        setOrderHistory(updated)
+        localStorage.setItem(`order_history_${slug}`, JSON.stringify(updated))
+        
+        // Se o último pedido foi concluído, limpar orderResult
+        if (updated.length > 0 && updated[0].status === "completed") {
+          setOrderResult(null)
+          localStorage.removeItem(`last_order_${slug}`)
+        }
+      }
+      updateHistory()
+    }
+  }, [])
   const featuredScrollRef = useRef<HTMLDivElement>(null)
   const scrollPausedRef = useRef(false)
 
   useEffect(() => {
     fetch(`/api/store/${slug}`).then(r => r.json()).then(data => {
       if (data.success) {
-        setStore(data.store)
-        // Set first category as active
-        const cats = data.store.categories?.filter((c: any) => c.products.length > 0)
-        if (cats?.length > 0) setActiveCategory(cats[0].id)
+        if (data.store.isBlocked) {
+          setStore({ ...data.store, blocked: true })
+        } else {
+          setStore(data.store)
+          // Set first category as active
+          const cats = data.store.categories?.filter((c: any) => c.products.length > 0)
+          if (cats?.length > 0) setActiveCategory(cats[0].id)
+        }
       }
       setLoading(false)
     })
@@ -104,8 +173,13 @@ export default function LojaPage() {
 
   // Save cart to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify(cart))
+    localStorage.setItem(`cart_${slug}`, JSON.stringify(cart))
   }, [cart])
+
+  // Save active tab to localStorage
+  useEffect(() => {
+    localStorage.setItem(`active_tab_${slug}`, tab)
+  }, [tab])
 
   // Track if modal was closed by code (not by back button)
   const closingByCodeRef = useRef(false)
@@ -153,7 +227,9 @@ export default function LojaPage() {
   }
 
   const saveProfile = () => {
-    localStorage.setItem("customer_profile", JSON.stringify(profile))
+    if (!profile.name.trim()) { alert("Informe seu nome"); return }
+    if (!profile.phone.trim()) { alert("Informe seu telefone"); return }
+    localStorage.setItem(`customer_profile_${slug}`, JSON.stringify(profile))
     setShowProfile(false)
     // Auto-fill checkout form
     setCheckoutForm(prev => ({
@@ -162,7 +238,10 @@ export default function LojaPage() {
       phone: profile.phone,
       address: profile.address,
       number: profile.number,
+      complement: profile.complement || '',
       neighborhood: profile.neighborhood,
+      city: profile.city,
+      state: profile.state || '',
       reference: profile.reference,
     }))
   }
@@ -192,7 +271,7 @@ export default function LojaPage() {
           if (data.success) {
             const customer = data.customer
             setGoogleUser(customer)
-            localStorage.setItem('google_user', JSON.stringify(customer))
+            localStorage.setItem(`google_user_${slug}`, JSON.stringify(customer))
             
             // Pré-preencher com dados do cliente
             setCheckoutForm(prev => ({
@@ -215,6 +294,21 @@ export default function LojaPage() {
                 reference: addr.reference || prev.reference,
               }))
             }
+
+            // Salvar no perfil local também
+            const profileData = {
+              name: customer.name || '',
+              phone: customer.phone || '',
+              address: customer.addresses?.[0]?.address || '',
+              number: customer.addresses?.[0]?.number || '',
+              complement: customer.addresses?.[0]?.complement || '',
+              neighborhood: customer.addresses?.[0]?.neighborhood || '',
+              city: customer.addresses?.[0]?.city || '',
+              state: customer.addresses?.[0]?.state || '',
+              reference: customer.addresses?.[0]?.reference || '',
+            }
+            setProfile(profileData)
+            localStorage.setItem(`customer_profile_${slug}`, JSON.stringify(profileData))
           }
         } catch (err) {
           console.error('Google login error:', err)
@@ -227,11 +321,18 @@ export default function LojaPage() {
 
   const handleGoogleLogout = () => {
     setGoogleUser(null)
-    localStorage.removeItem('google_user')
+    localStorage.removeItem(`google_user_${slug}`)
   }
+
+  const isProfileComplete = profile.name && profile.phone
 
   const submitOrder = async () => {
     if (cart.length === 0) { alert("Carrinho vazio"); return }
+    if (!isProfileComplete) {
+      setShowProfile(true)
+      alert("Preencha seu perfil antes de finalizar o pedido!")
+      return
+    }
     if (!checkoutForm.name) { alert("Informe seu nome"); return }
     if (checkoutForm.deliveryType === "delivery") {
       if (!checkoutForm.address) { alert("Informe seu endereço"); return }
@@ -261,8 +362,9 @@ export default function LojaPage() {
         customerCity: checkoutForm.city || profile.city,
         customerState: checkoutForm.state,
         notes: checkoutForm.notes,
+        scheduledDate: cart.find(i => i.scheduledDate)?.scheduledDate || null,
         items: cart.map(item => ({
-          productId: item.productId,
+          productId: item.productId && !item.productId.startsWith('sorvete') ? item.productId : null,
           productName: item.productName,
           unitPrice: item.unitPrice,
           quantity: item.quantity,
@@ -279,9 +381,29 @@ export default function LojaPage() {
     const data = await res.json()
     if (data.success) {
       setOrderResult(data.order)
+      localStorage.setItem(`last_order_${slug}`, JSON.stringify(data.order))
+      // Adicionar ao histórico
+      const updatedHistory = [data.order, ...orderHistory].slice(0, 10)
+      setOrderHistory(updatedHistory)
+      localStorage.setItem(`order_history_${slug}`, JSON.stringify(updatedHistory))
       setCart([])
       setTab("pedidos")
       try { localStorage.removeItem(`cart_${slug}`) } catch {}
+
+      // Salvar dados do checkout no perfil
+      const profileData = {
+        name: checkoutForm.name,
+        phone: checkoutForm.phone,
+        address: checkoutForm.address,
+        number: checkoutForm.number,
+        complement: checkoutForm.complement,
+        neighborhood: checkoutForm.neighborhood,
+        city: checkoutForm.city,
+        state: checkoutForm.state,
+        reference: checkoutForm.reference,
+      }
+      setProfile(profileData)
+      localStorage.setItem(`customer_profile_${slug}`, JSON.stringify(profileData))
     } else {
       alert(data.error || "Erro ao enviar pedido")
     }
@@ -290,6 +412,18 @@ export default function LojaPage() {
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="animate-spin w-8 h-8 border-4 border-t-transparent rounded-full" />
+    </div>
+  )
+
+  if (store?.blocked) return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <div className="text-center max-w-md">
+        {store.logo && <Image src={store.logo} alt={store.name} width={80} height={80} className="rounded-full mx-auto mb-4 object-cover" />}
+        <p className="text-5xl mb-4">⛔</p>
+        <h1 className="text-2xl font-bold text-gray-800 mb-2">{store.name}</h1>
+        <p className="text-gray-500">Esta loja está temporariamente indisponível.</p>
+        <p className="text-sm text-gray-400 mt-2">Entre em contato com o lojista para mais informações.</p>
+      </div>
     </div>
   )
 
@@ -305,20 +439,31 @@ export default function LojaPage() {
   const isStoreOpen = store.isOpen && !store.isTempClosed
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20" style={{ "--primary": store.primaryColor, "--secondary": store.secondaryColor, "--button": store.buttonColor } as any}>
+    <div className="min-h-screen pb-20" style={{ backgroundColor: store.backgroundColor || '#f9fafb', "--primary": store.primaryColor, "--secondary": store.secondaryColor, "--button": store.buttonColor } as any}>
       {/* Header + Category Tabs - sticky together */}
       <div className="sticky top-0 z-30">
         <header style={{ background: `linear-gradient(135deg, ${store.primaryColor || '#e74c3c'}, ${store.secondaryColor || store.primaryColor || '#c0392b'})` }}>
           <div className="max-w-lg mx-auto px-4 py-4 flex items-center gap-3">
             {store.logo && <Image src={store.logo} alt={store.name} width={48} height={48} className="rounded-full object-cover border-2 border-white/30 shadow-lg" />}
             <div className="flex-1 min-w-0">
-              <h1 className="font-bold text-white text-lg truncate drop-shadow-md">{store.name}</h1>
+              <h1 className="font-bold text-lg truncate drop-shadow-md" style={{ color: store.headerTextColor || '#ffffff' }}>{store.name}</h1>
               <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full mt-1 ${isStoreOpen ? "bg-white/20 text-white" : "bg-red-900/30 text-red-200"}`}>
                 {isStoreOpen ? "🟢 Aberta" : store.isTempClosed ? "🔴 " + (store.tempClosedMsg || "Fechada temporariamente") : "🔴 Fechada"}
               </span>
             </div>
-            <button onClick={() => setShowProfile(true)} className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white text-lg hover:bg-white/30 transition">
-              👤
+            <button onClick={() => setShowProfile(true)} className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-lg transition ${isProfileComplete ? 'bg-white/20 hover:bg-white/30' : 'bg-amber-500/80 hover:bg-amber-500 animate-pulse'}`}>
+              {isProfileComplete ? '👤' : '⚠️'}
+            </button>
+            <button onClick={() => {
+              const url = window.location.href
+              if (navigator.share) {
+                navigator.share({ title: store.name, url })
+              } else {
+                navigator.clipboard.writeText(url)
+                alert('Link copiado!')
+              }
+            }} className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white text-lg hover:bg-white/30 transition">
+              📤
             </button>
           </div>
         </header>
@@ -353,7 +498,7 @@ export default function LojaPage() {
             <Image src={store.banner} alt={store.name} fill className="object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent" />
             <div className="absolute inset-0 flex flex-col justify-center items-start pl-4">
-              <h2 className="text-white font-bold text-xl drop-shadow-lg">{store.name}</h2>
+              <h2 className="font-bold text-xl drop-shadow-lg" style={{ color: store.bannerTextColor || '#ffffff' }}>{store.name}</h2>
               {store.description && (
                 <div className="text-white/90 text-xs mt-0.5 drop-shadow">
                   {store.description.split('\n').map((line: string, i: number) => (
@@ -400,7 +545,7 @@ export default function LojaPage() {
                       onClick={() => setSelectedProduct(p)}
                       className="flex-shrink-0 bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100"
                       style={{ width: '120px', maxWidth: '120px', minWidth: '120px', flex: '0 0 120px', marginRight: '12px' }}>
-                      {p.image && <div className="aspect-[3/4] overflow-hidden"><img src={p.image} alt={p.name} className="w-full h-full object-cover" draggable={false} style={{ WebkitTouchCallout: 'none', userSelect: 'none' } as React.CSSProperties} onContextMenu={(e) => e.preventDefault()} /></div>}
+                      {p.image && <div style={{ aspectRatio: '4/3' }} className="overflow-hidden bg-gray-50"><img src={p.image} alt={p.name} className="w-full h-full object-contain" draggable={false} style={{ WebkitTouchCallout: 'none', userSelect: 'none' } as React.CSSProperties} onContextMenu={(e) => e.preventDefault()} /></div>}
                       <div className="p-2">
                         <p className="text-xs font-medium truncate">{p.name}</p>
                         <p className="text-xs font-bold mt-0.5" style={{ color: store.primaryColor }}>
@@ -456,7 +601,7 @@ export default function LojaPage() {
                     cat.products.map((p: any) => (
                       <div key={p.id} onClick={() => setSelectedProduct(p)}
                         className="bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100">
-                        {p.image && <Image src={p.image} alt={p.name} width={250} height={250} className="w-full aspect-square object-cover" />}
+                        {p.image && <Image src={p.image} alt={p.name} width={250} height={188} className="w-full object-contain bg-gray-50" style={{ aspectRatio: '4/3' }} />}
                         <div className="p-2.5">
                           <p className="text-sm font-medium truncate">{p.name}</p>
                           {p.description && <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">{p.description}</p>}
@@ -491,9 +636,6 @@ export default function LojaPage() {
               </div>
             ) : (
               <>
-                <button onClick={() => setTab("cardapio")} className="mb-4 flex items-center gap-2 text-sm font-medium" style={{ color: store.primaryColor }}>
-                  ← Continuar comprando
-                </button>
                 <div className="space-y-3 mb-6">
                   {cart.map((item, i) => (
                     <div key={i} className="bg-white p-3 rounded-xl shadow-sm">
@@ -518,18 +660,18 @@ export default function LojaPage() {
                               {/* Cobertura */}
                               {item.options.filter((o: any) => o.name.startsWith('Cobertura:')).length > 0 && (
                                 <div className="mt-4">
-                                  <p className="text-xs font-semibold text-gray-600">Cobertura</p>
+                                  <p className="text-xs font-bold text-gray-700">Caldas</p>
                                   {item.options.filter((o: any) => o.name.startsWith('Cobertura:')).map((o: any, j: number) => (
-                                    <p key={j} className="text-xs text-gray-500">{o.name.replace('Cobertura: ', '')}</p>
+                                    <p key={j} className="text-xs text-gray-500">{o.quantity || 1}x {o.name.replace('Cobertura: ', '')}</p>
                                   ))}
                                 </div>
                               )}
                               {/* Extras */}
                               {item.options.filter((o: any) => o.name.startsWith('Extra:')).length > 0 && (
                                 <div className="mt-4">
-                                  <p className="text-xs font-semibold text-gray-600">Extras</p>
+                                  <p className="text-xs font-bold text-gray-700">Extras</p>
                                   {item.options.filter((o: any) => o.name.startsWith('Extra:')).map((o: any, j: number) => (
-                                    <p key={j} className="text-xs text-gray-500">{o.quantity}x {o.name.replace('Extra: ', '')} (R$ {(o.price * o.quantity).toFixed(2)})</p>
+                                    <p key={j} className="text-xs text-gray-500">{o.quantity || 1}x {o.name.replace('Extra: ', '')} (R$ {(o.price * (o.quantity || 1)).toFixed(2)})</p>
                                   ))}
                                 </div>
                               )}
@@ -637,6 +779,13 @@ export default function LojaPage() {
                     </>
                   )}
 
+                  {checkoutForm.deliveryType === "pickup" && store.address && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm">
+                      <p className="font-bold text-amber-800 mb-1">🏪 Retirar na loja:</p>
+                      <p className="text-amber-700">{store.address}{store.city ? `, ${store.city}` : ''}{store.state ? ` - ${store.state}` : ''}</p>
+                    </div>
+                  )}
+
                   <h3 className="font-bold pt-2">Pagamento</h3>
                   <div className="flex gap-2 flex-wrap">
                     {store.settings?.cashEnabled && (
@@ -697,6 +846,12 @@ export default function LojaPage() {
                   </div>
                 </div>
 
+                <button onClick={() => setTab("cardapio")}
+                  className="w-full py-3 rounded-xl font-bold text-lg mb-2 flex items-center justify-center gap-2"
+                  style={{ color: store.primaryColor, border: `2px solid ${store.primaryColor}` }}>
+                  ← Continuar comprando
+                </button>
+
                 <button onClick={submitOrder} disabled={!isStoreOpen}
                   className="w-full py-4 rounded-xl font-bold text-white text-lg disabled:opacity-50 disabled:grayscale"
                   style={{ backgroundColor: store.buttonColor }}>
@@ -712,22 +867,151 @@ export default function LojaPage() {
           <div>
             {orderResult ? (
               <div className="bg-white p-6 rounded-2xl shadow-sm text-center">
-                <p className="text-5xl mb-4">✅</p>
-                <h2 className="text-xl font-bold mb-2">Pedido #{orderResult.orderNumber} enviado!</h2>
-                <p className="text-gray-500 mb-4">Aguardando confirmação da loja</p>
+                {orderResult.scheduledDate && orderResult.paymentStatus === 'awaiting_proof' ? (
+                  <>
+                    <p className="text-5xl mb-4">📦</p>
+                    <h2 className="text-xl font-bold mb-1">Encomenda #{orderResult.orderNumber}</h2>
+                    <p className="text-gray-500 mb-4">Para: {new Date(orderResult.scheduledDate).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' })}</p>
+
+                    {/* PIX Info */}
+                    {store.settings?.pixKey && (
+                      <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-4 text-left mb-4">
+                        <p className="font-bold text-sm mb-2">💰 Pague via PIX:</p>
+                        <p className="text-xs text-gray-500 mb-1">Chave PIX:</p>
+                        <div className="flex items-center gap-2 bg-white p-2 rounded-lg border">
+                          <code className="flex-1 text-sm font-mono break-all">{store.settings.pixKey}</code>
+                          <button onClick={() => { navigator.clipboard.writeText(store.settings.pixKey); alert('Copiado!') }}
+                            className="px-3 py-1.5 bg-gray-200 rounded-lg text-xs font-bold shrink-0">Copiar</button>
+                        </div>
+                        {store.settings.pixName && <p className="text-xs text-gray-500 mt-2">Titular: <strong>{store.settings.pixName}</strong></p>}
+                        <p className="text-xs text-gray-500 mt-1">Valor: <strong className="text-green-600">R$ {orderResult.total.toFixed(2)}</strong></p>
+                      </div>
+                    )}
+
+                    {/* Upload comprovante */}
+                    <div className="border-2 border-dashed border-gray-300 rounded-xl p-4 mb-4">
+                      <p className="text-sm font-medium mb-2">📸 Envie o comprovante</p>
+                      <label className="cursor-pointer inline-block px-4 py-2 text-white rounded-xl font-bold text-sm" style={{ backgroundColor: store.buttonColor }}>
+                        Selecionar foto
+                        <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                          const file = e.target.files?.[0]
+                          if (!file) return
+                          const fd = new FormData()
+                          fd.append('file', file)
+                          fd.append('orderId', orderResult.id)
+                          const res = await fetch('/api/orders/proof', { method: 'POST', body: fd })
+                          const data = await res.json()
+                          if (data.success) {
+                            setOrderResult({ ...orderResult, paymentStatus: 'proof_submitted', paymentProofUrl: data.url })
+                          } else {
+                            alert(data.error || 'Erro ao enviar comprovante')
+                          }
+                        }} />
+                      </label>
+                    </div>
+                  </>
+                ) : orderResult.paymentStatus === 'proof_submitted' ? (
+                  <>
+                    <p className="text-5xl mb-4">⏳</p>
+                    <h2 className="text-xl font-bold mb-2">Comprovante enviado!</h2>
+                    <p className="text-gray-500 mb-4">Aguardando o lojista confirmar o pagamento</p>
+                    {orderResult.paymentProofUrl && (
+                      <img src={orderResult.paymentProofUrl} alt="Comprovante" className="w-48 mx-auto rounded-xl border mb-4" />
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <p className="text-5xl mb-4">✅</p>
+                    <h2 className="text-xl font-bold mb-2">Pedido #{orderResult.orderNumber} enviado!</h2>
+                    <p className="text-gray-500 mb-4">Aguardando confirmação da loja</p>
+                  </>
+                )}
                 <div className="text-left space-y-2 text-sm border-t pt-4">
                   <p><strong>Cliente:</strong> {orderResult.customerName}</p>
                   <p><strong>Total:</strong> R$ {orderResult.total.toFixed(2)}</p>
                   <p><strong>Pagamento:</strong> {orderResult.paymentMethod === "cash" ? "Dinheiro" : orderResult.paymentMethod === "pix" ? "PIX" : "Cartão"}</p>
                 </div>
-                <div className="flex gap-3 mt-6">
-                  <a href={`/pedido/${orderResult.id}`} className="flex-1 py-3 text-white rounded-xl font-bold text-center" style={{ backgroundColor: store.buttonColor }}>
+                <div className="mt-6">
+                  <a href={`/pedido/${orderResult.id}`} className="w-full py-3 text-white rounded-xl font-bold text-center block" style={{ backgroundColor: store.buttonColor }}>
                     Acompanhar pedido
                   </a>
-                  <button onClick={() => setOrderResult(null)} className="px-6 py-3 bg-gray-100 rounded-xl font-medium">
-                    Novo pedido
-                  </button>
                 </div>
+              </div>
+            ) : orderHistory.length > 0 ? (
+              <div className="space-y-3">
+                <h3 className="font-bold text-lg">Seus pedidos</h3>
+                {orderHistory.map((order: any, i: number) => (
+                  <div key={i} className="bg-white p-4 rounded-2xl shadow-sm">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-bold">Pedido #{order.orderNumber}</span>
+                      <span className="text-sm text-gray-500">R$ {order.total.toFixed(2)}</span>
+                    </div>
+                    <p className="text-sm text-gray-500">{order.customerName}</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {order.paymentMethod === "cash" ? "Dinheiro" : order.paymentMethod === "pix" ? "PIX" : "Cartão"}
+                    </p>
+                    
+                    {/* Itens do pedido */}
+                    {order.items && order.items.length > 0 && (
+                      <div className="mt-3 pt-3 border-t space-y-1">
+                        {order.items.map((item: any, j: number) => (
+                          <div key={j} className="flex justify-between text-xs text-gray-600">
+                            <span>{item.quantity}x {item.productName}</span>
+                            <span>R$ {(item.unitPrice * item.quantity).toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center justify-between mt-3">
+                      <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                        order.status === "completed" ? "bg-green-100 text-green-700" :
+                        order.status === "cancelled" ? "bg-red-100 text-red-700" :
+                        "bg-blue-100 text-blue-700"
+                      }`}>
+                        {order.status === "completed" ? "Entregue" :
+                         order.status === "cancelled" ? "Cancelado" :
+                         order.status === "received" ? "Recebido" :
+                         order.status === "confirmed" ? "Confirmado" :
+                         order.status === "preparing" ? "Em preparação" :
+                         order.status === "out_for_delivery" ? "Saiu para entrega" :
+                         order.status}
+                      </span>
+                      <div className="flex gap-2">
+                        {order.status !== "completed" && order.status !== "cancelled" && (
+                          <a href={`/pedido/${order.id}`} className="text-sm font-medium" style={{ color: store.primaryColor }}>
+                            Acompanhar →
+                          </a>
+                        )}
+                        <button onClick={() => {
+                          // Recolocar itens no carrinho
+                          const items = order.items?.map((item: any) => ({
+                            productId: item.productId,
+                            productName: item.productName,
+                            unitPrice: item.unitPrice,
+                            quantity: item.quantity,
+                            sizeName: item.sizeName,
+                            crustName: item.crustName,
+                            halfHalf: item.halfHalf,
+                            flavor1: item.flavor1,
+                            flavor2: item.flavor2,
+                            notes: item.notes,
+                            options: item.options || [],
+                          })) || []
+                          setCart(items)
+                          setTab("carrinho")
+                          setOrderResult(null)
+                          localStorage.removeItem(`last_order_${slug}`)
+                        }} className="text-sm font-medium text-gray-500 hover:text-gray-700">
+                          Comprar novamente
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <button onClick={() => setTab("cardapio")} className="w-full py-3 bg-gray-100 rounded-xl font-medium mt-4">
+                  Novo pedido
+                </button>
               </div>
             ) : (
               <div className="text-center py-20 text-gray-400">
@@ -767,6 +1051,11 @@ export default function LojaPage() {
             </div>
             <div className="p-5 space-y-3">
               <p className="text-xs text-gray-500 mb-2">Preencha seus dados para agilizar seus pedidos</p>
+              {!isProfileComplete && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-700">
+                  ⚠️ Preencha pelo menos nome e telefone para fazer pedidos
+                </div>
+              )}
               <input placeholder="Nome completo *" value={profile.name}
                 onChange={e => setProfile({...profile, name: e.target.value})}
                 className="w-full px-4 py-3 border rounded-xl text-sm" />
@@ -780,12 +1069,18 @@ export default function LojaPage() {
                 <input placeholder="Número *" value={profile.number}
                   onChange={e => setProfile({...profile, number: e.target.value})}
                   className="px-4 py-3 border rounded-xl text-sm" />
-                <input placeholder="Bairro *" value={profile.neighborhood}
-                  onChange={e => setProfile({...profile, neighborhood: e.target.value})}
+                <input placeholder="Complemento" value={profile.complement || ''}
+                  onChange={e => setProfile({...profile, complement: e.target.value})}
                   className="px-4 py-3 border rounded-xl text-sm" />
               </div>
+              <input placeholder="Bairro *" value={profile.neighborhood}
+                onChange={e => setProfile({...profile, neighborhood: e.target.value})}
+                className="w-full px-4 py-3 border rounded-xl text-sm" />
               <input placeholder="Cidade *" value={profile.city}
                 onChange={e => setProfile({...profile, city: e.target.value})}
+                className="w-full px-4 py-3 border rounded-xl text-sm" />
+              <input placeholder="Estado" value={profile.state || ''}
+                onChange={e => setProfile({...profile, state: e.target.value})}
                 className="w-full px-4 py-3 border rounded-xl text-sm" />
               <input placeholder="Ponto de referência *" value={profile.reference}
                 onChange={e => setProfile({...profile, reference: e.target.value})}
@@ -832,6 +1127,16 @@ function ProductModal({ product, store, onClose, onAdd }: {
   const [selectedCrust, setSelectedCrust] = useState<any>(null)
   const [halfHalf, setHalfHalf] = useState(false)
   const [flavor2, setFlavor2] = useState<any>(null)
+  const [scheduledDate, setScheduledDate] = useState("")
+
+  // Find category type for this product
+  const productCategory = store.categories?.find((c: any) => c.products?.some((p: any) => p.id === product.id))
+  const isEncomenda = productCategory?.isEncomenda === true
+
+  // Get tomorrow as minimum date
+  const tomorrow = new Date()
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  const minDate = tomorrow.toISOString().split('T')[0]
 
   // Get all pizza products from the store for meio a meio
   const allPizzas = store.categories?.flatMap((c: any) => c.products).filter((p: any) => p.isPizza) || []
@@ -894,14 +1199,18 @@ function ProductModal({ product, store, onClose, onAdd }: {
       flavor1: halfHalf ? product.name : undefined,
       flavor2: halfHalf ? flavor2?.name : undefined,
       notes: notes || undefined,
+      scheduledDate: scheduledDate || undefined,
       options: allOptions,
     })
   }
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center" onClick={onClose}>
-      <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto"
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto relative"
         onClick={e => e.stopPropagation()}>
+        <button onClick={onClose} className="absolute top-3 right-3 z-10 w-8 h-8 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white text-lg transition">
+          ×
+        </button>
         {product.image && <Image src={product.image} alt={product.name} width={400} height={225} className="w-full aspect-video object-cover" />}
         <div className="p-5">
           <h3 className="text-xl font-bold">{product.name}</h3>
@@ -1076,6 +1385,17 @@ function ProductModal({ product, store, onClose, onAdd }: {
             </div>
           ))}
 
+          {/* Encomenda - Date picker */}
+          {isEncomenda && (
+            <div className="mt-4 p-3 rounded-xl border-2 border-amber-200 bg-amber-50">
+              <label className="block text-sm font-bold mb-1">📅 Data de entrega</label>
+              <p className="text-xs text-gray-500 mb-2">Escolha quando deseja receber</p>
+              <input type="date" value={scheduledDate} onChange={e => setScheduledDate(e.target.value)}
+                min={minDate}
+                className="w-full px-3 py-2 border rounded-lg text-sm" />
+            </div>
+          )}
+
           {/* Notes */}
           <div className="mt-4">
             <textarea placeholder="Observação para o estabelecimento" value={notes}
@@ -1091,12 +1411,12 @@ function ProductModal({ product, store, onClose, onAdd }: {
               <button onClick={() => setQuantity(quantity + 1)} className="py-2 px-1 font-bold">+</button>
             </div>
             <button onClick={handleAdd}
-              disabled={halfHalf && !flavor2}
+              disabled={(halfHalf && !flavor2) || (isEncomenda && !scheduledDate)}
               className={`flex-1 py-3 rounded-xl font-bold text-white ${
-                halfHalf && !flavor2 ? "opacity-50 cursor-not-allowed" : ""
+                (halfHalf && !flavor2) || (isEncomenda && !scheduledDate) ? "opacity-50 cursor-not-allowed" : ""
               }`}
               style={{ backgroundColor: store.buttonColor }}>
-              {halfHalf && !flavor2 ? "Escolha a 2ª metade" : `Adicionar • R$ ${((effectivePrice + crustPrice + optionsPrice + extraFlavorsCost) * quantity).toFixed(2)}`}
+              {halfHalf && !flavor2 ? "Escolha a 2ª metade" : isEncomenda && !scheduledDate ? "Escolha a data de entrega" : `Adicionar • R$ ${((effectivePrice + crustPrice + optionsPrice + extraFlavorsCost) * quantity).toFixed(2)}`}
             </button>
           </div>
         </div>

@@ -1,6 +1,7 @@
 "use client"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { formatCpfCnpj, getCpfCnpjError } from "@/lib/validators"
 
 const steps = [
   { id: 1, title: "Dados da loja", icon: "🏪" },
@@ -108,6 +109,22 @@ export default function OnboardingPage() {
                 <label className="block text-sm font-medium mb-1">WhatsApp</label>
                 <input value={store.whatsapp || ""} onChange={e => setStore({...store, whatsapp: e.target.value})}
                   className="w-full px-4 py-3 border rounded-xl" placeholder="33999999999" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">CPF ou CNPJ</label>
+                <input 
+                  value={store.cpfCnpj || ""} 
+                  onChange={e => {
+                    const formatted = formatCpfCnpj(e.target.value)
+                    setStore({...store, cpfCnpj: formatted})
+                  }}
+                  className={`w-full px-4 py-3 border rounded-xl ${getCpfCnpjError(store.cpfCnpj || "") ? 'border-red-400' : ''}`} 
+                  placeholder="000.000.000-00" 
+                />
+                {getCpfCnpjError(store.cpfCnpj || "") && (
+                  <p className="text-xs text-red-500 mt-1">{getCpfCnpjError(store.cpfCnpj || "")}</p>
+                )}
+                <p className="text-xs text-gray-400 mt-1">Necessário para gerar boletos e PIX</p>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Endereço</label>

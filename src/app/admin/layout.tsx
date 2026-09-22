@@ -91,7 +91,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <p className="text-6xl">⛔</p>
         <h1 className="text-2xl font-bold text-red-600">Período de teste expirado</h1>
         <p className="text-gray-500 text-center max-w-md">
-          Seu período de teste gratuito de 7 dias acabou. Para continuar usando o MenuJá e recebendo pedidos, escolha um plano.
+          Seu período de teste gratuito de 14 dias acabou. Para continuar usando o MenuJá e recebendo pedidos, escolha um plano."
         </p>
         <Link
           href="/admin/planos"

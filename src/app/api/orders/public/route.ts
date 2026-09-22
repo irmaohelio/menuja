@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
     const {
       storeSlug, customerName, customerPhone, deliveryType, paymentMethod,
       changeFor, items, customerAddress, customerNumber, customerComplement,
-      customerNeighborhood, customerCity, customerState, customerReference, notes
+      customerNeighborhood, customerCity, customerState, customerReference, notes, scheduledDate
     } = body
 
     if (!storeSlug || !customerName || !items?.length) {
@@ -103,6 +103,8 @@ export async function POST(req: NextRequest) {
         deliveryFee,
         total,
         notes,
+        scheduledDate: scheduledDate ? new Date(scheduledDate) : null,
+        paymentStatus: scheduledDate ? 'awaiting_proof' : null,
         items: { create: itemsData },
         statusLog: { create: { status: 'received' } },
       },

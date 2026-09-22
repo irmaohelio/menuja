@@ -37,6 +37,8 @@ export async function POST(req: NextRequest) {
       description: body.description,
       image: body.image,
       type: body.type || 'standard',
+      availableDays: body.availableDays || [],
+      isEncomenda: body.isEncomenda || false,
       sortOrder: (maxOrder?.sortOrder ?? -1) + 1,
     },
   })

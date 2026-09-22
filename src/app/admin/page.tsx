@@ -45,7 +45,7 @@ export default function AdminDashboard() {
                 {trial.isBlocked 
                   ? '⛔ Período de teste expirado' 
                   : trial.isPaid 
-                    ? `📅 Plano ${trial.plan.toUpperCase()} — ${trial.daysRemaining} dias restantes`
+                    ? `✅ Plano ${trial.plan === 'monthly' ? 'Mensal' : trial.plan === 'semiannual' ? 'Semestral' : 'Anual'} ativo`
                     : `🎁 Período de teste — ${trial.daysRemaining} dias restantes`}
               </h3>
               <p className={`text-sm mt-1 ${
@@ -55,7 +55,7 @@ export default function AdminDashboard() {
                   ? 'Para continuar usando o MenuJá, escolha um plano abaixo.'
                   : trial.isPaid 
                     ? trial.planExpiresAt
-                      ? `Seu plano expira em ${new Date(trial.planExpiresAt).toLocaleDateString('pt-BR')}`
+                      ? `Expira em ${new Date(trial.planExpiresAt).toLocaleDateString('pt-BR')} (${trial.daysRemaining} dias)`
                       : `Seu plano ${trial.plan} está ativo`
                     : `Seu teste gratuito expira em ${new Date(trial.trialEndsAt).toLocaleDateString('pt-BR')}`}
               </p>
@@ -85,6 +85,44 @@ export default function AdminDashboard() {
             <p className="text-sm opacity-70">{c.label}</p>
           </div>
         ))}
+      </div>
+
+      {/* Referral Program */}
+      <div className="mt-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl p-6 text-white">
+        <h2 className="text-xl font-bold mb-2">🎁 Indique e Ganhe</h2>
+        <p className="text-purple-100 mb-4">Indique amigos e ganhe 1 mês grátis para cada indicação!</p>
+        
+        <div className="bg-white/20 rounded-xl p-4 mb-4">
+          <p className="text-sm text-purple-100 mb-1">Seu link de indicação:</p>
+          <div className="flex items-center gap-2">
+            <input 
+              type="text" 
+              value={`https://menuja.app.br/cadastro?ref=${trial?.referralCode || '...'}`}
+              readOnly
+              className="flex-1 bg-white/10 px-3 py-2 rounded-lg text-white text-sm"
+            />
+            <button 
+              onClick={() => {
+                navigator.clipboard.writeText(`https://menuja.app.br/cadastro?ref=${trial?.referralCode || ''}`)
+                alert('Link copiado!')
+              }}
+              className="px-4 py-2 bg-white text-purple-600 rounded-lg font-medium text-sm hover:bg-purple-50 transition"
+            >
+              Copiar
+            </button>
+          </div>
+        </div>
+
+        <div className="flex gap-4 text-center">
+          <div className="flex-1 bg-white/10 rounded-xl p-3">
+            <p className="text-2xl font-bold">{trial?.referredCount || 0}</p>
+            <p className="text-xs text-purple-100">Indicações</p>
+          </div>
+          <div className="flex-1 bg-white/10 rounded-xl p-3">
+            <p className="text-2xl font-bold">{trial?.referralCredits || 0}</p>
+            <p className="text-xs text-purple-100">Meses Grátis</p>
+          </div>
+        </div>
       </div>
     </div>
   )

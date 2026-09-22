@@ -44,10 +44,33 @@ export default function PedidoPage() {
       <div className="text-center">
         <p className="text-5xl mb-4">😕</p>
         <p>Pedido não encontrado</p>
-        <Link href="/" className="text-rose-600 text-sm mt-2 inline-block">Voltar ao início</Link>
+        <button onClick={() => window.history.back()} className="text-rose-600 text-sm mt-2 inline-block">← Voltar à loja</button>
       </div>
     </div>
   )
+
+  // Se o pedido foi concluído, mostrar mensagem de entrega
+  if (order.status === "completed") {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="max-w-lg mx-auto px-4 py-6">
+          <div className="bg-white p-8 rounded-2xl shadow-sm text-center">
+            <p className="text-6xl mb-4">🎉</p>
+            <h2 className="text-2xl font-bold mb-2">Pedido entregue!</h2>
+            <p className="text-gray-500 mb-6">Seu pedido #{order.orderNumber} foi entregue com sucesso</p>
+            <div className="text-left space-y-2 text-sm border-t pt-4 mb-6">
+              <p><strong>Cliente:</strong> {order.customerName}</p>
+              <p><strong>Total:</strong> R$ {order.total.toFixed(2)}</p>
+              <p><strong>Pagamento:</strong> {order.paymentMethod === "cash" ? "Dinheiro" : order.paymentMethod === "pix" ? "PIX" : "Cartão"}</p>
+            </div>
+            <a href={`/loja/${order.store?.slug || ""}`} className="w-full py-3 text-white rounded-xl font-bold text-center block" style={{ backgroundColor: "#e11d48" }}>
+              Voltar à loja
+            </a>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   const currentIdx = allStatuses.indexOf(order.status)
   const isCancelled = order.status === "cancelled"
@@ -100,7 +123,7 @@ export default function PedidoPage() {
           <div className="space-y-3">
             {order.statusLog?.map((log: any, i: number) => (
               <div key={i} className="flex items-start gap-3">
-                <div className={`w-3 h-3 rounded-full mt-1.5 ${i === 0 ? "bg-rose-600" : "bg-gray-300"}`} />
+                <div className={`w-3 h-3 rounded-full mt-1.5 ${i === order.statusLog.length - 1 ? "bg-rose-600" : "bg-gray-300"}`} />
                 <div>
                   <p className="text-sm font-medium">{statusLabels[log.status]?.label || log.status}</p>
                   <p className="text-xs text-gray-400">{new Date(log.createdAt).toLocaleString("pt-BR")}</p>
@@ -130,7 +153,26 @@ export default function PedidoPage() {
 
         {/* Info do pedido */}
         <div className="bg-white p-5 rounded-2xl shadow-sm text-sm space-y-2">
-          <p><strong>Pagamento:</strong> {order.paymentMethod === "cash" ? "Dinheiro" : order.paymentMethod === "pix" ? "PIX" : "Cartão"}</p>
+          {order.scheduledDate && (
+            <p><strong>📅 Encomenda para:</strong> <span className="text-amber-600 font-medium">{new Date(order.scheduledDate).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}</span></p>
+          )}
+          {order.paymentStatus && (
+            <div className="flex items-center gap-2">
+              <strong>Pagamento:</strong>
+              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                order.paymentStatus === 'confirmed' ? 'bg-green-100 text-green-700' :
+                order.paymentStatus === 'rejected' ? 'bg-red-100 text-red-700' :
+                order.paymentStatus === 'proof_submitted' ? 'bg-blue-100 text-blue-700' :
+                'bg-amber-100 text-amber-700'
+              }`}>
+                {order.paymentStatus === 'confirmed' ? '✅ Pagamento confirmado' :
+                 order.paymentStatus === 'rejected' ? '❌ Pagamento recusado' :
+                 order.paymentStatus === 'proof_submitted' ? '⏳ Aguardando confirmação' :
+                 '💰 Aguardando pagamento'}
+              </span>
+            </div>
+          )}
+          <p><strong>Forma:</strong> {order.paymentMethod === "cash" ? "Dinheiro" : order.paymentMethod === "pix" ? "PIX" : "Cartão"}</p>
           <p><strong>Entrega:</strong> {order.deliveryType === "delivery" ? "Entrega" : "Retirada"}</p>
           {order.customerAddress && (
             <p><strong>Endereço:</strong> {order.customerAddress}, {order.customerNumber} - {order.customerNeighborhood}</p>

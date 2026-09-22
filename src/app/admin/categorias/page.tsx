@@ -42,6 +42,14 @@ export default function CategoriasPage() {
   const [lancheExtras, setLancheExtras] = useState<any[]>([])
   const [lanExtraName, setLanExtraName] = useState("")
   const [lanExtraPreco, setLanExtraPreco] = useState("")
+  // Pizza state
+  const [pizzaCrusts, setPizzaCrusts] = useState<any[]>([])
+  const [crustName, setCrustName] = useState("")
+  const [crustPrice, setCrustPrice] = useState("")
+  // Available days state
+  const [availableDays, setAvailableDays] = useState<number[]>([])
+  // Encomenda state
+  const [isEncomenda, setIsEncomenda] = useState(false)
 
 
   const load = () => {
@@ -59,7 +67,7 @@ export default function CategoriasPage() {
     const method = editing ? "PUT" : "POST"
     await fetch(url, {
       method, headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, description, type }),
+      body: JSON.stringify({ name, description, type, availableDays, isEncomenda }),
     })
     if (type === 'sorvete' && (sorveteSabores.length > 0 || sorveteCoberturas.length > 0 || sorveteImage)) {
       await fetch("/api/sorvete-config", {
@@ -128,6 +136,8 @@ export default function CategoriasPage() {
     setPicoleCoberturas([])
     setBebidaTamanhos([])
     setLancheExtras([])
+    setAvailableDays([])
+    setIsEncomenda(false)
 
     load()
   }
@@ -151,6 +161,8 @@ export default function CategoriasPage() {
     setName(c.name)
     setDescription(c.description || "")
     setType(c.type)
+    setAvailableDays(c.availableDays || [])
+    setIsEncomenda(c.isEncomenda || false)
     setShowForm(true)
     if (c.type === 'sorvete' || c.type === 'confeitaria' || c.type === 'picole' || c.type === 'bebidas') {
       fetch("/api/auth/me", { credentials: "include", cache: "no-store" })
@@ -225,7 +237,7 @@ export default function CategoriasPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Categorias</h1>
-        <button onClick={() => { setEditing(null); setName(""); setDescription(""); setType("standard"); setShowForm(true) }}
+        <button onClick={() => { setEditing(null); setName(""); setDescription(""); setType("standard"); setAvailableDays([]); setIsEncomenda(false); setShowForm(true) }}
           className="px-4 py-2 text-white rounded-xl font-medium" style={{ backgroundColor: "var(--btn)" }}>+ Nova categoria</button>
       </div>
 
@@ -239,6 +251,14 @@ export default function CategoriasPage() {
                 <div className="flex items-center gap-2 mt-1">
                   <span className="text-xs bg-gray-100 px-2 py-0.5 rounded-full">{typeLabels[c.type] || c.type}</span>
                   <span className="text-xs text-gray-400">{c._count?.products || 0} produtos</span>
+                  {c.availableDays && c.availableDays.length > 0 && (
+                    <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">
+                      📅 {["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"].filter((_, i) => c.availableDays.includes(i)).join(", ")}
+                    </span>
+                  )}
+                  {c.isEncomenda && (
+                    <span className="text-xs bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full">📦 Encomenda</span>
+                  )}
                 </div>
               </div>
               <button onClick={() => toggleActive(c)} className={`w-10 h-6 rounded-full relative transition ${c.isActive ? "bg-green-400" : "bg-gray-300"}`}>
@@ -316,7 +336,7 @@ export default function CategoriasPage() {
       {showForm && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4"
           onClick={() => { setShowForm(false); setEditing(null) }}>
-          <div className="bg-white rounded-2xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-2xl w-full max-w-md p-6 max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <h3 className="text-xl font-bold mb-4">{editing ? "Editar" : "Nova"} categoria</h3>
             <div className="space-y-4">
               <div>
@@ -378,10 +398,10 @@ export default function CategoriasPage() {
 
               {type === 'sorvete' && (
                 <div className="border-t pt-4 space-y-4 bg-pink-50 -mx-2 px-4 py-4 rounded-xl">
-                  <h4 className="font-bold text-sm">🍦 Sabores & Coberturas</h4>
+                  <h4 className="font-bold text-sm">🍦 Imagem & Coberturas</h4>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2">Imagem do Sorvete</label>
+                    <label className="block text-sm font-medium mb-2">Imagem</label>
                     <div className="flex items-center gap-3">
                       {sorveteImage && (
                         <img src={sorveteImage} alt="Sorvete" className="w-16 h-16 object-cover rounded-lg border" />
@@ -401,29 +421,6 @@ export default function CategoriasPage() {
                       {sorveteImage && (
                         <button onClick={() => setSorveteImage("")} className="text-red-400 hover:text-red-600 text-sm">Remover</button>
                       )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Sabores</label>
-                    {sorveteSabores.length > 0 && (
-                      <div className="space-y-2 mb-3">
-                        {sorveteSabores.map((s, i) => (
-                          <div key={i} className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border">
-                            <div className="w-6 h-6 rounded-full border" style={{ backgroundColor: s.color }} />
-                            <span className="flex-1 text-sm font-medium">{s.name}</span>
-                            <button onClick={() => setSorveteSabores(sorveteSabores.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-600 text-lg">×</button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    <div className="flex gap-2">
-                      <input type="color" value={saborColor} onChange={e => setSaborColor(e.target.value)} className="w-10 h-10 rounded cursor-pointer border" />
-                      <input value={saborName} onChange={e => setSaborName(e.target.value)}
-                        className="flex-1 px-3 py-2 border rounded-lg text-sm" placeholder="Ex: Chocolate"
-                        onKeyDown={e => { if (e.key === "Enter" && saborName.trim()) { setSorveteSabores([...sorveteSabores, { name: saborName.trim(), color: saborColor }]); setSaborName(""); setSaborColor("#CCCCCC") } }} />
-                      <button onClick={() => { if (saborName.trim()) { setSorveteSabores([...sorveteSabores, { name: saborName.trim(), color: saborColor }]); setSaborName(""); setSaborColor("#CCCCCC") } }}
-                        className="px-3 py-2 text-white rounded-lg font-bold" style={{ backgroundColor: "var(--btn)" }}>+</button>
                     </div>
                   </div>
 
@@ -449,6 +446,8 @@ export default function CategoriasPage() {
                         className="px-3 py-2 text-white rounded-lg font-bold" style={{ backgroundColor: "var(--btn)" }}>+</button>
                     </div>
                   </div>
+
+                  <p className="text-xs text-gray-500">💡 Os sabores são gerenciados em Produtos</p>
                 </div>
               )}
 
@@ -456,132 +455,11 @@ export default function CategoriasPage() {
               {type === 'confeitaria' && (
                 <div className="border-t pt-4 space-y-4 bg-amber-50 -mx-2 px-4 py-4 rounded-xl">
                   <h4 className="font-bold text-sm">🎂 Configuração de Bolos e Doces</h4>
-
-                  {/* Sabores de massa */}
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Sabores de Massa</label>
-                    {confeitariaSabores.length > 0 && (
-                      <div className="space-y-2 mb-3">
-                        {confeitariaSabores.map((s, i) => (
-                          <div key={i} className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border">
-                            <span className="flex-1 text-sm font-medium">{s.name}</span>
-                            <button onClick={() => setConfeitariaSabores(confeitariaSabores.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-600 text-lg">×</button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    <div className="flex gap-2">
-                      <input value={confSaborName} onChange={e => setConfSaborName(e.target.value)}
-                        className="flex-1 px-3 py-2 border rounded-lg text-sm" placeholder="Ex: Chocolate, Baunilha, Red Velvet..."
-                        onKeyDown={e => { if (e.key === "Enter" && confSaborName.trim()) { setConfeitariaSabores([...confeitariaSabores, { name: confSaborName.trim() }]); setConfSaborName("") } }} />
-                      <button onClick={() => { if (confSaborName.trim()) { setConfeitariaSabores([...confeitariaSabores, { name: confSaborName.trim() }]); setConfSaborName("") } }}
-                        className="px-3 py-2 text-white rounded-lg font-bold" style={{ backgroundColor: "var(--btn)" }}>+</button>
-                    </div>
-                  </div>
-
-                  {/* Recheios */}
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Recheios</label>
-                    {confeitariaRecheios.length > 0 && (
-                      <div className="space-y-2 mb-3">
-                        {confeitariaRecheios.map((s, i) => (
-                          <div key={i} className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border">
-                            <span className="flex-1 text-sm font-medium">{s.name}</span>
-                            <button onClick={() => setConfeitariaRecheios(confeitariaRecheios.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-600 text-lg">×</button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    <div className="flex gap-2">
-                      <input value={confRecheioName} onChange={e => setConfRecheioName(e.target.value)}
-                        className="flex-1 px-3 py-2 border rounded-lg text-sm" placeholder="Ex: Brigadeiro, Doce de Leite, Nutella..."
-                        onKeyDown={e => { if (e.key === "Enter" && confRecheioName.trim()) { setConfeitariaRecheios([...confeitariaRecheios, { name: confRecheioName.trim() }]); setConfRecheioName("") } }} />
-                      <button onClick={() => { if (confRecheioName.trim()) { setConfeitariaRecheios([...confeitariaRecheios, { name: confRecheioName.trim() }]); setConfRecheioName("") } }}
-                        className="px-3 py-2 text-white rounded-lg font-bold" style={{ backgroundColor: "var(--btn)" }}>+</button>
-                    </div>
-                  </div>
-
-                  {/* Coberturas */}
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Coberturas</label>
-                    {confeitariaCoberturas.length > 0 && (
-                      <div className="space-y-2 mb-3">
-                        {confeitariaCoberturas.map((s, i) => (
-                          <div key={i} className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border">
-                            <span className="flex-1 text-sm font-medium">{s.name}</span>
-                            <button onClick={() => setConfeitariaCoberturas(confeitariaCoberturas.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-600 text-lg">×</button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    <div className="flex gap-2">
-                      <input value={confCoberturaName} onChange={e => setConfCoberturaName(e.target.value)}
-                        className="flex-1 px-3 py-2 border rounded-lg text-sm" placeholder="Ex: Chantilly, Fondant, Buttercream..."
-                        onKeyDown={e => { if (e.key === "Enter" && confCoberturaName.trim()) { setConfeitariaCoberturas([...confeitariaCoberturas, { name: confCoberturaName.trim() }]); setConfCoberturaName("") } }} />
-                      <button onClick={() => { if (confCoberturaName.trim()) { setConfeitariaCoberturas([...confeitariaCoberturas, { name: confCoberturaName.trim() }]); setConfCoberturaName("") } }}
-                        className="px-3 py-2 text-white rounded-lg font-bold" style={{ backgroundColor: "var(--btn)" }}>+</button>
-                    </div>
-                  </div>
-
-                  {/* Tamanhos por fatias */}
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Tamanhos (por fatias)</label>
-                    {confeitariaTamanhos.length > 0 && (
-                      <div className="space-y-2 mb-3">
-                        {confeitariaTamanhos.map((s, i) => (
-                          <div key={i} className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border">
-                            <span className="flex-1 text-sm font-medium">{s.name} ({s.fatias} fatias)</span>
-                            <span className="text-sm text-green-600 font-medium">R$ {parseFloat(s.price).toFixed(2)}</span>
-                            <button onClick={() => setConfeitariaTamanhos(confeitariaTamanhos.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-600 text-lg">×</button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    <div className="flex gap-2">
-                      <input value={confTamanhoName} onChange={e => setConfTamanhoName(e.target.value)}
-                        className="flex-1 px-3 py-2 border rounded-lg text-sm" placeholder="Nome (Pequeno, Médio...)" />
-                      <input type="number" value={confTamanhoFatias} onChange={e => setConfTamanhoFatias(e.target.value)}
-                        className="w-20 px-3 py-2 border rounded-lg text-sm" placeholder="Fatias" />
-                      <input type="number" step="0.01" value={confTamanhoPreco} onChange={e => setConfTamanhoPreco(e.target.value)}
-                        className="w-24 px-3 py-2 border rounded-lg text-sm" placeholder="R$ 0,00" />
-                      <button onClick={() => { if (confTamanhoName.trim()) { setConfeitariaTamanhos([...confeitariaTamanhos, { name: confTamanhoName.trim(), fatias: confTamanhoFatias || "0", price: confTamanhoPreco || "0" }]); setConfTamanhoName(""); setConfTamanhoFatias(""); setConfTamanhoPreco("") } }}
-                        className="px-3 py-2 text-white rounded-lg font-bold" style={{ backgroundColor: "var(--btn)" }}>+</button>
-                    </div>
-                  </div>
+                  <p className="text-xs text-gray-500">💡 As opções de bolos são gerenciadas em Produtos</p>
                 </div>
               )}
 
-              {/* Picolé config */}
-              {type === 'picole' && (
-                <div className="border-t pt-4 space-y-4 bg-cyan-50 -mx-2 px-4 py-4 rounded-xl">
-                  <h4 className="font-bold text-sm">🧊 Coberturas do Picolé</h4>
-                  <p className="text-xs text-gray-500">Coberturas que o cliente pode adicionar no picolé (ex: banho de chocolate)</p>
-
-                  {picoleCoberturas.length > 0 && (
-                    <div className="space-y-2 mb-3">
-                      {picoleCoberturas.map((s, i) => (
-                        <div key={i} className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border">
-                          <span className="flex-1 text-sm font-medium">{s.name}</span>
-                          <span className="text-sm text-green-600 font-medium">
-                            {parseFloat(s.price) > 0 ? `+R$ ${parseFloat(s.price).toFixed(2)}` : "grátis"}
-                          </span>
-                          <button onClick={() => setPicoleCoberturas(picoleCoberturas.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-600 text-lg">×</button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  <div className="flex gap-2">
-                    <input value={picCoberturaName} onChange={e => setPicCoberturaName(e.target.value)}
-                      className="flex-1 px-3 py-2 border rounded-lg text-sm" placeholder="Ex: Banho de Chocolate"
-                      onKeyDown={e => { if (e.key === "Enter" && picCoberturaName.trim()) { setPicoleCoberturas([...picoleCoberturas, { name: picCoberturaName.trim(), price: picCoberturaPreco || "0" }]); setPicCoberturaName(""); setPicCoberturaPreco("") } }} />
-                    <input type="number" step="0.01" value={picCoberturaPreco} onChange={e => setPicCoberturaPreco(e.target.value)}
-                      className="w-24 px-3 py-2 border rounded-lg text-sm" placeholder="R$ 0,00"
-                      onKeyDown={e => { if (e.key === "Enter" && picCoberturaName.trim()) { setPicoleCoberturas([...picoleCoberturas, { name: picCoberturaName.trim(), price: picCoberturaPreco || "0" }]); setPicCoberturaName(""); setPicCoberturaPreco("") } }} />
-                    <button onClick={() => { if (picCoberturaName.trim()) { setPicoleCoberturas([...picoleCoberturas, { name: picCoberturaName.trim(), price: picCoberturaPreco || "0" }]); setPicCoberturaName(""); setPicCoberturaPreco("") } }}
-                      className="px-3 py-2 text-white rounded-lg font-bold" style={{ backgroundColor: "var(--btn)" }}>+</button>
-                  </div>
-                </div>
-              )}
+              {/* Picolé config - removido, coberturas são gerenciadas em Produtos */}
 
               {/* Bebidas config */}
               {type === 'bebidas' && (
@@ -616,33 +494,80 @@ export default function CategoriasPage() {
               {/* Lanche config */}
               {type === 'lanche' && (
                 <div className="border-t pt-4 space-y-4 bg-amber-50 -mx-2 px-4 py-4 rounded-xl">
-                  <h4 className="font-bold text-sm">🍔 Extras do Lanche</h4>
-                  <p className="text-xs text-gray-500">Adicionais que o cliente pode incluir no lanche (ex: ovo, bacon, queijo extra)</p>
+                  <h4 className="font-bold text-sm">🍔 Configuração de Lanche</h4>
+                  <p className="text-xs text-gray-500">💡 Os extras do lanche são gerenciados em Produtos</p>
+                </div>
+              )}
 
-                  {lancheExtras.length > 0 && (
+              {/* Pizza config */}
+              {type === 'pizza' && (
+                <div className="border-t pt-4 space-y-4 bg-orange-50 -mx-2 px-4 py-4 rounded-xl">
+                  <h4 className="font-bold text-sm">🍕 Bordas de Pizza</h4>
+                  <p className="text-xs text-gray-500">Configure as opções de borda recheada que aparecem para o cliente</p>
+
+                  {pizzaCrusts.length > 0 && (
                     <div className="space-y-2 mb-3">
-                      {lancheExtras.map((s, i) => (
+                      {pizzaCrusts.map((c, i) => (
                         <div key={i} className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border">
-                          <span className="flex-1 text-sm font-medium">{s.name}</span>
-                          <span className="text-sm text-green-600 font-medium">R$ {parseFloat(s.price).toFixed(2)}</span>
-                          <button onClick={() => setLancheExtras(lancheExtras.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-600 text-lg">×</button>
+                          <span className="flex-1 text-sm font-medium">{c.name}</span>
+                          <span className="text-sm text-green-600 font-medium">+R$ {parseFloat(c.price).toFixed(2)}</span>
+                          <button onClick={() => setPizzaCrusts(pizzaCrusts.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-600 text-lg">×</button>
                         </div>
                       ))}
                     </div>
                   )}
                   <div className="flex gap-2">
-                    <input value={lanExtraName} onChange={e => setLanExtraName(e.target.value)}
-                      className="flex-1 px-3 py-2 border rounded-lg text-sm" placeholder="Ex: Ovo, Bacon, Queijo Extra"
-                      onKeyDown={e => { if (e.key === "Enter" && lanExtraName.trim()) { setLancheExtras([...lancheExtras, { name: lanExtraName.trim(), price: lanExtraPreco || "0" }]); setLanExtraName(""); setLanExtraPreco("") } }} />
-                    <input type="number" step="0.01" value={lanExtraPreco} onChange={e => setLanExtraPreco(e.target.value)}
+                    <input value={crustName} onChange={e => setCrustName(e.target.value)}
+                      className="flex-1 px-3 py-2 border rounded-lg text-sm" placeholder="Ex: Borda de Catupiry"
+                      onKeyDown={e => { if (e.key === "Enter" && crustName.trim()) { setPizzaCrusts([...pizzaCrusts, { name: crustName.trim(), price: crustPrice || "0" }]); setCrustName(""); setCrustPrice("") } }} />
+                    <input type="number" step="0.01" value={crustPrice} onChange={e => setCrustPrice(e.target.value)}
                       className="w-24 px-3 py-2 border rounded-lg text-sm" placeholder="R$ 0,00"
-                      onKeyDown={e => { if (e.key === "Enter" && lanExtraName.trim()) { setLancheExtras([...lancheExtras, { name: lanExtraName.trim(), price: lanExtraPreco || "0" }]); setLanExtraName(""); setLanExtraPreco("") } }} />
-                    <button onClick={() => { if (lanExtraName.trim()) { setLancheExtras([...lancheExtras, { name: lanExtraName.trim(), price: lanExtraPreco || "0" }]); setLanExtraName(""); setLanExtraPreco("") } }}
+                      onKeyDown={e => { if (e.key === "Enter" && crustName.trim()) { setPizzaCrusts([...pizzaCrusts, { name: crustName.trim(), price: crustPrice || "0" }]); setCrustName(""); setCrustPrice("") } }} />
+                    <button onClick={() => { if (crustName.trim()) { setPizzaCrusts([...pizzaCrusts, { name: crustName.trim(), price: crustPrice || "0" }]); setCrustName(""); setCrustPrice("") } }}
                       className="px-3 py-2 text-white rounded-lg font-bold" style={{ backgroundColor: "var(--btn)" }}>+</button>
                   </div>
                 </div>
               )}
 
+
+              {/* Dias disponíveis */}
+              <div>
+                <label className="block text-sm font-medium mb-2">📅 Dias de funcionamento</label>
+                <p className="text-xs text-gray-400 mb-2">Deixe vazio para todos os dias</p>
+                <div className="flex gap-1.5 flex-wrap">
+                  {[
+                    { v: 0, l: "Dom" }, { v: 1, l: "Seg" }, { v: 2, l: "Ter" },
+                    { v: 3, l: "Qua" }, { v: 4, l: "Qui" }, { v: 5, l: "Sex" }, { v: 6, l: "Sáb" },
+                  ].map(d => (
+                    <button key={d.v} type="button"
+                      onClick={() => setAvailableDays(prev => prev.includes(d.v) ? prev.filter(x => x !== d.v) : [...prev, d.v].sort())}
+                      className={`px-3 py-1.5 rounded-full text-xs font-bold border transition ${
+                        availableDays.includes(d.v) ? "text-white border-transparent" : "bg-white text-gray-500 border-gray-300"
+                      }`} style={availableDays.includes(d.v) ? { backgroundColor: "var(--primary)" } : {}}>
+                      {d.l}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Toggle Encomenda */}
+              <button type="button" onClick={() => setIsEncomenda(!isEncomenda)}
+                className={`w-full flex items-center justify-between p-3 rounded-xl border-2 transition ${
+                  isEncomenda ? "border-amber-400 bg-amber-50" : "border-gray-200 hover:border-gray-300"
+                }`}>
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">📦</span>
+                  <div className="text-left">
+                    <span className="text-sm font-medium block">Por encomenda</span>
+                    <span className="text-xs text-gray-400">Cliente escolhe a data de entrega</span>
+                  </div>
+                </div>
+                <div className={`w-10 h-6 rounded-full transition flex items-center ${
+                  isEncomenda ? "bg-amber-400 justify-end" : "bg-gray-300 justify-start"
+                }`}>
+                  <div className="w-5 h-5 bg-white rounded-full shadow mx-0.5" />
+                </div>
+              </button>
 
               <div className="flex gap-3">
                 <button onClick={() => { setShowForm(false); setEditing(null) }} className="flex-1 py-3 border rounded-xl">Cancelar</button>

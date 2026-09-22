@@ -51,18 +51,8 @@ export default function SorveteBuilder({ store, onAdd, onClose }: SorveteBuilder
 
   // Get coberturas and extras from sorveteConfig
   const sorveteConfig = store.sorveteConfig || {}
-  const coberturas = (sorveteConfig.coberturas && sorveteConfig.coberturas.length > 0) ? sorveteConfig.coberturas : [
-    { name: 'Calda de Groselha', color: '#8B0000' },
-    { name: 'Calda de Morango', color: '#FF1493' },
-    { name: 'Calda de Chocolate', color: '#3E2723' },
-  ]
-  const extrasList = (sorveteConfig.extras && sorveteConfig.extras.length > 0) ? sorveteConfig.extras : [
-    { name: 'Granola', price: 3 },
-    { name: 'Leite Condensado', price: 3 },
-    { name: 'Chocolate Granulado', price: 4 },
-    { name: 'Amendoim', price: 3 },
-    { name: 'Banana', price: 2 },
-  ]
+  const coberturas = sorveteConfig.coberturas || []
+  const extrasList = sorveteConfig.extras || []
 
   const totalScoops = Object.values(scoops).reduce((sum, qty) => sum + qty, 0)
   const scoopsPrice = Object.entries(scoops).reduce((sum, [name, qty]) => {

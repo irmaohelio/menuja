@@ -1,6 +1,6 @@
 "use client"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect, Suspense } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 
 const segments = [
@@ -14,15 +14,25 @@ const segments = [
   { value: "outros", label: "📦 Outros" },
 ]
 
-export default function CadastroPage() {
+function CadastroForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [step, setStep] = useState(1)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+  const [referralCode, setReferralCode] = useState("")
   const [form, setForm] = useState({
     name: "", email: "", phone: "", password: "", confirmPassword: "",
     storeName: "", segment: "outros",
   })
+
+  // Read referral code from URL
+  useEffect(() => {
+    const ref = searchParams.get("ref")
+    if (ref) {
+      setReferralCode(ref.toUpperCase())
+    }
+  }, [searchParams])
 
   const update = (field: string, value: string) => setForm({ ...form, [field]: value })
 
@@ -42,7 +52,7 @@ export default function CadastroPage() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, referralCode }),
       })
       const data = await res.json()
       if (!data.success) {
@@ -77,6 +87,12 @@ export default function CadastroPage() {
           </div>
 
           {error && <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm mb-4">{error}</div>}
+
+          {referralCode && (
+            <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-sm mb-4">
+              🎁 <strong>Código de indicação aplicado:</strong> {referralCode}
+            </div>
+          )}
 
           {step === 1 && (
             <div className="space-y-4">
@@ -150,5 +166,13 @@ export default function CadastroPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function CadastroPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Carregando...</div>}>
+      <CadastroForm />
+    </Suspense>
   )
 }

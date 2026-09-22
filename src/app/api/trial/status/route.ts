@@ -21,6 +21,9 @@ export async function GET(req: NextRequest) {
         planExpiresAt: true,
         isBlocked: true,
         isActive: true,
+        cpfCnpj: true,
+        referralCode: true,
+        referralCredits: true,
       },
     })
 
@@ -51,6 +54,43 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    // Apply referral credits automatically (1 credit = 30 days)
+    if (store.referralCredits > 0) {
+      const creditsToApply = store.referralCredits
+      const daysToAdd = creditsToApply * 30
+      
+      // Extend trial or plan expiration
+      if (!isPaid) {
+        // Extend trial
+        const newTrialEnd = new Date(trialEndsAt)
+        newTrialEnd.setDate(newTrialEnd.getDate() + daysToAdd)
+        await prisma.store.update({
+          where: { id: store.id },
+          data: { 
+            trialEndsAt: newTrialEnd,
+            referralCredits: 0 
+          },
+        })
+        // Recalculate
+        const diffMs = newTrialEnd.getTime() - now.getTime()
+        daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+      } else if (store.planExpiresAt) {
+        // Extend paid plan
+        const newPlanEnd = new Date(store.planExpiresAt)
+        newPlanEnd.setDate(newPlanEnd.getDate() + daysToAdd)
+        await prisma.store.update({
+          where: { id: store.id },
+          data: { 
+            planExpiresAt: newPlanEnd,
+            referralCredits: 0 
+          },
+        })
+        // Recalculate
+        const diffMs = newPlanEnd.getTime() - now.getTime()
+        daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+      }
+    }
+
     // Determine if store should be blocked
     const shouldBeBlocked = store.isBlocked || 
       (!isPaid && isTrialExpired) || 
@@ -64,6 +104,11 @@ export async function GET(req: NextRequest) {
       })
     }
 
+    // Count how many stores were referred by this store
+    const referredCount = await prisma.store.count({
+      where: { referredBy: store.id },
+    })
+
     return success({
       storeId: store.id,
       plan: store.plan,
@@ -76,6 +121,10 @@ export async function GET(req: NextRequest) {
       isBlocked: shouldBeBlocked,
       daysRemaining,
       storeName: store.name,
+      hasCpf: !!store.cpfCnpj,
+      referralCode: store.referralCode,
+      referralCredits: store.referralCredits,
+      referredCount,
     })
   } catch (e: any) {
     return error(e.message || 'Erro ao verificar status', 500)

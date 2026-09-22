@@ -47,3 +47,38 @@ export async function PUT(req: NextRequest) {
 
   return success({ order: updated })
 }
+
+export async function DELETE(req: NextRequest) {
+  const store = await getCurrentStore()
+  if (!store) return unauthorized()
+
+  const { orderIds } = await req.json()
+
+  if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
+    return error('IDs dos pedidos são obrigatórios')
+  }
+
+  // Verificar se os pedidos pertencem à loja
+  const orders = await prisma.order.findMany({
+    where: { id: { in: orderIds }, storeId: store.id },
+  })
+
+  if (orders.length !== orderIds.length) {
+    return error('Alguns pedidos não foram encontrados')
+  }
+
+  // Excluir pedidos e seus itens
+  await prisma.orderItem.deleteMany({
+    where: { orderId: { in: orderIds } },
+  })
+
+  await prisma.orderStatusLog.deleteMany({
+    where: { orderId: { in: orderIds } },
+  })
+
+  await prisma.order.deleteMany({
+    where: { id: { in: orderIds } },
+  })
+
+  return success({ deleted: orderIds.length })
+}

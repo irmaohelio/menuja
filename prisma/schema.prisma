@@ -56,6 +56,9 @@ model Store {
   primaryColor  String   @default("#e11d48")
   secondaryColor String  @default("#f0abfc")
   buttonColor   String   @default("#e11d48")
+  headerTextColor String @default("#ffffff")
+  bannerTextColor String @default("#ffffff")
+  backgroundColor String @default("#f9fafb")
 
   // Trial & Plan
   plan          String   @default("trial") // trial, basic, pro, enterprise
@@ -68,9 +71,15 @@ model Store {
   asaasCustomerId      String?  // Asaas customer ID
   asaasSubscriptionId  String?  // Asaas subscription ID
   planStatus           String?  // pending, active, cancelled, overdue
+  cpfCnpj              String?  // CPF/CNPJ for payment
 
   // Sorvete Config (JSON)
   sorveteConfig Json?
+
+  // Referral Program
+  referralCode    String?  @unique  // Unique referral code for this store
+  referredBy      String?  // Store ID that referred this store
+  referralCredits Int      @default(0) // Credits earned from referrals
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -100,6 +109,7 @@ model StoreSettings {
   pixEnabled       Boolean @default(false)
   cardEnabled      Boolean @default(false)
   pixKey           String?
+  pixName          String?
   halfAndHalfRule  String  @default("highest")
   halfAndHalfPrice Float?
   whatsappOrders   Boolean @default(false)
@@ -131,7 +141,9 @@ model Category {
   image       String?
   type        String   @default("standard")
   isActive    Boolean  @default(true)
+  isEncomenda Boolean  @default(false)
   sortOrder   Int      @default(0)
+  availableDays Json?  @default("[]") // [0,1,2,3,4,5,6] - days of week (0=Sun). Empty=all days
   extrasTemplate Json?  @default("[]") // [{name, price}] - stored directly on category
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -289,6 +301,9 @@ model Order {
   total                Float
   status               String   @default("received")
   notes                String?
+  scheduledDate        DateTime?
+  paymentProofUrl      String?
+  paymentStatus        String?  // 'pending' | 'awaiting_proof' | 'proof_submitted' | 'confirmed' | 'rejected'
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 

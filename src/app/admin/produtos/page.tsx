@@ -116,6 +116,16 @@ export default function ProdutosPage() {
     return cat?.type === "bebidas"
   }
 
+  const isPicoleCategory = (catId: string) => {
+    const cat = categories.find(c => c.id === catId)
+    return cat?.type === "picole"
+  }
+
+  const isConfeitariaCategory = (catId: string) => {
+    const cat = categories.find(c => c.id === catId)
+    return cat?.type === "confeitaria"
+  }
+
   const handleCategoryChange = async (categoryId: string) => {
     setForm(f => ({ ...f, categoryId }))
     
@@ -447,15 +457,15 @@ export default function ProdutosPage() {
               </div>
               )}
 
-              {/* Checkboxes - Preço por tamanho escondido para sorvete, lanche e bebidas */}
+              {/* Checkboxes - Preço por tamanho escondido para sorvete, lanche, bebidas, picolé e confeitaria */}
               <div className="flex gap-4">
-                {!isSorveteCategory(form.categoryId) && !isLancheCategory(form.categoryId) && !isBebidaCategory(form.categoryId) && (
+                {!isSorveteCategory(form.categoryId) && !isLancheCategory(form.categoryId) && !isBebidaCategory(form.categoryId) && !isPicoleCategory(form.categoryId) && !isConfeitariaCategory(form.categoryId) && (
                 <label className="flex items-center gap-2">
                   <input type="checkbox" checked={form.hasSizes} onChange={e => setForm({...form, hasSizes: e.target.checked})} />
                   <span className="text-sm">📐 Preço por tamanho</span>
                 </label>
                 )}
-                {!isBebidaCategory(form.categoryId) && (
+                {!isBebidaCategory(form.categoryId) && !isPicoleCategory(form.categoryId) && !isConfeitariaCategory(form.categoryId) && (
                 <label className="flex items-center gap-2">
                   <input type="checkbox" checked={form.hasExtras} onChange={async (e) => {
                     const checked = e.target.checked
