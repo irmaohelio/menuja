@@ -586,7 +586,7 @@ export default function LojaPage() {
                       style={{ width: '120px', maxWidth: '120px', minWidth: '120px', flex: '0 0 120px', marginRight: '12px' }}>
                       {p.image && (
                         <div className="relative w-full h-full" style={{ aspectRatio: '4/3' }}>
-                          <img src={p.image} alt={p.name} className="absolute inset-0 w-full h-full object-contain bg-gray-50" draggable={false} style={{ WebkitTouchCallout: 'none', userSelect: 'none' } as React.CSSProperties} onContextMenu={(e) => e.preventDefault()} />
+                          <img src={p.image} alt={p.name} className="absolute inset-0 w-full h-full object-cover" draggable={false} style={{ WebkitTouchCallout: 'none', userSelect: 'none' } as React.CSSProperties} onContextMenu={(e) => e.preventDefault()} />
                         </div>
                       )}
                       <div className="p-2">
@@ -646,7 +646,7 @@ export default function LojaPage() {
                         className="bg-white rounded-2xl shadow-sm cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100 overflow-hidden">
                         {p.image && (
                           <div className="relative w-full" style={{ aspectRatio: '2/3' }}>
-                            <Image src={p.image} alt={p.name} fill className="object-contain bg-gray-50" />
+                            <Image src={p.image} alt={p.name} fill className="object-cover" />
                           </div>
                         )}
                         <div className="p-2.5">
@@ -1271,7 +1271,7 @@ function ProductModal({ product, store, onClose, onAdd }: {
         </button>
         {product.image && (
           <div className="relative w-full" style={{ aspectRatio: '2/3' }}>
-            <Image src={product.image} alt={product.name} fill className="object-contain bg-gray-50" />
+            <Image src={product.image} alt={product.name} fill className="object-cover" />
           </div>
         )}
         <div className="p-5">
