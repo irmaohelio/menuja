@@ -32,8 +32,8 @@ export async function POST(req: NextRequest) {
       break
     case 'product':
     default:
-      width = 250
-      height = 250
+      width = 800
+      height = 800
       break
   }
 
