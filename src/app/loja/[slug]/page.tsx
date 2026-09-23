@@ -57,6 +57,7 @@ export default function LojaPage() {
     deliveryType: "delivery", paymentMethod: "cash", changeFor: "", notes: "",
   })
   const [showProfile, setShowProfile] = useState(false)
+  const [showBackToTop, setShowBackToTop] = useState(false)
   const [googleUser, setGoogleUser] = useState<any>(() => {
     try {
       const saved = localStorage.getItem(`google_user_${slug}`)
@@ -134,6 +135,15 @@ export default function LojaPage() {
       setLoading(false)
     })
   }, [slug])
+
+  // Scroll detection for back to top button
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowBackToTop(window.scrollY > 600)
+    }
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   // Load Google Identity Services script
   useEffect(() => {
@@ -439,6 +449,7 @@ export default function LojaPage() {
   const isStoreOpen = store.isOpen && !store.isTempClosed
 
   return (
+    <>
     <div className="min-h-screen pb-20" style={{ backgroundColor: store.backgroundColor || '#f9fafb', "--primary": store.primaryColor, "--secondary": store.secondaryColor, "--button": store.buttonColor } as any}>
       {/* Header - sticky */}
       <div className="sticky top-0 z-30">
@@ -1451,5 +1462,17 @@ function ProductModal({ product, store, onClose, onAdd }: {
         </div>
       </div>
     </div>
+
+    {/* Back to Top Button */}
+    {showBackToTop && (
+      <button
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        className="fixed bottom-20 right-4 w-12 h-12 rounded-full shadow-lg z-40 flex items-center justify-center text-white text-xl transition-all hover:scale-110"
+        style={{ backgroundColor: store.primaryColor || '#e74c3c' }}
+      >
+        ↑
+      </button>
+    )}
+  </>
   )
 }
