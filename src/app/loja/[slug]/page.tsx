@@ -1261,7 +1261,7 @@ function ProductModal({ product, store, onClose, onAdd }: {
         <button onClick={onClose} className="absolute top-3 right-3 z-10 w-8 h-8 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white text-lg transition">
           ×
         </button>
-        {product.image && <Image src={product.image} alt={product.name} width={400} height={225} className="w-full aspect-video object-cover" />}
+        {product.image && <Image src={product.image} alt={product.name} width={400} height={300} className="w-full object-contain bg-gray-50" style={{ aspectRatio: '4/3' }} />}
         <div className="p-5">
           <h3 className="text-xl font-bold">{product.name}</h3>
           {product.description && <p className="text-gray-500 text-sm mt-1">{product.description}</p>}
