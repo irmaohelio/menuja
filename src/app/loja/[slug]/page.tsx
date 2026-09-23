@@ -584,7 +584,11 @@ export default function LojaPage() {
                       onClick={() => setSelectedProduct(p)}
                       className="flex-shrink-0 bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100"
                       style={{ width: '120px', maxWidth: '120px', minWidth: '120px', flex: '0 0 120px', marginRight: '12px' }}>
-                      {p.image && <div style={{ aspectRatio: '4/3' }} className="overflow-hidden bg-gray-50"><img src={p.image} alt={p.name} className="w-full h-full object-contain" draggable={false} style={{ WebkitTouchCallout: 'none', userSelect: 'none' } as React.CSSProperties} onContextMenu={(e) => e.preventDefault()} /></div>}
+                      {p.image && (
+                        <div className="relative w-full h-full" style={{ aspectRatio: '4/3' }}>
+                          <img src={p.image} alt={p.name} className="absolute inset-0 w-full h-full object-contain bg-gray-50" draggable={false} style={{ WebkitTouchCallout: 'none', userSelect: 'none' } as React.CSSProperties} onContextMenu={(e) => e.preventDefault()} />
+                        </div>
+                      )}
                       <div className="p-2">
                         <p className="text-xs font-medium truncate">{p.name}</p>
                         <p className="text-xs font-bold mt-0.5" style={{ color: store.primaryColor }}>
@@ -639,8 +643,12 @@ export default function LojaPage() {
                   ) : (
                     cat.products.map((p: any) => (
                       <div key={p.id} onClick={() => setSelectedProduct(p)}
-                        className="bg-white rounded-2xl shadow-sm cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100">
-                        {p.image && <Image src={p.image} alt={p.name} width={400} height={300} className="w-full object-contain bg-gray-50" style={{ aspectRatio: '4/3' }} />}
+                        className="bg-white rounded-2xl shadow-sm cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100 overflow-hidden">
+                        {p.image && (
+                          <div className="relative w-full" style={{ aspectRatio: '4/3' }}>
+                            <Image src={p.image} alt={p.name} fill className="object-contain bg-gray-50" />
+                          </div>
+                        )}
                         <div className="p-2.5">
                           <p className="text-sm font-medium truncate">{p.name}</p>
                           {p.description && <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">{p.description}</p>}
@@ -1261,7 +1269,11 @@ function ProductModal({ product, store, onClose, onAdd }: {
         <button onClick={onClose} className="absolute top-3 right-3 z-10 w-8 h-8 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white text-lg transition">
           ×
         </button>
-        {product.image && <Image src={product.image} alt={product.name} width={400} height={300} className="w-full object-contain bg-gray-50" style={{ aspectRatio: '4/3' }} />}
+        {product.image && (
+          <div className="relative w-full" style={{ aspectRatio: '4/3' }}>
+            <Image src={product.image} alt={product.name} fill className="object-contain bg-gray-50" />
+          </div>
+        )}
         <div className="p-5">
           <h3 className="text-xl font-bold">{product.name}</h3>
           {product.description && <p className="text-gray-500 text-sm mt-1">{product.description}</p>}
