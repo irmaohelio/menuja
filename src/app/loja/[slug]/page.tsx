@@ -639,7 +639,7 @@ export default function LojaPage() {
                   ) : (
                     cat.products.map((p: any) => (
                       <div key={p.id} onClick={() => setSelectedProduct(p)}
-                        className="bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100">
+                        className="bg-white rounded-2xl shadow-sm cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100">
                         {p.image && <Image src={p.image} alt={p.name} width={400} height={300} className="w-full object-contain bg-gray-50" style={{ aspectRatio: '4/3' }} />}
                         <div className="p-2.5">
                           <p className="text-sm font-medium truncate">{p.name}</p>
