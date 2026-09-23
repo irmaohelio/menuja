@@ -643,8 +643,8 @@ export default function LojaPage() {
                       <div key={p.id} onClick={() => setSelectedProduct(p)}
                         className="bg-white rounded-2xl shadow-sm cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100">
                         {p.image && (
-                          <div className="w-full h-[250px] overflow-hidden bg-gray-50">
-                            <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                          <div className="w-full h-[250px] flex items-center justify-center bg-gray-50">
+                            <img src={p.image} alt={p.name} className="max-h-[80%] max-w-[90%] object-contain" />
                           </div>
                         )}
                         <div className="p-2.5">
