@@ -645,7 +645,7 @@ export default function LojaPage() {
                       <div key={p.id} onClick={() => setSelectedProduct(p)}
                         className="bg-white rounded-2xl shadow-sm cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100 overflow-hidden">
                         {p.image && (
-                          <div className="relative w-full" style={{ aspectRatio: '2/3' }}>
+                          <div className="relative w-full" style={{ aspectRatio: '1/1' }}>
                             <Image src={p.image} alt={p.name} fill className="object-cover" />
                           </div>
                         )}
@@ -1270,7 +1270,7 @@ function ProductModal({ product, store, onClose, onAdd }: {
           ×
         </button>
         {product.image && (
-          <div className="relative w-full" style={{ aspectRatio: '2/3' }}>
+          <div className="relative w-full" style={{ aspectRatio: '1/1' }}>
             <Image src={product.image} alt={product.name} fill className="object-cover" />
           </div>
         )}
