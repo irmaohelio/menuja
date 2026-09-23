@@ -584,7 +584,7 @@ export default function LojaPage() {
                       onClick={() => setSelectedProduct(p)}
                       className="flex-shrink-0 bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100"
                       style={{ width: '120px', maxWidth: '120px', minWidth: '120px', flex: '0 0 120px', marginRight: '12px' }}>
-                      {p.image && <div style={{ aspectRatio: '1/1' }} className="overflow-hidden bg-gray-50"><img src={p.image} alt={p.name} className="w-full h-full object-contain" draggable={false} style={{ WebkitTouchCallout: 'none', userSelect: 'none' } as React.CSSProperties} onContextMenu={(e) => e.preventDefault()} /></div>}
+                      {p.image && <div style={{ aspectRatio: '4/5' }} className="overflow-hidden bg-gray-50"><img src={p.image} alt={p.name} className="w-full h-full object-cover" draggable={false} style={{ WebkitTouchCallout: 'none', userSelect: 'none' } as React.CSSProperties} onContextMenu={(e) => e.preventDefault()} /></div>}
                       <div className="p-2">
                         <p className="text-xs font-medium truncate">{p.name}</p>
                         <p className="text-xs font-bold mt-0.5" style={{ color: store.primaryColor }}>
@@ -640,7 +640,7 @@ export default function LojaPage() {
                     cat.products.map((p: any) => (
                       <div key={p.id} onClick={() => setSelectedProduct(p)}
                         className="bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100">
-                        {p.image && <Image src={p.image} alt={p.name} width={400} height={400} className="w-full object-contain bg-gray-50" style={{ aspectRatio: '1/1' }} />}
+                        {p.image && <Image src={p.image} alt={p.name} width={400} height={500} className="w-full object-cover bg-gray-50" style={{ aspectRatio: '4/5' }} />}
                         <div className="p-2.5">
                           <p className="text-sm font-medium truncate">{p.name}</p>
                           {p.description && <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">{p.description}</p>}
