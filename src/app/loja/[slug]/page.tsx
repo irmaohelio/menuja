@@ -1154,6 +1154,7 @@ export default function LojaPage() {
         </div>
       </nav>
     </div>
+  </>
   )
 }
 
@@ -1473,6 +1474,5 @@ function ProductModal({ product, store, onClose, onAdd }: {
         ↑
       </button>
     )}
-  </>
   )
 }
