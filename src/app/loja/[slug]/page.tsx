@@ -449,7 +449,6 @@ export default function LojaPage() {
   const isStoreOpen = store.isOpen && !store.isTempClosed
 
   return (
-    <>
     <div className="min-h-screen pb-20" style={{ backgroundColor: store.backgroundColor || '#f9fafb', "--primary": store.primaryColor, "--secondary": store.secondaryColor, "--button": store.buttonColor } as any}>
       {/* Header - sticky */}
       <div className="sticky top-0 z-30">
@@ -1135,6 +1134,17 @@ export default function LojaPage() {
         </div>
       )}
 
+      {/* Back to Top Button */}
+      {showBackToTop && (
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="fixed bottom-20 right-4 w-12 h-12 rounded-full shadow-lg z-40 flex items-center justify-center text-white text-xl transition-all hover:scale-110"
+          style={{ backgroundColor: store.primaryColor || '#e74c3c' }}
+        >
+          ↑
+        </button>
+      )}
+
       {/* Bottom Nav */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t z-30">
         <div className="max-w-lg mx-auto flex">
@@ -1154,7 +1164,6 @@ export default function LojaPage() {
         </div>
       </nav>
     </div>
-  </>
   )
 }
 
@@ -1463,16 +1472,5 @@ function ProductModal({ product, store, onClose, onAdd }: {
         </div>
       </div>
     </div>
-
-    {/* Back to Top Button */}
-    {showBackToTop && (
-      <button
-        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        className="fixed bottom-20 right-4 w-12 h-12 rounded-full shadow-lg z-40 flex items-center justify-center text-white text-xl transition-all hover:scale-110"
-        style={{ backgroundColor: store.primaryColor || '#e74c3c' }}
-      >
-        ↑
-      </button>
-    )}
   )
 }
