@@ -443,43 +443,56 @@ export default function LojaPage() {
       {/* Header - sticky */}
       <div className="sticky top-0 z-30">
         <header style={{ background: `linear-gradient(135deg, ${store.primaryColor || '#e74c3c'}, ${store.secondaryColor || store.primaryColor || '#c0392b'})` }}>
-          <div className="max-w-lg mx-auto px-3 py-3">
-            <div className="flex items-center gap-2">
-              {store.logo && <Image src={store.logo} alt={store.name} width={40} height={40} className="rounded-full object-cover border-2 border-white/30 shadow-lg" />}
-              <div className="flex-1 min-w-0">
-                <h1 className="font-bold text-base truncate drop-shadow-md" style={{ color: store.headerTextColor || '#ffffff' }}>{store.name}</h1>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${isStoreOpen ? "bg-white/20 text-white" : "bg-red-900/30 text-red-200"}`}>
-                    {isStoreOpen ? "🟢 Aberta" : store.isTempClosed ? "🔴 " + (store.tempClosedMsg || "Fechada temporariamente") : "🔴 Fechada"}
-                  </span>
-                  {store.businessHours && store.businessHours.length > 0 && (() => {
-                    const today = new Date().getDay()
-                    const todayHours = store.businessHours.find((h: any) => h.dayOfWeek === today)
-                    if (todayHours && !todayHours.isClosed) {
-                      return (
-                        <span className="text-xs text-white/80">
-                          ⏰ {todayHours.openTime?.substring(0, 5)} às {todayHours.closeTime?.substring(0, 5)}
-                        </span>
-                      )
-                    }
-                    return null
-                  })()}
+          <div className="max-w-lg mx-auto px-4 py-4">
+            <div className="flex items-start justify-between">
+              {/* Left: Logo + Info */}
+              <div className="flex items-center gap-3">
+                {store.logo && (
+                  <div className="relative">
+                    <Image src={store.logo} alt={store.name} width={52} height={52} className="rounded-2xl object-cover border-2 border-white/20 shadow-lg" />
+                    <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${isStoreOpen ? 'bg-emerald-400' : 'bg-red-400'}`} />
+                  </div>
+                )}
+                <div>
+                  <h1 className="font-bold text-lg leading-tight drop-shadow-md" style={{ color: store.headerTextColor || '#ffffff' }}>{store.name}</h1>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${isStoreOpen ? 'bg-emerald-400/20 text-emerald-100' : 'bg-red-400/20 text-red-100'}`}>
+                      {isStoreOpen ? 'Aberta' : store.isTempClosed ? store.tempClosedMsg || 'Fechada' : 'Fechada'}
+                    </span>
+                    {store.businessHours && store.businessHours.length > 0 && (() => {
+                      const today = new Date().getDay()
+                      const todayHours = store.businessHours.find((h: any) => h.dayOfWeek === today)
+                      if (todayHours && !todayHours.isClosed) {
+                        return (
+                          <span className="text-xs text-white/70 font-medium">
+                            {todayHours.openTime?.substring(0, 5)} - {todayHours.closeTime?.substring(0, 5)}
+                          </span>
+                        )
+                      }
+                      return null
+                    })()}
+                  </div>
                 </div>
               </div>
-              <button onClick={() => setShowProfile(true)} className={`w-9 h-9 rounded-full flex items-center justify-center text-white text-sm transition ${isProfileComplete ? 'bg-white/20 hover:bg-white/30' : 'bg-amber-500/80 hover:bg-amber-500 animate-pulse'}`}>
-                {isProfileComplete ? '👤' : '⚠️'}
-              </button>
-              <button onClick={() => {
-                const url = window.location.href
-                if (navigator.share) {
-                  navigator.share({ title: store.name, url })
-                } else {
-                  navigator.clipboard.writeText(url)
-                  alert('Link copiado!')
-                }
-              }} className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white text-sm hover:bg-white/30 transition">
-                📤
-              </button>
+
+              {/* Right: Action Buttons */}
+              <div className="flex items-center gap-2">
+                <button onClick={() => setShowProfile(true)} 
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center text-white transition-all ${isProfileComplete ? 'bg-white/15 hover:bg-white/25' : 'bg-amber-400/80 hover:bg-amber-400 animate-pulse'}`}>
+                  {isProfileComplete ? '👤' : '⚠️'}
+                </button>
+                <button onClick={() => {
+                  const url = window.location.href
+                  if (navigator.share) {
+                    navigator.share({ title: store.name, url })
+                  } else {
+                    navigator.clipboard.writeText(url)
+                    alert('Link copiado!')
+                  }
+                }} className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center text-white hover:bg-white/25 transition-all">
+                  📤
+                </button>
+              </div>
             </div>
           </div>
         </header>
