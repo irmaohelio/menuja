@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { getCurrentStore } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { success, error, unauthorized } from '@/lib/api'
+import { del } from '@vercel/blob'
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const store = await getCurrentStore()
@@ -12,6 +13,10 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const prod = await prisma.product.findFirst({ where: { id, storeId: store.id } })
   if (!prod) return error('Produto não encontrado', 404)
+
+  // Check if image changed - delete old one from blob
+  const oldImage = prod.image
+  const newImage = body.image
 
   const updateData: any = {
       name: body.name,
@@ -30,6 +35,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     where: { id },
     data: updateData,
   })
+
+  // Delete old image if changed
+  if (oldImage && newImage && oldImage !== newImage && oldImage.includes('vercel-blob')) {
+    try { await del(oldImage) } catch (e) { console.log('[BLOB] Failed to delete old image:', e) }
+  }
 
   // Atualizar grupos de opções
   if (body.optionGroups !== undefined) {

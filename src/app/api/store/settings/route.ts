@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { getCurrentStore } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { success, error, unauthorized } from '@/lib/api'
+import { del } from '@vercel/blob'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,7 +26,23 @@ export async function PUT(req: NextRequest) {
   if (storeData) {
     // Only send scalar fields, strip nested objects (settings, categories, etc.)
     const { settings, categories, products, customers, orders, businessHours, highlights, notifications, pizzaCrusts, user, ...scalarData } = storeData
+
+    // Check if banner or logo changed - delete old ones from blob
+    const oldBanner = store.banner
+    const oldLogo = store.logo
+    const newBanner = scalarData.banner
+    const newLogo = scalarData.logo
+
     await prisma.store.update({ where: { id: store.id }, data: scalarData })
+
+    // Delete old banner if changed
+    if (oldBanner && newBanner && oldBanner !== newBanner && oldBanner.includes('vercel-blob')) {
+      try { await del(oldBanner) } catch (e) { console.log('[BLOB] Failed to delete old banner:', e) }
+    }
+    // Delete old logo if changed
+    if (oldLogo && newLogo && oldLogo !== newLogo && oldLogo.includes('vercel-blob')) {
+      try { await del(oldLogo) } catch (e) { console.log('[BLOB] Failed to delete old logo:', e) }
+    }
   }
 
   if (settingsData) {
