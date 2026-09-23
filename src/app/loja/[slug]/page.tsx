@@ -644,7 +644,7 @@ export default function LojaPage() {
                         className="bg-white rounded-2xl shadow-sm cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100">
                         {p.image && (
                           <div className="w-full h-[250px] flex items-center justify-center bg-gray-50">
-                            <img src={p.image} alt={p.name} className="max-h-[80%] max-w-[90%] object-contain" />
+                            <img src={p.image} alt={p.name} className="h-[90%] max-w-[95%] object-contain" />
                           </div>
                         )}
                         <div className="p-2.5">
