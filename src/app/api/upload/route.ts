@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
 
   const resized = await sharp(buffer)
     .resize(width, height, { 
-      fit: 'cover',
+      fit: 'inside',
       withoutEnlargement: false
     })
     .jpeg({ quality: 80 })
