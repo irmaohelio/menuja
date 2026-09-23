@@ -585,8 +585,7 @@ export default function LojaPage() {
                       className="flex-shrink-0 bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100"
                       style={{ width: '120px', maxWidth: '120px', minWidth: '120px', flex: '0 0 120px', marginRight: '12px' }}>
                       {p.image && (
-                        <div className="relative w-full h-full" style={{ aspectRatio: '4/3' }}>
-                          <img src={p.image} alt={p.name} className="w-full h-auto" draggable={false} style={{ WebkitTouchCallout: 'none', userSelect: 'none' } as React.CSSProperties} onContextMenu={(e) => e.preventDefault()} />
+                        <img src={p.image} alt={p.name} className="w-full h-auto" draggable={false} style={{ WebkitTouchCallout: 'none', userSelect: 'none' } as React.CSSProperties} onContextMenu={(e) => e.preventDefault()} />
                       )}
                       <div className="p-2">
                         <p className="text-xs font-medium truncate">{p.name}</p>
