@@ -641,7 +641,7 @@ export default function LojaPage() {
                   ) : (
                     cat.products.map((p: any) => (
                       <div key={p.id} onClick={() => setSelectedProduct(p)}
-                        className="bg-white rounded-2xl shadow-sm cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100 overflow-hidden">
+                        className="bg-white rounded-2xl shadow-sm cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100">
                         {p.image && (
                           <img src={p.image} alt={p.name} className="w-full h-auto" />
                         )}
