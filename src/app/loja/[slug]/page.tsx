@@ -586,8 +586,7 @@ export default function LojaPage() {
                       style={{ width: '120px', maxWidth: '120px', minWidth: '120px', flex: '0 0 120px', marginRight: '12px' }}>
                       {p.image && (
                         <div className="relative w-full h-full" style={{ aspectRatio: '4/3' }}>
-                          <img src={p.image} alt={p.name} className="absolute inset-0 w-full h-full object-cover" draggable={false} style={{ WebkitTouchCallout: 'none', userSelect: 'none' } as React.CSSProperties} onContextMenu={(e) => e.preventDefault()} />
-                        </div>
+                          <img src={p.image} alt={p.name} className="w-full h-auto" draggable={false} style={{ WebkitTouchCallout: 'none', userSelect: 'none' } as React.CSSProperties} onContextMenu={(e) => e.preventDefault()} />
                       )}
                       <div className="p-2">
                         <p className="text-xs font-medium truncate">{p.name}</p>
@@ -645,9 +644,7 @@ export default function LojaPage() {
                       <div key={p.id} onClick={() => setSelectedProduct(p)}
                         className="bg-white rounded-2xl shadow-sm cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100 overflow-hidden">
                         {p.image && (
-                          <div className="relative w-full" style={{ aspectRatio: '1/1' }}>
-                            <Image src={p.image} alt={p.name} fill className="object-cover" />
-                          </div>
+                          <img src={p.image} alt={p.name} className="w-full h-auto" />
                         )}
                         <div className="p-2.5">
                           <p className="text-sm font-medium truncate">{p.name}</p>
@@ -1270,9 +1267,7 @@ function ProductModal({ product, store, onClose, onAdd }: {
           ×
         </button>
         {product.image && (
-          <div className="relative w-full" style={{ aspectRatio: '1/1' }}>
-            <Image src={product.image} alt={product.name} fill className="object-cover" />
-          </div>
+          <img src={product.image} alt={product.name} className="w-full h-auto" />
         )}
         <div className="p-5">
           <h3 className="text-xl font-bold">{product.name}</h3>
