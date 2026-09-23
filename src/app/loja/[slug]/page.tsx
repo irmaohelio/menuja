@@ -458,7 +458,7 @@ export default function LojaPage() {
                     if (todayHours && !todayHours.isClosed) {
                       return (
                         <span className="text-xs text-white/80">
-                          ⏰ {todayHours.openTime} - {todayHours.closeTime}
+                          ⏰ {todayHours.openTime?.substring(0, 5)} às {todayHours.closeTime?.substring(0, 5)}
                         </span>
                       )
                     }
@@ -481,23 +481,6 @@ export default function LojaPage() {
                 📤
               </button>
             </div>
-            {/* Business Hours Summary */}
-            {store.businessHours && store.businessHours.length > 0 && (
-              <div className="mt-2 flex gap-1 overflow-x-auto scrollbar-hide pb-1">
-                {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day, i) => {
-                  const hours = store.businessHours.find((h: any) => h.dayOfWeek === i)
-                  const isToday = new Date().getDay() === i
-                  return (
-                    <div key={i} className={`flex flex-col items-center px-1.5 py-1 rounded-lg text-xs ${isToday ? 'bg-white/20' : ''}`}>
-                      <span className={`font-medium ${isToday ? 'text-white' : 'text-white/70'}`}>{day}</span>
-                      <span className={`text-center ${isToday ? 'text-white' : 'text-white/60'}`}>
-                        {hours && !hours.isClosed ? hours.openTime?.substring(0, 5) : 'Fechado'}
-                      </span>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
           </div>
         </header>
       </div>
