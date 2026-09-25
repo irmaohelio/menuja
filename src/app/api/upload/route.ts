@@ -46,7 +46,8 @@ export async function POST(req: NextRequest) {
     .toBuffer()
 
   const ext = 'jpg'
-  const filename = `uploads/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+  // Isolate images by store slug
+  const filename = `uploads/${store.slug}/${type}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
 
   const blob = await put(filename, resized, {
     access: 'public',
