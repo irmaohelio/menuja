@@ -232,9 +232,20 @@ export default function PedidosPage() {
                 {order.items && order.items.length > 0 && (
                   <div className="mt-2 pt-2 border-t border-gray-100 space-y-1">
                     {order.items.map((item: any, j: number) => (
-                      <div key={j} className="flex justify-between text-xs text-gray-600">
-                        <span>{item.quantity}x {item.productName}</span>
-                        <span>R$ {item.totalPrice.toFixed(2)}</span>
+                      <div key={j}>
+                        <div className="flex justify-between text-xs text-gray-600">
+                          <span>{item.quantity}x {item.productName}{item.sizeName ? ` (${item.sizeName})` : ''}</span>
+                          <span>R$ {item.totalPrice.toFixed(2)}</span>
+                        </div>
+                        {item.options?.length > 0 && (
+                          <div className="ml-3 mt-0.5">
+                            {item.options.map((opt: any, k: number) => (
+                              <p key={k} className="text-[10px] text-gray-400">
+                                {opt.quantity > 1 ? `${opt.quantity}x` : '+'} {opt.name} {opt.price > 0 ? `(R$ ${(opt.price * (opt.quantity || 1)).toFixed(2)})` : ''}
+                              </p>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
