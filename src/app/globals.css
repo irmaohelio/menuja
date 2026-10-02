@@ -32,3 +32,27 @@ body {
 .featured-scroll:active {
   animation-play-state: paused;
 }
+
+/* Notification bell ringing */
+@keyframes bell-ring {
+  0%, 100% { transform: rotate(0); }
+  15% { transform: rotate(18deg); }
+  30% { transform: rotate(-16deg); }
+  45% { transform: rotate(12deg); }
+  60% { transform: rotate(-8deg); }
+  75% { transform: rotate(4deg); }
+}
+.animate-bell {
+  display: inline-block;
+  transform-origin: 50% 0;
+  animation: bell-ring 1s ease-in-out infinite;
+}
+
+/* New order alert entrance */
+@keyframes alert-in {
+  0% { opacity: 0; transform: translateY(-24px) scale(0.96); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-alert-in {
+  animation: alert-in 0.35s ease-out both;
+}

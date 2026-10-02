@@ -18,8 +18,18 @@ export function useNotifications() {
 
   useEffect(() => {
     fetchNotifications()
-    const interval = setInterval(fetchNotifications, 10000) // Polling a cada 10s
-    return () => clearInterval(interval)
+    const interval = setInterval(fetchNotifications, 5000) // Polling a cada 5s
+
+    // Refresh immediately when the tab becomes visible again
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") fetchNotifications()
+    }
+    document.addEventListener("visibilitychange", onVisibility)
+
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener("visibilitychange", onVisibility)
+    }
   }, [fetchNotifications])
 
   const markAllRead = async () => {

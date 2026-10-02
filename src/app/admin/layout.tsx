@@ -1,9 +1,48 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
 import { useNotifications } from "@/lib/use-notifications"
 import { isWithinBusinessHours } from "@/lib/business-hours"
+
+// Shared AudioContext, unlocked on the first user interaction (browser autoplay policy)
+let audioCtx: AudioContext | null = null
+function getAudioCtx(): AudioContext | null {
+  if (typeof window === "undefined") return null
+  const w = window as any
+  const Ctx = w.AudioContext || w.webkitAudioContext
+  if (!Ctx) return null
+  if (!audioCtx) audioCtx = new Ctx()
+  return audioCtx
+}
+
+// Short 3-note chime played when a new order arrives (Web Audio, no asset needed)
+function playOrderSound() {
+  try {
+    const ctx = getAudioCtx()
+    if (!ctx) return
+    const play = () => {
+      const now = ctx.currentTime
+      const notes = [880, 1175, 1568]
+      notes.forEach((freq, i) => {
+        const t = now + i * 0.16
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.type = "sine"
+        osc.frequency.value = freq
+        gain.gain.setValueAtTime(0.0001, t)
+        gain.gain.exponentialRampToValueAtTime(0.35, t + 0.02)
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.15)
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        osc.start(t)
+        osc.stop(t + 0.16)
+      })
+    }
+    if (ctx.state === "suspended") ctx.resume().then(play).catch(() => {})
+    else play()
+  } catch {}
+}
 
 const menuItems = [
   { href: "/admin", label: "Dashboard", icon: "📊" },
@@ -26,6 +65,30 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const [trial, setTrial] = useState<any>(null)
   const { unread, notifications, markAllRead } = useNotifications()
+
+  // Prominent on-screen alert for new orders
+  const [orderAlert, setOrderAlert] = useState<any>(null)
+  const seenNotifIds = useRef<Set<string>>(new Set())
+
+  useEffect(() => {
+    const unreadOrders = notifications.filter((n: any) => n.type === "new_order" && !n.isRead)
+    const fresh = unreadOrders.find((n: any) => !seenNotifIds.current.has(n.id))
+    unreadOrders.forEach((n: any) => seenNotifIds.current.add(n.id))
+    if (fresh) {
+      setOrderAlert(fresh)
+      playOrderSound()
+    }
+  }, [notifications])
+
+  // Unlock audio on the first user interaction so order chimes can play
+  useEffect(() => {
+    const unlock = () => {
+      const ctx = getAudioCtx()
+      if (ctx && ctx.state === "suspended") ctx.resume().catch(() => {})
+    }
+    window.addEventListener("pointerdown", unlock, { once: true })
+    return () => window.removeEventListener("pointerdown", unlock)
+  }, [])
 
   useEffect(() => {
     fetch("/api/auth/me", { credentials: 'include', cache: 'no-store' })
@@ -109,6 +172,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-screen bg-gray-50" style={{ "--primary": store?.primaryColor || "#e11d48", "--secondary": store?.secondaryColor || "#f0abfc", "--btn": store?.buttonColor || "#e11d48" } as any}>
+      {/* ===== NEW ORDER ALERT ===== */}
+      {orderAlert && (
+        <div className="fixed top-3 left-1/2 -translate-x-1/2 z-[70] w-[94%] max-w-md">
+          <div className="animate-alert-in flex items-center gap-3 rounded-2xl bg-emerald-600 text-white shadow-2xl ring-4 ring-emerald-400/40 px-4 py-3">
+            <span className="text-2xl animate-bell">🔔</span>
+            <div className="flex-1 min-w-0">
+              <p className="font-bold leading-tight">{orderAlert.title || "Novo pedido!"}</p>
+              {orderAlert.message && <p className="text-sm text-white/90 truncate">{orderAlert.message}</p>}
+            </div>
+            <Link href="/admin/pedidos" onClick={() => setOrderAlert(null)}
+              className="shrink-0 rounded-xl bg-white text-emerald-700 font-bold text-sm px-3 py-2 hover:bg-emerald-50 transition">
+              Ver pedido
+            </Link>
+            <button onClick={() => setOrderAlert(null)} aria-label="Fechar"
+              className="shrink-0 text-white/80 hover:text-white text-lg leading-none">✕</button>
+          </div>
+        </div>
+      )}
+
       {/* ===== TOP BAR ===== */}
       <header className="bg-white shadow-sm sticky top-0 z-40">
         <div className="flex items-center justify-between px-4 py-2.5">
@@ -122,11 +204,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {/* Notificações */}
             <div className="relative">
               <button onClick={() => setShowNotif(!showNotif)} className="relative p-1">
-                <span className="text-xl">🔔</span>
+                <span className={`text-xl ${unread > 0 ? "animate-bell" : ""}`}>🔔</span>
                 {unread > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
-                    {unread > 9 ? "9+" : unread}
-                  </span>
+                  <>
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full animate-ping opacity-75" />
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                      {unread > 9 ? "9+" : unread}
+                    </span>
+                  </>
                 )}
               </button>
               {showNotif && (
@@ -153,15 +238,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               )}
             </div>
 
-            {/* Status da loja (mobile) */}
-            <span className={`lg:hidden px-2.5 py-1.5 rounded-full text-xs font-medium ${
-              storeOpen ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-            }`}>
-              {storeOpen ? "🟢 Aberta" : "🔴 Fechada"}
-            </span>
-
-            {/* Desktop actions */}
-            <span className={`hidden lg:inline-flex px-3 py-1.5 rounded-full text-sm font-medium ${
+            {/* Status da loja */}
+            <span className={`px-2.5 py-1.5 rounded-full text-xs font-medium sm:text-sm ${
               storeOpen ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
             }`}>
               {storeOpen ? "🟢 Aberta" : "🔴 Fechada"}
