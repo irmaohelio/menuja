@@ -153,8 +153,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               )}
             </div>
 
-            {/* Status da loja (apenas indicador visual) */}
-            <span className={`px-2.5 py-1.5 rounded-full text-xs font-medium ${
+            {/* Status da loja (mobile) */}
+            <span className={`lg:hidden px-2.5 py-1.5 rounded-full text-xs font-medium ${
               storeOpen ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
             }`}>
               {storeOpen ? "🟢 Aberta" : "🔴 Fechada"}
