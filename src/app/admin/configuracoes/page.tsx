@@ -9,6 +9,7 @@ export default function ConfiguracoesPage() {
   const [settings, setSettings] = useState<any>({})
   const [hours, setHours] = useState<any[]>([])
   const [saving, setSaving] = useState(false)
+  const [savingHour, setSavingHour] = useState<number | null>(null)
   const [tab, setTab] = useState("loja")
 
   useEffect(() => {
@@ -55,6 +56,27 @@ export default function ConfiguracoesPage() {
       alert("Erro de conexão: " + err)
     }
     setSaving(false)
+  }
+
+  const saveHour = async (dayOfWeek: number) => {
+    setSavingHour(dayOfWeek)
+    try {
+      const hour = hours.find(h => h.dayOfWeek === dayOfWeek)
+      if (!hour) return
+      const { id: _hid, storeId: _hsid, createdAt: _hct, updatedAt: _hut, ...cleanHour } = hour
+      const res = await fetch("/api/store/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ businessHours: [cleanHour] }),
+      })
+      const data = await res.json()
+      if (!data.success) {
+        alert("Erro ao salvar: " + (data.error || "Tente novamente"))
+      }
+    } catch (err) {
+      alert("Erro de conexão")
+    }
+    setSavingHour(null)
   }
 
   const handleLogo = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -240,6 +262,10 @@ export default function ConfiguracoesPage() {
                   }} className="px-2 py-1.5 border rounded-lg text-sm" />
                 </>
               )}
+              <button onClick={() => saveHour(h.dayOfWeek)} disabled={savingHour === h.dayOfWeek}
+                className="ml-auto px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 disabled:opacity-50">
+                {savingHour === h.dayOfWeek ? "Salvando..." : "Salvar"}
+              </button>
             </div>
           ))}
         </div>

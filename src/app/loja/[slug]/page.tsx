@@ -120,20 +120,59 @@ export default function LojaPage() {
   const featuredScrollRef = useRef<HTMLDivElement>(null)
   const scrollPausedRef = useRef(false)
 
-  useEffect(() => {
-    fetch(`/api/store/${slug}`).then(r => r.json()).then(data => {
+  // Extract the fetch logic so we can reuse it for initial load
+  const fetchStore = () => {
+    fetch(`/api/store/${slug}?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()).then(data => {
       if (data.success) {
         if (data.store.isBlocked) {
           setStore({ ...data.store, blocked: true })
         } else {
-          setStore(data.store)
-          // Set first category as active
-          const cats = data.store.categories?.filter((c: any) => c.products.length > 0)
-          if (cats?.length > 0) setActiveCategory(cats[0].id)
+          setStore((prev: any) => {
+            if (!prev) {
+              const cats = data.store.categories?.filter((c: any) => c.products.length > 0)
+              if (cats?.length > 0) setActiveCategory(cats[0].id)
+            }
+            return data.store
+          })
         }
       }
       setLoading(false)
-    })
+    }).catch(() => setLoading(false))
+  }
+
+  // Lightweight polling: only checks open/close status (no heavy joins)
+  const pollStatus = () => {
+    fetch(`/api/store/${slug}/status?t=${Date.now()}`, {
+      cache: 'no-store',
+      headers: { 'Pragma': 'no-cache', 'Cache-Control': 'no-cache' },
+    }).then(r => r.json()).then(data => {
+      setStore((prev: any) => {
+        if (!prev) return prev
+        if (prev.isTempClosed !== data.isTempClosed || prev.tempClosedMsg !== data.tempClosedMsg || prev.withinHours !== data.withinHours) {
+          return { ...prev, isTempClosed: data.isTempClosed, tempClosedMsg: data.tempClosedMsg, withinHours: data.withinHours }
+        }
+        return prev
+      })
+    }).catch(() => {})
+  }
+
+  useEffect(() => {
+    fetchStore()
+  }, [slug])
+
+  // Re-fetch store data when tab becomes visible (e.g. user switches back from admin)
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') pollStatus()
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => document.removeEventListener('visibilitychange', handleVisibility)
+  }, [slug])
+
+  // Poll open/close status every 1 second
+  useEffect(() => {
+    const interval = setInterval(pollStatus, 1000)
+    return () => clearInterval(interval)
   }, [slug])
 
   // Scroll detection for back to top button
@@ -446,7 +485,12 @@ export default function LojaPage() {
     </div>
   )
 
-  const isStoreOpen = store.isOpen && !store.isTempClosed
+  // isTempClosed → fechamento temporário
+  // withinHours → dentro do horário de funcionamento
+  // Se não tem horários configurados, loja aberta por padrão
+  const hasBusinessHours = store.businessHours && store.businessHours.length > 0
+  const withinHours = hasBusinessHours ? store.withinHours !== false : true
+  const isStoreOpen = !store.isTempClosed && withinHours
 
   return (
     <div className="min-h-screen pb-20" style={{ backgroundColor: store.backgroundColor || '#f9fafb', "--primary": store.primaryColor, "--secondary": store.secondaryColor, "--button": store.buttonColor } as any}>
@@ -472,7 +516,7 @@ export default function LojaPage() {
                     {store.businessHours && store.businessHours.length > 0 && (() => {
                       const today = new Date().getDay()
                       const todayHours = store.businessHours.find((h: any) => h.dayOfWeek === today)
-                      if (todayHours && !todayHours.isClosed) {
+                      if (todayHours && todayHours.isOpen) {
                         return (
                           <span className="text-xs text-white/70 font-medium">
                             {todayHours.openTime?.substring(0, 5)} - {todayHours.closeTime?.substring(0, 5)}

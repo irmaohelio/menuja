@@ -30,7 +30,7 @@ export async function getCurrentUser() {
 
   const user = await prisma.user.findUnique({
     where: { id: payload.userId as string },
-    include: { store: true },
+    include: { store: { include: { businessHours: { orderBy: { dayOfWeek: 'asc' } } } } },
   })
 
   return user

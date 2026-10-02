@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { success, error } from '@/lib/api'
+import { isWithinBusinessHours } from '@/lib/business-hours'
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,12 +18,16 @@ export async function POST(req: NextRequest) {
 
     const store = await prisma.store.findUnique({
       where: { slug: storeSlug },
-      include: { settings: true },
+      include: { settings: true, businessHours: true },
     })
 
     if (!store) return error('Loja não encontrada', 404)
-    if (!store.isOpen) return error('Loja fechada no momento')
     if (store.isTempClosed) return error(store.tempClosedMsg || 'Loja temporariamente fechada')
+    // Open/closed is driven by the configured business hours, not the legacy manual toggle.
+    // Stores without configured hours are considered open (matches the storefront behavior).
+    if (store.businessHours.length > 0 && !isWithinBusinessHours(store.businessHours)) {
+      return error('Loja fechada no momento')
+    }
 
     // Calcular totais
     let subtotal = 0

@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 export const dynamic = 'force-dynamic'
 import { prisma } from '@/lib/prisma'
 import { success, error } from '@/lib/api'
+import { isWithinBusinessHours, getBrazilNow } from '@/lib/business-hours'
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -60,15 +61,20 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     return success({ store: { name: store.name, slug: store.slug, logo: store.logo, isBlocked: true } })
   }
 
-  // Filter categories by availableDays (current day of week)
-  const today = new Date().getDay() // 0=Sun, 1=Mon, ..., 6=Sat
+  // Filter categories by availableDays (Brazil current day of week)
+  const today = getBrazilNow().dayOfWeek // 0=Sun, 1=Mon, ..., 6=Sat
+  const withinHours = isWithinBusinessHours(store.businessHours)
+
   const filteredStore = {
     ...store,
+    withinHours,
     categories: store.categories.filter((cat: any) => {
       if (!cat.availableDays || cat.availableDays.length === 0) return true
       return cat.availableDays.includes(today)
     }),
   }
 
-  return success({ store: filteredStore })
+  const res = success({ store: filteredStore })
+  res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate')
+  return res
 }

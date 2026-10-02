@@ -3,6 +3,7 @@ import { useState, useEffect } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
 import { useNotifications } from "@/lib/use-notifications"
+import { isWithinBusinessHours } from "@/lib/business-hours"
 
 const menuItems = [
   { href: "/admin", label: "Dashboard", icon: "📊" },
@@ -22,7 +23,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [authError, setAuthError] = useState(false)
   const [showNotif, setShowNotif] = useState(false)
   const [copied, setCopied] = useState(false)
-  const [showStoreMenu, setShowStoreMenu] = useState(false)
+
   const [trial, setTrial] = useState<any>(null)
   const { unread, notifications, markAllRead } = useNotifications()
 
@@ -50,11 +51,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     router.push("/")
   }
 
-  const toggleStore = async () => {
-    const res = await fetch("/api/store/toggle", { method: "POST" })
-    const data = await res.json()
-    if (data.success) setStore({ ...store, isOpen: data.isOpen })
-  }
+  // Open/closed is driven by business hours (no hours configured → open)
+  const hasBusinessHours = store?.businessHours && store.businessHours.length > 0
+  const storeOpen = !store?.isTempClosed && (!hasBusinessHours || isWithinBusinessHours(store.businessHours))
 
   const copyStoreLink = () => {
     const text = `${window.location.origin}/loja/${store?.slug}`
@@ -122,7 +121,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="flex items-center gap-2">
             {/* Notificações */}
             <div className="relative">
-              <button onClick={() => { setShowNotif(!showNotif); setShowStoreMenu(false) }} className="relative p-1">
+              <button onClick={() => setShowNotif(!showNotif)} className="relative p-1">
                 <span className="text-xl">🔔</span>
                 {unread > 0 && (
                   <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
@@ -154,46 +153,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               )}
             </div>
 
-            {/* Menu da loja (mobile) */}
-            <div className="relative lg:hidden">
-              <button onClick={() => { setShowStoreMenu(!showStoreMenu); setShowNotif(false) }}
-                className={`px-2.5 py-1.5 rounded-full text-xs font-medium transition ${
-                  store?.isOpen ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                }`}>
-                {store?.isOpen ? "🟢" : "🔴"}
-              </button>
-              {showStoreMenu && (
-                <div className="absolute right-0 top-10 w-64 bg-white rounded-xl shadow-lg border z-50 p-2 space-y-1">
-                  <button onClick={() => { toggleStore(); setShowStoreMenu(false) }}
-                    className="w-full text-left px-3 py-2.5 rounded-lg text-sm hover:bg-gray-50 flex items-center gap-2">
-                    {store?.isOpen ? "🔴 Fechar loja" : "🟢 Abrir loja"}
-                  </button>
-                  {store?.slug && (
-                    <a href={`/loja/${store.slug}`} target="_blank"
-                      className="block px-3 py-2.5 rounded-lg text-sm hover:bg-gray-50 flex items-center gap-2">
-                      👁️ Ver loja
-                    </a>
-                  )}
-                  <button onClick={() => { copyStoreLink(); setShowStoreMenu(false) }}
-                    className="w-full text-left px-3 py-2.5 rounded-lg text-sm hover:bg-gray-50 flex items-center gap-2">
-                    {copied ? "✅ Link copiado!" : "🔗 Copiar link da loja"}
-                  </button>
-                  <hr />
-                  <button onClick={handleLogout}
-                    className="w-full text-left px-3 py-2.5 rounded-lg text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
-                    🚪 Sair
-                  </button>
-                </div>
-              )}
-            </div>
+            {/* Status da loja (apenas indicador visual) */}
+            <span className={`px-2.5 py-1.5 rounded-full text-xs font-medium ${
+              storeOpen ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+            }`}>
+              {storeOpen ? "🟢 Aberta" : "🔴 Fechada"}
+            </span>
 
             {/* Desktop actions */}
-            <button onClick={toggleStore}
-              className={`hidden lg:inline-flex px-3 py-1.5 rounded-full text-sm font-medium transition ${
-                store?.isOpen ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-              }`}>
-              {store?.isOpen ? "🟢 Aberta" : "🔴 Fechada"}
-            </button>
+            <span className={`hidden lg:inline-flex px-3 py-1.5 rounded-full text-sm font-medium ${
+              storeOpen ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+            }`}>
+              {storeOpen ? "🟢 Aberta" : "🔴 Fechada"}
+            </span>
             {store?.slug && (
               <a href={`/loja/${store.slug}`} target="_blank" className="hidden lg:inline text-sm text-gray-500">Ver loja ↗</a>
             )}
