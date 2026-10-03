@@ -3,12 +3,22 @@ import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
 import { signToken } from '@/lib/auth'
 import { success, error } from '@/lib/api'
+import { rateLimit, clientIp } from '@/lib/rate-limit'
 
 export async function POST(req: NextRequest) {
   try {
     const { email, password } = await req.json()
 
     if (!email || !password) return error('Preencha todos os campos')
+
+    // Anti força-bruta: por IP e por e-mail
+    const ip = clientIp(req)
+    const byIp = rateLimit(`login:ip:${ip}`, 12, 5 * 60 * 1000)
+    const byEmail = rateLimit(`login:email:${String(email).toLowerCase()}`, 8, 5 * 60 * 1000)
+    const blocked = !byIp.ok ? byIp : !byEmail.ok ? byEmail : null
+    if (blocked) {
+      return error(`Muitas tentativas. Tente novamente em ${blocked.retryAfter}s.`, 429)
+    }
 
     const user = await prisma.user.findUnique({
       where: { email },

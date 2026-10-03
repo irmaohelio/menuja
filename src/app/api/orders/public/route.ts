@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { success, error } from '@/lib/api'
 import { isWithinBusinessHours } from '@/lib/business-hours'
 import { findStoreCustomer, attachCustomerIdentifiers, createStoreCustomer, normalizeEmail, normalizePhone } from '@/lib/customers'
+import { rateLimit, clientIp } from '@/lib/rate-limit'
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,6 +17,12 @@ export async function POST(req: NextRequest) {
 
     if (!storeSlug || !customerName || !items?.length) {
       return error('Dados incompletos')
+    }
+
+    // Anti-spam: limita a quantidade de pedidos por IP
+    const rl = rateLimit(`order:ip:${clientIp(req)}`, 20, 10 * 60 * 1000)
+    if (!rl.ok) {
+      return error(`Muitos pedidos em sequência. Aguarde ${rl.retryAfter}s.`, 429)
     }
 
     const store = await prisma.store.findUnique({
