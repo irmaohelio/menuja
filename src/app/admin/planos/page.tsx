@@ -70,18 +70,60 @@ export default function PlanosPage() {
   const [paymentData, setPaymentData] = useState<any>(null)
   const [storeId, setStoreId] = useState<string | null>(null)
   const [hasCpf, setHasCpf] = useState(true)
+  const [activated, setActivated] = useState(false)
 
   useEffect(() => {
     fetch("/api/trial/status").then(r => r.json()).then(data => {
       if (data.success) {
         setTrial(data)
-        setSelectedPlan(data.plan !== "trial" ? data.plan : null)
         setStoreId(data.storeId)
         setHasCpf(data.hasCpf)
+
+        if (data.isPaid) {
+          setSelectedPlan(data.plan)
+          try { localStorage.removeItem(`menuja_pending_${data.storeId}`) } catch {}
+        } else if (data.planStatus === "pending") {
+          setSelectedPlan(data.plan)
+          // Reexibe o pagamento pendente salvo (boleto/PIX) sem gerar outro
+          try {
+            const saved = localStorage.getItem(`menuja_pending_${data.storeId}`)
+            if (saved) {
+              const p = JSON.parse(saved)
+              if (p.planId === data.plan) {
+                setPaymentMethod(p.method)
+                setPaymentData({ success: true, payment: p.payment })
+                setShowPayment(true)
+              }
+            }
+          } catch {}
+        } else {
+          setSelectedPlan(null)
+        }
       }
       setLoading(false)
     })
   }, [])
+
+  // Detecta a confirmação do pagamento automaticamente (webhook)
+  useEffect(() => {
+    if (!showPayment || !paymentData) return
+    let stop = false
+    const check = async () => {
+      try {
+        const r = await fetch("/api/trial/status", { cache: "no-store" })
+        const d = await r.json()
+        if (d.success && d.isPaid) {
+          stop = true
+          setTrial(d)
+          setActivated(true)
+          try { localStorage.removeItem(`menuja_pending_${d.storeId}`) } catch {}
+        }
+      } catch {}
+    }
+    check()
+    const id = setInterval(() => { if (!stop) check() }, 5000)
+    return () => clearInterval(id)
+  }, [showPayment, paymentData])
 
   const handleSelectPlan = async (planId: string) => {
     setSelectedPlan(planId)
@@ -105,9 +147,16 @@ export default function PlanosPage() {
       })
 
       const data = await res.json()
-      
+
       if (data.success) {
         setPaymentData(data)
+        // Guarda para reexibir caso o lojista saia e volte
+        try {
+          localStorage.setItem(
+            `menuja_pending_${storeId}`,
+            JSON.stringify({ planId: selectedPlan, method: paymentMethod, payment: data.payment })
+          )
+        } catch {}
       } else {
         alert("Erro ao processar pagamento: " + (data.error || "Tente novamente"))
       }
@@ -122,6 +171,25 @@ export default function PlanosPage() {
     return (
       <div className="animate-pulse space-y-4">
         {[1,2,3].map(i => <div key={i} className="h-64 bg-gray-200 rounded-2xl" />)}
+      </div>
+    )
+  }
+
+  // Pagamento confirmado (ativado automaticamente)
+  if (activated) {
+    return (
+      <div className="max-w-lg mx-auto">
+        <div className="bg-white rounded-2xl shadow-sm border p-8 text-center">
+          <p className="text-6xl mb-4">🎉</p>
+          <h2 className="text-2xl font-bold mb-2">Pagamento confirmado!</h2>
+          <p className="text-gray-500 mb-6">Seu plano foi ativado com sucesso. Bom trabalho e boas vendas!</p>
+          <button
+            onClick={() => router.push("/admin")}
+            className="px-6 py-3 bg-rose-600 text-white rounded-xl font-bold hover:bg-rose-700 transition"
+          >
+            Ir para o painel
+          </button>
+        </div>
       </div>
     )
   }
@@ -272,9 +340,25 @@ export default function PlanosPage() {
             ? "Seu período de teste expirou. Escolha um plano para continuar."
             : trial?.isPaid 
               ? `Seu plano atual: ${trial.plan.toUpperCase()}`
-              : "Você está no período de teste gratuito de 14 dias."}
+              : trial?.planStatus === "pending"
+                ? "Você tem um pagamento pendente. Finalize para ativar seu plano."
+                : "Você está no período de teste gratuito de 14 dias."}
         </p>
       </div>
+
+      {trial?.planStatus === "pending" && !trial?.isPaid && (
+        <div className="max-w-5xl mx-auto mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-sm text-amber-800">
+            ⏳ Existe um pagamento pendente do plano <strong>{plans.find(p => p.id === trial.plan)?.name || trial.plan}</strong>.
+          </p>
+          <button
+            onClick={() => { setSelectedPlan(trial.plan); setShowPayment(true); setPaymentData(null) }}
+            className="px-4 py-2 bg-amber-500 text-white rounded-xl text-sm font-bold hover:bg-amber-600 transition whitespace-nowrap"
+          >
+            Ver pagamento
+          </button>
+        </div>
+      )}
 
       <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
         {plans.map((plan) => (

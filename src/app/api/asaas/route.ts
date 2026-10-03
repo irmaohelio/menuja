@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { getCurrentStore } from "@/lib/auth"
 
 const ASAAS_API_URL = "https://api.asaas.com/v3"
 
@@ -8,17 +9,29 @@ function getApiKey() {
 }
 
 const digits = (v?: string | null) => (v || "").replace(/\D/g, "")
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
+const PLANS: Record<string, { name: string; value: number; cycle: string }> = {
+  monthly: { name: "Plano Mensal", value: 34.9, cycle: "MONTHLY" },
+  semiannual: { name: "Plano Semestral", value: 199.9, cycle: "SEMIANNUALLY" },
+  annual: { name: "Plano Anual", value: 374.9, cycle: "YEARLY" },
+}
+
+type PaymentMethod = "pix" | "boleto"
+const toBillingType = (m: PaymentMethod) => (m === "pix" ? "PIX" : "BOLETO")
+
+async function asaas(path: string, init?: RequestInit) {
+  return fetch(`${ASAAS_API_URL}${path}`, {
+    ...init,
+    headers: { access_token: getApiKey(), "Content-Type": "application/json", ...(init?.headers || {}) },
+  })
+}
 
 // Create or get Asaas customer
 async function getOrCreateCustomer(store: any) {
-  const apiKey = getApiKey()
-
-  // Check if customer already exists in Asaas
   if (store.asaasCustomerId) {
     try {
-      const res = await fetch(`${ASAAS_API_URL}/customers/${store.asaasCustomerId}`, {
-        headers: { access_token: apiKey },
-      })
+      const res = await asaas(`/customers/${store.asaasCustomerId}`)
       if (res.ok) return store.asaasCustomerId
     } catch {}
   }
@@ -26,13 +39,8 @@ async function getOrCreateCustomer(store: any) {
   const cpfCnpj = digits(store.cpfCnpj)
   const phone = digits(store.phone)
 
-  // Create new customer (omite campos vazios para não serem rejeitados pela Asaas)
-  const res = await fetch(`${ASAAS_API_URL}/customers`, {
+  const res = await asaas(`/customers`, {
     method: "POST",
-    headers: {
-      access_token: apiKey,
-      "Content-Type": "application/json",
-    },
     body: JSON.stringify({
       name: store.name,
       email: store.email || `${store.slug}@menuja.com.br`,
@@ -48,73 +56,129 @@ async function getOrCreateCustomer(store: any) {
   }
 
   const customer = await res.json()
-
-  // Save Asaas customer ID
-  await prisma.store.update({
-    where: { id: store.id },
-    data: { asaasCustomerId: customer.id },
-  })
-
+  await prisma.store.update({ where: { id: store.id }, data: { asaasCustomerId: customer.id } })
   return customer.id
 }
 
-// POST /api/asaas  → cria a assinatura e retorna a 1ª cobrança (PIX ou Boleto)
+// Busca a 1ª cobrança em aberto de uma assinatura (com pequenas tentativas)
+async function getOpenPayment(subscriptionId: string) {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const res = await asaas(`/subscriptions/${subscriptionId}/payments`)
+    if (res.ok) {
+      const data = await res.json()
+      const open = (data.data || []).find((p: any) => ["PENDING", "OVERDUE", "AWAITING_RISK_ANALYSIS"].includes(p.status))
+      if (open) return open
+    }
+    await sleep(1200)
+  }
+  return null
+}
+
+async function buildPaymentInfo(payment: any, method: PaymentMethod) {
+  if (method === "pix") {
+    const pixRes = await asaas(`/payments/${payment.id}/pixQrCode`)
+    const pix = pixRes.ok ? await pixRes.json() : {}
+    return { ...pix, paymentId: payment.id }
+  }
+  return {
+    bankSlipUrl: payment.bankSlipUrl,
+    invoiceUrl: payment.invoiceUrl,
+    dueDate: payment.dueDate,
+    paymentId: payment.id,
+  }
+}
+
+// Cancela uma assinatura e suas cobranças em aberto (evita boleto duplicado)
+async function cancelSubscription(subscriptionId: string) {
+  try {
+    const res = await asaas(`/subscriptions/${subscriptionId}/payments`)
+    if (res.ok) {
+      const data = await res.json()
+      for (const p of data.data || []) {
+        if (["PENDING", "OVERDUE", "AWAITING_RISK_ANALYSIS"].includes(p.status)) {
+          await asaas(`/payments/${p.id}`, { method: "DELETE" })
+        }
+      }
+    }
+  } catch {}
+  try { await asaas(`/subscriptions/${subscriptionId}`, { method: "DELETE" }) } catch {}
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { storeId, planId, paymentMethod } = body
+    const { storeId, planId, paymentMethod } = body as { storeId: string; planId: string; paymentMethod: PaymentMethod }
 
     if (!storeId || !planId || !paymentMethod) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    const store = await prisma.store.findUnique({ where: { id: storeId } })
-    if (!store) {
-      return NextResponse.json({ error: "Store not found" }, { status: 404 })
+    // Só o próprio lojista pode gerar cobrança para a sua loja
+    const current = await getCurrentStore()
+    if (!current || current.id !== storeId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Plan pricing
-    const plans: Record<string, { name: string; value: number; cycle: string }> = {
-      monthly: { name: "Plano Mensal", value: 34.9, cycle: "MONTHLY" },
-      semiannual: { name: "Plano Semestral", value: 199.9, cycle: "SEMIANNUALLY" },
-      annual: { name: "Plano Anual", value: 374.9, cycle: "YEARLY" },
-    }
-
-    const plan = plans[planId]
-    if (!plan) {
-      return NextResponse.json({ error: "Invalid plan" }, { status: 400 })
-    }
+    const plan = PLANS[planId]
+    if (!plan) return NextResponse.json({ error: "Invalid plan" }, { status: 400 })
 
     if (!getApiKey()) {
       return NextResponse.json({ error: "Pagamento indisponível no momento (chave Asaas não configurada)." }, { status: 500 })
     }
 
+    const store = await prisma.store.findUnique({ where: { id: storeId } })
+    if (!store) return NextResponse.json({ error: "Store not found" }, { status: 404 })
+
+    const billingType = toBillingType(paymentMethod)
+
+    // Reaproveita assinatura existente para não gerar cobrança duplicada
+    if (store.asaasSubscriptionId) {
+      const subRes = await asaas(`/subscriptions/${store.asaasSubscriptionId}`)
+      if (subRes.ok) {
+        const existingSub = await subRes.json()
+        const [refStore, refPlan] = (existingSub.externalReference || "").split("_")
+        const samePlan = refStore === storeId && refPlan === planId
+
+        if (samePlan) {
+          const open = await getOpenPayment(store.asaasSubscriptionId)
+          if (open && open.billingType === billingType) {
+            // Mesma assinatura, mesma forma → devolve a cobrança em aberto
+            const paymentInfo = await buildPaymentInfo(open, paymentMethod)
+            return NextResponse.json({
+              success: true,
+              reused: true,
+              subscription: { id: existingSub.id, status: existingSub.status, value: existingSub.value, nextDueDate: existingSub.nextDueDate },
+              payment: { method: paymentMethod, ...paymentInfo },
+            })
+          }
+          // Existe assinatura do mesmo plano mas sem cobrança em aberto (já paga?)
+          if (!open) {
+            return NextResponse.json({ error: "Já existe uma assinatura deste plano. Aguarde a confirmação do pagamento." }, { status: 409 })
+          }
+        }
+        // Plano ou forma diferentes → cancela a assinatura antiga antes de criar nova
+        await cancelSubscription(store.asaasSubscriptionId)
+      }
+    }
+
     // Get or create Asaas customer
     const customerId = await getOrCreateCustomer(store)
-    const apiKey = getApiKey()
 
     // nextDueDate é obrigatório na Asaas (primeira cobrança)
     const dueDays = paymentMethod === "boleto" ? 3 : 1
-    const nextDueDate = new Date(Date.now() + dueDays * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+    const nextDueDate = new Date(Date.now() + dueDays * 864e5).toISOString().slice(0, 10)
 
-    // Create subscription
-    const subscriptionData: any = {
-      customer: customerId,
-      billingType: paymentMethod === "pix" ? "PIX" : "BOLETO",
-      value: plan.value,
-      cycle: plan.cycle,
-      nextDueDate,
-      description: `MenuJá - ${plan.name}`,
-      externalReference: `${storeId}_${planId}`,
-    }
-
-    const res = await fetch(`${ASAAS_API_URL}/subscriptions`, {
+    const res = await asaas(`/subscriptions`, {
       method: "POST",
-      headers: {
-        access_token: apiKey,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(subscriptionData),
+      body: JSON.stringify({
+        customer: customerId,
+        billingType,
+        value: plan.value,
+        cycle: plan.cycle,
+        nextDueDate,
+        description: `MenuJá - ${plan.name}`,
+        externalReference: `${storeId}_${planId}`,
+      }),
     })
 
     if (!res.ok) {
@@ -124,46 +188,12 @@ export async function POST(req: NextRequest) {
     }
 
     const subscription = await res.json()
+    const open = await getOpenPayment(subscription.id)
+    const paymentInfo = open ? await buildPaymentInfo(open, paymentMethod) : {}
 
-    // Busca a 1ª cobrança (pode levar um instante para ser gerada)
-    let payment: any = null
-    for (let attempt = 0; attempt < 3 && !payment; attempt++) {
-      const paymentsRes = await fetch(`${ASAAS_API_URL}/subscriptions/${subscription.id}/payments`, {
-        headers: { access_token: apiKey },
-      })
-      if (paymentsRes.ok) {
-        const paymentsData = await paymentsRes.json()
-        payment = paymentsData.data?.[0] || null
-      }
-      if (!payment) await new Promise((r) => setTimeout(r, 1500))
-    }
-
-    let paymentInfo: any = {}
-
-    if (payment) {
-      if (paymentMethod === "pix") {
-        const pixRes = await fetch(`${ASAAS_API_URL}/payments/${payment.id}/pixQrCode`, {
-          headers: { access_token: apiKey },
-        })
-        if (pixRes.ok) paymentInfo = await pixRes.json()
-      } else {
-        paymentInfo = {
-          bankSlipUrl: payment.bankSlipUrl,
-          invoiceUrl: payment.invoiceUrl,
-          dueDate: payment.dueDate,
-        }
-      }
-      paymentInfo.paymentId = payment.id
-    }
-
-    // Update store with subscription info
     await prisma.store.update({
       where: { id: storeId },
-      data: {
-        plan: planId,
-        planStatus: "pending",
-        asaasSubscriptionId: subscription.id,
-      },
+      data: { plan: planId, planStatus: "pending", asaasSubscriptionId: subscription.id },
     })
 
     return NextResponse.json({
@@ -174,10 +204,7 @@ export async function POST(req: NextRequest) {
         value: subscription.value,
         nextDueDate: subscription.nextDueDate,
       },
-      payment: {
-        method: paymentMethod,
-        ...paymentInfo,
-      },
+      payment: { method: paymentMethod, ...paymentInfo },
     })
   } catch (error: any) {
     console.error("Asaas error:", error)
