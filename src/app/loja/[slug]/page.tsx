@@ -219,26 +219,13 @@ export default function LojaPage() {
     return () => clearInterval(interval)
   }, [slug])
 
-  // Manifest específico da loja (permite instalar o app do cliente)
-  useEffect(() => {
-    let link = document.querySelector('link[rel="manifest"]') as HTMLLinkElement | null
-    if (!link) {
-      link = document.createElement('link')
-      link.rel = 'manifest'
-      document.head.appendChild(link)
-    }
-    const prev = link.getAttribute('href')
-    link.setAttribute('href', `/api/store/${slug}/manifest`)
-    return () => { if (prev) link!.setAttribute('href', prev) }
-  }, [slug])
-
   // Convite para instalar o app
   useEffect(() => {
     const standalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone
     if (standalone) return
     const ios = /iPad|iPhone|iPod/.test(navigator.userAgent)
     setIsIOS(ios)
-    try { if (localStorage.getItem(`install_dismissed_${slug}`)) return } catch {}
+    try { if (sessionStorage.getItem(`install_hide_${slug}`)) return } catch {}
 
     const onBIP = (e: any) => {
       e.preventDefault()
@@ -247,12 +234,12 @@ export default function LojaPage() {
     }
     window.addEventListener('beforeinstallprompt', onBIP)
 
-    let timer: any
-    if (ios) timer = setTimeout(() => setShowInstall(true), 3000)
+    // Mostra o convite mesmo sem o evento nativo (o Chrome pode não disparar na 1ª visita)
+    const timer = setTimeout(() => setShowInstall(true), 4000)
 
     return () => {
       window.removeEventListener('beforeinstallprompt', onBIP)
-      if (timer) clearTimeout(timer)
+      clearTimeout(timer)
     }
   }, [slug])
 
@@ -266,7 +253,7 @@ export default function LojaPage() {
 
   const dismissInstall = () => {
     setShowInstall(false)
-    try { localStorage.setItem(`install_dismissed_${slug}`, '1') } catch {}
+    try { sessionStorage.setItem(`install_hide_${slug}`, '1') } catch {}
   }
 
   // Scroll detection for back to top button
@@ -1401,16 +1388,22 @@ export default function LojaPage() {
       {showInstall && (
         <div className="fixed bottom-16 left-0 right-0 z-40 px-3 pointer-events-none">
           <div className="max-w-lg mx-auto bg-gray-900 text-white rounded-2xl shadow-2xl p-3 flex items-center gap-3 pointer-events-auto">
-            <span className="text-2xl">📲</span>
+            {store?.logo ? (
+              <img src={store.logo} alt="" className="w-9 h-9 rounded-xl object-cover shrink-0" />
+            ) : (
+              <span className="text-2xl">📲</span>
+            )}
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold leading-tight">Instalar o app da loja</p>
-              {isIOS ? (
+              {installEvt ? (
+                <p className="text-xs text-gray-300">Acesso rápido, direto da tela inicial do celular.</p>
+              ) : isIOS ? (
                 <p className="text-xs text-gray-300">Toque em Compartilhar (□↑) e em "Adicionar à Tela de Início".</p>
               ) : (
-                <p className="text-xs text-gray-300">Acesso rápido, direto da tela inicial do celular.</p>
+                <p className="text-xs text-gray-300">No menu do navegador (⋮), toque em "Instalar aplicativo" (ou "Adicionar à tela inicial").</p>
               )}
             </div>
-            {!isIOS && installEvt && (
+            {installEvt && (
               <button onClick={doInstall} className="shrink-0 px-3 py-2 rounded-xl text-sm font-bold text-white"
                 style={{ backgroundColor: store.buttonColor || store.primaryColor }}>
                 Instalar

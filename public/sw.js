@@ -2,6 +2,10 @@
 self.addEventListener('install', () => self.skipWaiting())
 self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()))
 
+// Alguns navegadores exigem um handler de fetch para considerar o app instalável.
+// Deixamos o navegador seguir o fluxo normal (sem interceptar as requisições).
+self.addEventListener('fetch', () => {})
+
 self.addEventListener('push', (event) => {
   let data = {}
   try {
