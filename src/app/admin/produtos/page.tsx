@@ -422,7 +422,7 @@ export default function ProdutosPage() {
                       </div>
                       <input type="file" accept="image/*" onChange={handleImage} className="hidden" />
                     </label>
-                    <span className="text-xs text-gray-500 mt-1 block">tamanho 250x250px</span>
+                    <span className="text-xs text-gray-500 mt-1 block">Ajustada automaticamente</span>
                   </div>
                 </div>
               </div>

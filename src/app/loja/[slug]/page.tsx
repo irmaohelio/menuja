@@ -666,7 +666,9 @@ export default function LojaPage() {
                       className="flex-shrink-0 bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100"
                       style={{ width: '120px', maxWidth: '120px', minWidth: '120px', flex: '0 0 120px', marginRight: '12px' }}>
                       {p.image && (
-                        <img src={p.image} alt={p.name} className="w-full h-auto" draggable={false} style={{ WebkitTouchCallout: 'none', userSelect: 'none' } as React.CSSProperties} onContextMenu={(e) => e.preventDefault()} />
+                        <div className="w-full aspect-[4/5] bg-gray-50 overflow-hidden">
+                          <img src={p.image} alt={p.name} className="w-full h-full object-cover" draggable={false} style={{ WebkitTouchCallout: 'none', userSelect: 'none' } as React.CSSProperties} onContextMenu={(e) => e.preventDefault()} />
+                        </div>
                       )}
                       <div className="p-2">
                         <p className="text-xs font-medium truncate">{p.name}</p>
@@ -724,8 +726,8 @@ export default function LojaPage() {
                       <div key={p.id} onClick={() => setSelectedProduct(p)}
                         className="bg-white rounded-2xl shadow-sm cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100">
                         {p.image && (
-                          <div className="w-full h-[250px] flex items-center justify-center bg-gray-50">
-                            <img src={p.image} alt={p.name} className="h-[90%] max-w-[95%] object-contain" />
+                          <div className="w-full aspect-[4/5] bg-gray-50 overflow-hidden">
+                            <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
                           </div>
                         )}
                         <div className="p-2.5">
@@ -1388,7 +1390,9 @@ function ProductModal({ product, store, onClose, onAdd }: {
           ×
         </button>
         {product.image && (
-          <img src={product.image} alt={product.name} className="w-full h-auto" />
+          <div className="w-full aspect-[4/5] bg-gray-50 overflow-hidden">
+            <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+          </div>
         )}
         <div className="p-5">
           <h3 className="text-xl font-bold">{product.name}</h3>

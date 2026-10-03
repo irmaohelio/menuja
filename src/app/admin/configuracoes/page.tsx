@@ -160,7 +160,7 @@ export default function ConfiguracoesPage() {
                 <input type="file" accept="image/*" onChange={handleLogo} className="hidden" />
               </label>
             </div>
-            <p className="text-xs text-gray-400 mt-1">Tamanho recomendado: <strong>200x200px</strong></p>
+            <p className="text-xs text-gray-400 mt-1">Ajustada automaticamente (quadrada)</p>
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Banner da loja</label>
@@ -182,7 +182,7 @@ export default function ConfiguracoesPage() {
                 </div>
                 <input type="file" accept="image/*" onChange={handleBanner} className="hidden" />
               </label>
-              <p className="text-xs text-gray-400 text-center">Aparece no topo da página da loja • Tamanho recomendado: <strong>780x280px</strong></p>
+              <p className="text-xs text-gray-400 text-center">Aparece no topo da página da loja • ajustado automaticamente (proporção larga)</p>
             </div>
           </div>
           <div>

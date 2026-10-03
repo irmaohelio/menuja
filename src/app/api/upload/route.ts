@@ -4,6 +4,22 @@ import sharp from 'sharp'
 import { getCurrentStore } from '@/lib/auth'
 import { success, error, unauthorized } from '@/lib/api'
 
+export const runtime = 'nodejs'
+
+// Proporção fixa por tipo de imagem: todas ficam padronizadas (recorte automático)
+function targetFor(type: string) {
+  switch (type) {
+    case 'logo':
+      return { width: 200, height: 200, position: 'centre' as const }
+    case 'banner':
+      return { width: 1560, height: 320, position: 'centre' as const }
+    case 'product':
+    default:
+      // 4:5 retrato; 'attention' escolhe a região mais interessante da foto
+      return { width: 720, height: 900, position: 'attention' as const }
+  }
+}
+
 export async function POST(req: NextRequest) {
   const store = await getCurrentStore()
   if (!store) return unauthorized()
@@ -14,45 +30,27 @@ export async function POST(req: NextRequest) {
 
   if (!file) return error('Nenhum arquivo enviado')
 
-  // Convert File to Buffer
-  const arrayBuffer = await file.arrayBuffer()
-  const buffer = Buffer.from(arrayBuffer)
+  const buffer = Buffer.from(await file.arrayBuffer())
+  const { width, height, position } = targetFor(type)
 
-  // Resize based on type
-  let width: number, height: number
-  
-  switch (type) {
-    case 'logo':
-      width = 200
-      height = 200
-      break
-    case 'banner':
-      width = 780
-      height = 280
-      break
-    case 'product':
-    default:
-      width = 800
-      height = 800
-      break
-  }
+  try {
+    const resized = await sharp(buffer)
+      .rotate() // corrige a orientação de fotos tiradas pelo celular (EXIF)
+      .resize(width, height, { fit: 'cover', position })
+      .webp({ quality: 82 })
+      .toBuffer()
 
-  const resized = await sharp(buffer)
-    .resize(width, height, { 
-      fit: 'inside',
-      withoutEnlargement: false
+    // Isola as imagens por loja
+    const filename = `uploads/${store.slug}/${type}/${Date.now()}-${Math.random().toString(36).slice(2)}.webp`
+
+    const blob = await put(filename, resized, {
+      access: 'public',
+      contentType: 'image/webp',
     })
-    .jpeg({ quality: 80 })
-    .toBuffer()
 
-  const ext = 'jpg'
-  // Isolate images by store slug
-  const filename = `uploads/${store.slug}/${type}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-
-  const blob = await put(filename, resized, {
-    access: 'public',
-    contentType: 'image/jpeg',
-  })
-
-  return success({ url: blob.url })
+    return success({ url: blob.url })
+  } catch (e) {
+    console.error('[UPLOAD] Falha ao processar imagem:', e)
+    return error('Não foi possível processar a imagem. Use JPG, PNG ou WEBP.', 400)
+  }
 }
