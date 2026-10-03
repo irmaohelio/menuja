@@ -104,6 +104,38 @@ export default function ConfiguracoesPage() {
     setTestingNotify(false)
   }
 
+  const urlBase64ToUint8Array = (base64: string) => {
+    const padding = "=".repeat((4 - (base64.length % 4)) % 4)
+    const raw = atob((base64 + padding).replace(/-/g, "+").replace(/_/g, "/"))
+    const arr = new Uint8Array(raw.length)
+    for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i)
+    return arr
+  }
+
+  const enablePush = async () => {
+    try {
+      if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+        alert("Este navegador não suporta notificações push."); return
+      }
+      const reg = await navigator.serviceWorker.register("/sw.js")
+      const perm = await Notification.requestPermission()
+      if (perm !== "granted") { alert("Permissão de notificação negada."); return }
+      const keyRes = await fetch("/api/push/public-key")
+      const { key } = await keyRes.json()
+      if (!key) { alert("As notificações push ainda não estão configuradas no servidor."); return }
+      const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(key) })
+      const res = await fetch("/api/push/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(sub),
+      })
+      const data = await res.json()
+      alert(data.success ? "Notificações ativadas neste aparelho!" : data.error || "Falha ao ativar")
+    } catch (e: any) {
+      alert("Erro ao ativar notificações: " + (e?.message || e))
+    }
+  }
+
   const handleLogo = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -403,6 +435,17 @@ export default function ConfiguracoesPage() {
             className="px-5 py-2.5 rounded-xl text-white font-medium disabled:opacity-50" style={{ backgroundColor: "var(--btn)" }}>
             {testingNotify ? "Enviando..." : "Enviar teste"}
           </button>
+
+          <div className="border-t pt-5">
+            <h3 className="font-bold">📱 Notificações no celular (push)</h3>
+            <p className="text-sm text-gray-500 mt-1">
+              Instale o app ("Adicionar à tela inicial") e receba um aviso no celular a cada pedido, mesmo com o app fechado.
+            </p>
+            <button onClick={enablePush}
+              className="mt-3 px-5 py-2.5 rounded-xl text-white font-medium" style={{ backgroundColor: "var(--btn)" }}>
+              Ativar neste aparelho
+            </button>
+          </div>
         </div>
       )}
 

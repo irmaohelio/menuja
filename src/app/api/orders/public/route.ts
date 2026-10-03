@@ -7,6 +7,7 @@ import { findStoreCustomer, attachCustomerIdentifiers, createStoreCustomer, norm
 import { rateLimit, clientIp } from '@/lib/rate-limit'
 import { validateCoupon } from '@/lib/coupons'
 import { sendOrderWhatsApp, orderWhatsAppText } from '@/lib/notify'
+import { sendStorePush } from '@/lib/push'
 
 export async function POST(req: NextRequest) {
   try {
@@ -215,6 +216,14 @@ export async function POST(req: NextRequest) {
         customerNeighborhood,
       }),
     )
+
+    // Notificação push nos aparelhos inscritos (se configurado)
+    await sendStorePush(store.id, {
+      title: '🔔 Novo pedido!',
+      body: `#${order.orderNumber} • ${customerName} • R$ ${total.toFixed(2)}`,
+      url: '/admin/pedidos',
+      tag: `order-${order.id}`,
+    })
 
     return success({ order })
   } catch (e: any) {

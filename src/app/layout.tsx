@@ -5,6 +5,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  themeColor: "#e11d48",
 };
 
 export const metadata: Metadata = {
@@ -14,6 +15,15 @@ export const metadata: Metadata = {
   authors: [{ name: "MenuJá" }],
   creator: "MenuJá",
   metadataBase: new URL("https://menuja.app.br"),
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [
+      { url: "/favicon.png", type: "image/png" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
+  },
+  appleWebApp: { capable: true, statusBarStyle: "default", title: "MenuJá" },
   alternates: {
     canonical: "https://menuja.app.br",
   },
@@ -56,8 +66,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="pt-BR">
       <head>
-        <link rel="icon" href="/favicon.ico" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

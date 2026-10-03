@@ -23,7 +23,8 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "sharp": "^0.35.3",
-    "uuid": "^14.0.1"
+    "uuid": "^14.0.1",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -34,6 +35,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/uuid": "^10.0.0",
+    "@types/web-push": "^3.6.4",
     "better-sqlite3": "^13.0.3",
     "dotenv": "^17.4.2",
     "eslint": "^9",

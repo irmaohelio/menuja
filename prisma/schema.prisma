@@ -96,6 +96,20 @@ model Store {
   notifications  Notification[]
   pizzaCrusts    PizzaCrust[]
   coupons        Coupon[]
+  pushSubscriptions PushSubscription[]
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  storeId   String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId])
 }
 
 model Coupon {
