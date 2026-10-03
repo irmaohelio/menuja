@@ -1530,19 +1530,28 @@ function ProductModal({ product, store, onClose, onAdd }: {
               <div className="space-y-2">
                 {group.options.map((opt: any) => {
                   const isSelected = (selectedOptions[group.id] || []).find((o: any) => o.name === opt.name)
+                  const isSingle = group.maxQty === 1 // escolha única → radio
+                  const accent = store.buttonColor || store.primaryColor || "#e11d48"
                   return (
                     <label key={opt.id} onClick={() => toggleOption(group.id, opt, group.maxQty, group.name)}
                       className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer border-2 transition ${
-                        isSelected ? "border-gray-400 bg-gray-50" : "border-gray-200 hover:border-gray-300"
-                      }`}>
-                      <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition ${
-                        isSelected ? "" : "border-gray-300"
-                      }`}>
-                        {isSelected && <span className="text-white text-xs">✓</span>}
+                        isSelected ? "bg-gray-50" : "border-gray-200 hover:border-gray-300"
+                      }`}
+                      style={isSelected ? { borderColor: accent } : undefined}>
+                      <div
+                        className={`w-5 h-5 shrink-0 flex items-center justify-center border-2 transition ${
+                          isSingle ? "rounded-full" : "rounded-md"
+                        } ${isSelected ? "text-white" : "border-gray-300 bg-white"}`}
+                        style={isSelected ? { backgroundColor: accent, borderColor: accent } : undefined}>
+                        {isSelected && (
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
                       </div>
                       <span className="flex-1 text-sm font-medium">{opt.name}</span>
                       {opt.price > 0 && (
-                        <span className={`text-sm font-medium ${isSelected ? "" : "text-gray-500"}`}>
+                        <span className={`text-sm font-medium ${isSelected ? "text-gray-900" : "text-gray-500"}`}>
                           +R$ {opt.price.toFixed(2)}
                         </span>
                       )}
