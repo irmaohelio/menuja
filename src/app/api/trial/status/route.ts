@@ -5,6 +5,8 @@ import { success, error } from '@/lib/api'
 
 export const dynamic = 'force-dynamic'
 
+const DAY = 24 * 60 * 60 * 1000
+
 export async function GET(req: NextRequest) {
   try {
     const user = await getCurrentUser()
@@ -16,6 +18,7 @@ export async function GET(req: NextRequest) {
         id: true,
         name: true,
         plan: true,
+        planStatus: true,
         trialStartsAt: true,
         trialEndsAt: true,
         planExpiresAt: true,
@@ -30,93 +33,59 @@ export async function GET(req: NextRequest) {
     if (!store) return error('Loja não encontrada', 404)
 
     const now = new Date()
-    const trialEndsAt = new Date(store.trialEndsAt)
-    const isTrialExpired = now > trialEndsAt
-    const isPaid = store.plan !== 'trial'
-    const isPlanExpired = store.planExpiresAt ? now > new Date(store.planExpiresAt) : false
+    const addDays = (d: Date, days: number) => new Date(d.getTime() + days * DAY)
 
-    // Calculate days remaining
-    let daysRemaining = 0
-    if (!isTrialExpired && !isPaid) {
-      const diffMs = trialEndsAt.getTime() - now.getTime()
-      daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
-    } else if (isPaid) {
-      // Paid plan — use planExpiresAt if available, otherwise assume active
-      if (store.planExpiresAt && !isPlanExpired) {
-        const diffMs = new Date(store.planExpiresAt).getTime() - now.getTime()
-        daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
-      } else if (!store.planExpiresAt) {
-        // planExpiresAt not set yet (e.g. just subscribed) — assume30 days from trial start
-        const estimatedEnd = new Date(store.trialStartsAt)
-        estimatedEnd.setDate(estimatedEnd.getDate() + 30)
-        const diffMs = estimatedEnd.getTime() - now.getTime()
-        daysRemaining = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)))
-      }
-    }
+    let trialEndsAt = new Date(store.trialEndsAt)
+    let planExpiresAt = store.planExpiresAt ? new Date(store.planExpiresAt) : null
+    const isPaidPlan = store.plan !== 'trial'
 
-    // Apply referral credits automatically (1 credit = 30 days)
+    // Aplica créditos de indicação (1 crédito = 30 dias)
     if (store.referralCredits > 0) {
-      const creditsToApply = store.referralCredits
-      const daysToAdd = creditsToApply * 30
-      
-      // Extend trial or plan expiration
-      if (!isPaid) {
-        // Extend trial
-        const newTrialEnd = new Date(trialEndsAt)
-        newTrialEnd.setDate(newTrialEnd.getDate() + daysToAdd)
+      const days = store.referralCredits * 30
+      if (isPaidPlan && planExpiresAt) {
+        planExpiresAt = addDays(planExpiresAt, days)
+        await prisma.store.update({ where: { id: store.id }, data: { planExpiresAt, referralCredits: 0 } })
+      } else {
+        trialEndsAt = addDays(trialEndsAt, days)
         await prisma.store.update({
           where: { id: store.id },
-          data: { 
-            trialEndsAt: newTrialEnd,
-            referralCredits: 0 
-          },
+          data: { trialEndsAt, referralCredits: 0, ...(trialEndsAt > now ? { isBlocked: false } : {}) },
         })
-        // Recalculate
-        const diffMs = newTrialEnd.getTime() - now.getTime()
-        daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
-      } else if (store.planExpiresAt) {
-        // Extend paid plan
-        const newPlanEnd = new Date(store.planExpiresAt)
-        newPlanEnd.setDate(newPlanEnd.getDate() + daysToAdd)
-        await prisma.store.update({
-          where: { id: store.id },
-          data: { 
-            planExpiresAt: newPlanEnd,
-            referralCredits: 0 
-          },
-        })
-        // Recalculate
-        const diffMs = newPlanEnd.getTime() - now.getTime()
-        daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
       }
     }
 
-    // Determine if store should be blocked
-    const shouldBeBlocked = store.isBlocked || 
-      (!isPaid && isTrialExpired) || 
-      (isPaid && isPlanExpired)
+    const isTrialExpired = now > trialEndsAt
+    const isPlanExpired = !!planExpiresAt && now > planExpiresAt
 
-    // Update block status if needed
+    // Um plano só dá acesso quando está ATIVO (webhook de pagamento confirmado)
+    // ou possui vencimento futuro. Assinatura "pending" (boleto não pago) NÃO libera.
+    const hasActivePlan = isPaidPlan && !isPlanExpired && (store.planStatus === 'active' || !!planExpiresAt)
+
+    const hasAccess = !isTrialExpired || hasActivePlan
+    const shouldBeBlocked = !hasAccess || store.isBlocked
+
     if (shouldBeBlocked && !store.isBlocked) {
-      await prisma.store.update({
-        where: { id: store.id },
-        data: { isBlocked: true },
-      })
+      await prisma.store.update({ where: { id: store.id }, data: { isBlocked: true } })
     }
 
-    // Count how many stores were referred by this store
-    const referredCount = await prisma.store.count({
-      where: { referredBy: store.id },
-    })
+    // Dias restantes (plano ativo tem prioridade; senão, teste)
+    let daysRemaining = 0
+    if (hasActivePlan) {
+      daysRemaining = planExpiresAt ? Math.max(0, Math.ceil((planExpiresAt.getTime() - now.getTime()) / DAY)) : 30
+    } else if (!isTrialExpired) {
+      daysRemaining = Math.max(0, Math.ceil((trialEndsAt.getTime() - now.getTime()) / DAY))
+    }
+
+    const referredCount = await prisma.store.count({ where: { referredBy: store.id } })
 
     return success({
       storeId: store.id,
       plan: store.plan,
       trialStartsAt: store.trialStartsAt,
-      trialEndsAt: store.trialEndsAt,
-      planExpiresAt: store.planExpiresAt,
+      trialEndsAt,
+      planExpiresAt,
       isTrialExpired,
-      isPaid,
+      isPaid: hasActivePlan,
       isPlanExpired,
       isBlocked: shouldBeBlocked,
       daysRemaining,
