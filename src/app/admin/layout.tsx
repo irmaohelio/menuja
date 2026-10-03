@@ -109,6 +109,34 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     })
   }, [])
 
+  // Keep business hours / temp-closed status fresh so the "Aberta/Fechada"
+  // indicator updates on its own (no page refresh needed)
+  useEffect(() => {
+    if (!store?.slug) return
+    let active = true
+    const refresh = async () => {
+      try {
+        const r = await fetch("/api/store/settings", { cache: "no-store" })
+        const data = await r.json()
+        if (!active || !data?.success) return
+        setStore((prev: any) => prev ? {
+          ...prev,
+          businessHours: data.businessHours ?? prev.businessHours,
+          isTempClosed: data.store?.isTempClosed ?? prev.isTempClosed,
+          tempClosedMsg: data.store?.tempClosedMsg ?? prev.tempClosedMsg,
+        } : prev)
+      } catch {}
+    }
+    const id = setInterval(refresh, 10000)
+    const onVis = () => { if (document.visibilityState === "visible") refresh() }
+    document.addEventListener("visibilitychange", onVis)
+    return () => {
+      active = false
+      clearInterval(id)
+      document.removeEventListener("visibilitychange", onVis)
+    }
+  }, [store?.slug])
+
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" })
     router.push("/")
