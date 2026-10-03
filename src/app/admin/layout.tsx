@@ -360,7 +360,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </div>
 
       {/* WhatsApp support button */}
-      <a href="https://wa.me/5533999959911?text=Ol%C3%A1%2C%20preciso%20de%20ajuda%20com%20o%20MenuJ%C3%A1" target="_blank"
+      <a href="https://wa.me/5533999421853?text=Ol%C3%A1%2C%20preciso%20de%20ajuda%20com%20o%20MenuJ%C3%A1" target="_blank"
         className="fixed bottom-20 lg:bottom-6 right-4 z-50 w-14 h-14 bg-green-500 rounded-full shadow-lg flex items-center justify-center hover:bg-green-600 transition-all hover:scale-110"
         title="Falar com suporte no WhatsApp">
         <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">

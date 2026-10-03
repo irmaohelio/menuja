@@ -366,7 +366,7 @@ export default function LandingPage() {
             </div>
             <div>
               <p className="text-white font-semibold mb-2">Suporte</p>
-              <a href="https://wa.me/5533999959911?text=Ol%C3%A1%2C%20quero%20saber%20mais%20sobre%20o%20MenuJ%C3%A1" target="_blank" className="block text-sm hover:text-rose-400 transition">WhatsApp</a>
+              <a href="https://wa.me/5533999421853?text=Ol%C3%A1%2C%20quero%20saber%20mais%20sobre%20o%20MenuJ%C3%A1" target="_blank" className="block text-sm hover:text-rose-400 transition">WhatsApp</a>
             </div>
           </div>
         </div>
