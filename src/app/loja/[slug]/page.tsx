@@ -65,6 +65,7 @@ export default function LojaPage() {
   const [installEvt, setInstallEvt] = useState<any>(null)
   const [showInstall, setShowInstall] = useState(false)
   const [isIOS, setIsIOS] = useState(false)
+  const [inApp, setInApp] = useState(false)
   const [googleUser, setGoogleUser] = useState<any>(() => {
     try {
       const saved = localStorage.getItem(`google_user_${slug}`)
@@ -227,8 +228,12 @@ export default function LojaPage() {
     }
     const standalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone
     if (standalone) return
-    const ios = /iPad|iPhone|iPod/.test(navigator.userAgent)
+    const ua = navigator.userAgent || ''
+    const ios = /iPad|iPhone|iPod/.test(ua)
     setIsIOS(ios)
+    // Navegador interno de apps (WhatsApp, Instagram, Facebook...) ou WebView
+    const isInApp = /FBAN|FBAV|Instagram|WhatsApp|Line\/|Twitter|MicroMessenger|; wv\)/i.test(ua) || (ios && !/Safari/i.test(ua))
+    setInApp(isInApp)
     try { if (sessionStorage.getItem(`install_hide_${slug}`)) return } catch {}
 
     const onBIP = (e: any) => {
@@ -239,7 +244,7 @@ export default function LojaPage() {
     window.addEventListener('beforeinstallprompt', onBIP)
 
     // Mostra o convite mesmo sem o evento nativo (o Chrome pode não disparar na 1ª visita)
-    const timer = setTimeout(() => setShowInstall(true), 4000)
+    const timer = setTimeout(() => setShowInstall(true), 6000)
 
     return () => {
       window.removeEventListener('beforeinstallprompt', onBIP)
@@ -258,6 +263,11 @@ export default function LojaPage() {
   const dismissInstall = () => {
     setShowInstall(false)
     try { sessionStorage.setItem(`install_hide_${slug}`, '1') } catch {}
+  }
+
+  const copyStoreLink = () => {
+    try { navigator.clipboard.writeText(window.location.href) } catch {}
+    alert("Link copiado! Abra no navegador (Chrome/Safari), cole e instale o app.")
   }
 
   // Scroll detection for back to top button
@@ -1401,18 +1411,25 @@ export default function LojaPage() {
               <p className="text-sm font-bold leading-tight">Instalar o app da loja</p>
               {installEvt ? (
                 <p className="text-xs text-gray-300">Acesso rápido, direto da tela inicial do celular.</p>
+              ) : inApp ? (
+                <p className="text-xs text-gray-300">Copie o link e abra no {isIOS ? "Safari" : "Chrome"} para instalar (este navegador de app não instala).</p>
               ) : isIOS ? (
                 <p className="text-xs text-gray-300">Toque em Compartilhar (□↑) e em "Adicionar à Tela de Início".</p>
               ) : (
                 <p className="text-xs text-gray-300">Abra no menu do navegador (três pontinhos, canto superior) e toque em "Instalar aplicativo" ou "Adicionar à tela inicial".</p>
               )}
             </div>
-            {installEvt && (
+            {installEvt ? (
               <button onClick={doInstall} className="shrink-0 px-3 py-2 rounded-xl text-sm font-bold text-white"
                 style={{ backgroundColor: store.buttonColor || store.primaryColor }}>
                 Instalar
               </button>
-            )}
+            ) : inApp ? (
+              <button onClick={copyStoreLink} className="shrink-0 px-3 py-2 rounded-xl text-sm font-bold text-white"
+                style={{ backgroundColor: store.buttonColor || store.primaryColor }}>
+                Copiar link
+              </button>
+            ) : null}
             <button onClick={dismissInstall} className="shrink-0 text-gray-400 hover:text-white text-lg leading-none">✕</button>
           </div>
         </div>
