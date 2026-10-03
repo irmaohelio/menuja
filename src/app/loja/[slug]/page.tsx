@@ -1400,7 +1400,7 @@ export default function LojaPage() {
               ) : isIOS ? (
                 <p className="text-xs text-gray-300">Toque em Compartilhar (□↑) e em "Adicionar à Tela de Início".</p>
               ) : (
-                <p className="text-xs text-gray-300">No menu do navegador (⋮), toque em "Instalar aplicativo" (ou "Adicionar à tela inicial").</p>
+                <p className="text-xs text-gray-300">Abra no menu do navegador (três pontinhos, canto superior) e toque em "Instalar aplicativo" ou "Adicionar à tela inicial".</p>
               )}
             </div>
             {installEvt && (
