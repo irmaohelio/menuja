@@ -10,6 +10,7 @@ export default function ConfiguracoesPage() {
   const [hours, setHours] = useState<any[]>([])
   const [saving, setSaving] = useState(false)
   const [savingHour, setSavingHour] = useState<number | null>(null)
+  const [savedHour, setSavedHour] = useState<number | null>(null)
   const [tab, setTab] = useState("loja")
 
   useEffect(() => {
@@ -28,24 +29,24 @@ export default function ConfiguracoesPage() {
     try {
       // Only send scalar store fields, strip nested objects and system fields
       const { id, userId, createdAt, updatedAt, settings: _s, categories: _c, products: _p, customers: _cu, orders: _o, businessHours: _bh, highlights: _h, notifications: _n, pizzaCrusts: _pc, user: _u, ...storeScalar } = store
-      console.log("[CONFIG] Sending:", JSON.stringify({ storeData: storeScalar, settingsData: settings, businessHours: hours }).substring(0, 300))
+      console.log("[CONFIG] Sending:", JSON.stringify({ storeData: storeScalar, settingsData: settings }).substring(0, 300))
       
       const res = await fetch("/api/store/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ storeData: storeScalar, settingsData: settings, businessHours: hours }),
+        // Horários não são salvos aqui — cada dia tem seu próprio botão Salvar
+        body: JSON.stringify({ storeData: storeScalar, settingsData: settings }),
       })
       console.log("[CONFIG] Response status:", res.status)
       const data = await res.json()
       console.log("[CONFIG] Response data:", JSON.stringify(data).substring(0, 200))
       if (data.success) {
         alert("Salvo!")
-        // Reload fresh data
+        // Reload fresh data (mantém os horários editados localmente)
         fetch("/api/store/settings").then(r => r.json()).then(d => {
           if (d.success) {
             setStore(d.store)
             setSettings(d.settings || {})
-            setHours(d.businessHours || [])
           }
         })
       } else {
@@ -72,6 +73,9 @@ export default function ConfiguracoesPage() {
       const data = await res.json()
       if (!data.success) {
         alert("Erro ao salvar: " + (data.error || "Tente novamente"))
+      } else {
+        setSavedHour(dayOfWeek)
+        setTimeout(() => setSavedHour(prev => (prev === dayOfWeek ? null : prev)), 2000)
       }
     } catch (err) {
       alert("Erro de conexão")
@@ -263,8 +267,10 @@ export default function ConfiguracoesPage() {
                 </>
               )}
               <button onClick={() => saveHour(h.dayOfWeek)} disabled={savingHour === h.dayOfWeek}
-                className="ml-auto px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 disabled:opacity-50">
-                {savingHour === h.dayOfWeek ? "Salvando..." : "Salvar"}
+                className={`ml-auto px-3 py-1.5 text-white rounded-lg text-xs font-medium disabled:opacity-50 ${
+                  savedHour === h.dayOfWeek ? "bg-green-600" : "bg-blue-600 hover:bg-blue-700"
+                }`}>
+                {savingHour === h.dayOfWeek ? "Salvando..." : savedHour === h.dayOfWeek ? "Salvo! ✓" : "Salvar"}
               </button>
             </div>
           ))}
