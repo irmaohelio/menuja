@@ -89,34 +89,63 @@ export default function LojaPage() {
     }
   }, [profile])
 
-  // Atualizar status dos pedidos no histórico
+  // Atualizar status dos pedidos (histórico + último pedido) e refletir
+  // cancelamentos/exclusões feitos pela loja, sem precisar recarregar a página
+  const orderHistoryRef = useRef<any[]>([])
+  const orderResultRef = useRef<any>(null)
+  useEffect(() => { orderHistoryRef.current = orderHistory }, [orderHistory])
+  useEffect(() => { orderResultRef.current = orderResult }, [orderResult])
+
   useEffect(() => {
-    if (orderHistory.length > 0) {
-      const updateHistory = async () => {
-        const updated = await Promise.all(
-          orderHistory.map(async (order: any) => {
-            try {
-              const res = await fetch(`/api/orders/track?id=${order.id}`)
-              const data = await res.json()
-              if (data.success) {
-                return { ...order, status: data.order.status }
-              }
-            } catch {}
-            return order
-          })
-        )
-        setOrderHistory(updated)
-        localStorage.setItem(`order_history_${slug}`, JSON.stringify(updated))
-        
-        // Se o último pedido foi concluído, limpar orderResult
-        if (updated.length > 0 && updated[0].status === "completed") {
-          setOrderResult(null)
-          localStorage.removeItem(`last_order_${slug}`)
+    let active = true
+    const sync = async () => {
+      const history: any[] = orderHistoryRef.current || []
+      const last = orderResultRef.current
+      const list = [...history]
+      if (last && !list.some((o) => o.id === last.id)) list.unshift(last)
+      if (list.length === 0) return
+
+      const updated = await Promise.all(
+        list.map(async (order: any) => {
+          try {
+            const res = await fetch(`/api/orders/track?id=${order.id}&t=${Date.now()}`, { cache: "no-store" })
+            // 404 = pedido excluído pela loja → marca como cancelado no app do cliente
+            if (res.status === 404) return { ...order, status: "cancelled", removedByStore: true }
+            const data = await res.json()
+            if (data.success) return { ...order, status: data.order.status }
+          } catch {}
+          return order
+        })
+      )
+      if (!active) return
+
+      setOrderHistory(updated)
+      localStorage.setItem(`order_history_${slug}`, JSON.stringify(updated))
+
+      // Reflete no cartão do último pedido
+      setOrderResult((prev: any) => {
+        if (!prev) return prev
+        const match = updated.find((o: any) => o.id === prev.id)
+        if (!match) return prev
+        if (match.status === "cancelled") {
+          const next = { ...prev, status: "cancelled", removedByStore: match.removedByStore }
+          localStorage.setItem(`last_order_${slug}`, JSON.stringify(next))
+          return next
         }
-      }
-      updateHistory()
+        if (match.status === "completed") {
+          localStorage.removeItem(`last_order_${slug}`)
+          return null
+        }
+        return { ...prev, status: match.status }
+      })
     }
-  }, [])
+
+    sync()
+    const id = setInterval(sync, 10000)
+    const onVis = () => { if (document.visibilityState === "visible") sync() }
+    document.addEventListener("visibilitychange", onVis)
+    return () => { active = false; clearInterval(id); document.removeEventListener("visibilitychange", onVis) }
+  }, [slug])
   const featuredScrollRef = useRef<HTMLDivElement>(null)
   const scrollPausedRef = useRef(false)
 
@@ -964,7 +993,13 @@ export default function LojaPage() {
           <div>
             {orderResult ? (
               <div className="bg-white p-6 rounded-2xl shadow-sm text-center">
-                {orderResult.scheduledDate && orderResult.paymentStatus === 'awaiting_proof' ? (
+                {orderResult.status === "cancelled" ? (
+                  <>
+                    <p className="text-5xl mb-4">❌</p>
+                    <h2 className="text-xl font-bold mb-2">Pedido #{orderResult.orderNumber} cancelado</h2>
+                    <p className="text-gray-500 mb-4">Este pedido foi cancelado pela loja.</p>
+                  </>
+                ) : orderResult.scheduledDate && orderResult.paymentStatus === 'awaiting_proof' ? (
                   <>
                     <p className="text-5xl mb-4">📦</p>
                     <h2 className="text-xl font-bold mb-1">Encomenda #{orderResult.orderNumber}</h2>
@@ -1028,11 +1063,13 @@ export default function LojaPage() {
                   <p><strong>Total:</strong> R$ {orderResult.total.toFixed(2)}</p>
                   <p><strong>Pagamento:</strong> {orderResult.paymentMethod === "cash" ? "Dinheiro" : orderResult.paymentMethod === "pix" ? "PIX" : "Cartão"}</p>
                 </div>
-                <div className="mt-6">
-                  <a href={`/pedido/${orderResult.id}`} className="w-full py-3 text-white rounded-xl font-bold text-center block" style={{ backgroundColor: store.buttonColor }}>
-                    Acompanhar pedido
-                  </a>
-                </div>
+                {orderResult.status !== "cancelled" && (
+                  <div className="mt-6">
+                    <a href={`/pedido/${orderResult.id}`} className="w-full py-3 text-white rounded-xl font-bold text-center block" style={{ backgroundColor: store.buttonColor }}>
+                      Acompanhar pedido
+                    </a>
+                  </div>
+                )}
               </div>
             ) : orderHistory.length > 0 ? (
               <div className="space-y-3">

@@ -22,13 +22,21 @@ export default function PedidosClientePage() {
 
   const search = () => {
     if (!phone) return
-    fetch(`/api/orders/history?phone=${encodeURIComponent(phone)}&store=${slug}`)
+    fetch(`/api/orders/history?phone=${encodeURIComponent(phone)}&store=${slug}&t=${Date.now()}`, { cache: "no-store" })
       .then(r => r.json())
       .then(data => {
         if (data.success) setOrders(data.orders)
         setSearched(true)
       })
   }
+
+  // Atualiza a lista (ex.: cancelamento feito pela loja) sem precisar rebuscar
+  useEffect(() => {
+    if (!searched || !phone) return
+    const id = setInterval(search, 15000)
+    return () => clearInterval(id)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searched, phone, slug])
 
   return (
     <div className="min-h-screen bg-gray-50">

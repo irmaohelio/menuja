@@ -20,16 +20,18 @@ export default function PedidoPage() {
   const orderId = params.id as string
   const [order, setOrder] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [gone, setGone] = useState(false)
 
   useEffect(() => {
     const load = () => {
-      fetch(`/api/orders/track?id=${orderId}`).then(r => r.json()).then(data => {
-        if (data.success) setOrder(data.order)
+      fetch(`/api/orders/track?id=${orderId}&t=${Date.now()}`, { cache: "no-store" }).then(r => r.json()).then(data => {
+        if (data.success) { setOrder(data.order); setGone(false) }
+        else { setGone(true) } // pedido cancelado/excluído pela loja
         setLoading(false)
-      })
+      }).catch(() => setLoading(false))
     }
     load()
-    const interval = setInterval(load, 15000) // Polling a cada 15s
+    const interval = setInterval(load, 10000) // Polling a cada 10s
     return () => clearInterval(interval)
   }, [orderId])
 
@@ -49,8 +51,10 @@ export default function PedidoPage() {
     </div>
   )
 
+  const isCancelled = order.status === "cancelled" || gone
+
   // Se o pedido foi concluído, mostrar mensagem de entrega
-  if (order.status === "completed") {
+  if (order.status === "completed" && !isCancelled) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="max-w-lg mx-auto px-4 py-6">
@@ -73,7 +77,6 @@ export default function PedidoPage() {
   }
 
   const currentIdx = allStatuses.indexOf(order.status)
-  const isCancelled = order.status === "cancelled"
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -120,6 +123,11 @@ export default function PedidoPage() {
         {/* Status log */}
         <div className="bg-white p-5 rounded-2xl shadow-sm">
           <h2 className="font-bold mb-3">Acompanhamento</h2>
+          {isCancelled && (
+            <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 text-sm mb-3">
+              ❌ Este pedido foi cancelado pela loja.
+            </div>
+          )}
           <div className="space-y-3">
             {order.statusLog?.map((log: any, i: number) => (
               <div key={i} className="flex items-start gap-3">
