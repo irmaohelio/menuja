@@ -69,11 +69,11 @@ export async function POST(req: NextRequest) {
     })
     const orderNumber = (lastOrder?.orderNumber || 0) + 1
 
-    // Buscar ou criar cliente
+    // Buscar ou criar cliente (sempre restrito a esta loja — evita vínculo entre lojas)
     let customer = null
     if (body.customerId) {
-      customer = await prisma.customer.findUnique({
-        where: { id: body.customerId },
+      customer = await prisma.customer.findFirst({
+        where: { id: body.customerId, storeId: store.id },
       })
     }
     if (!customer && customerPhone) {
