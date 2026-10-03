@@ -45,6 +45,13 @@ export async function PUT(req: NextRequest) {
     data: { orderId, status },
   })
 
+  // Pedido cancelado deixa de ser uma notificação pendente (sino para de marcar)
+  if (status === 'cancelled') {
+    await prisma.notification.deleteMany({
+      where: { orderId, storeId: store.id },
+    })
+  }
+
   return success({ order: updated })
 }
 
@@ -66,6 +73,11 @@ export async function DELETE(req: NextRequest) {
   if (orders.length !== orderIds.length) {
     return error('Alguns pedidos não foram encontrados')
   }
+
+  // Excluir notificações vinculadas (sino deixa de marcar pedidos que não existem mais)
+  await prisma.notification.deleteMany({
+    where: { orderId: { in: orderIds }, storeId: store.id },
+  })
 
   // Excluir pedidos e seus itens
   await prisma.orderItem.deleteMany({

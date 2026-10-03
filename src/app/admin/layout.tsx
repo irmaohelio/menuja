@@ -64,7 +64,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [copied, setCopied] = useState(false)
 
   const [trial, setTrial] = useState<any>(null)
-  const { unread, notifications, markAllRead } = useNotifications()
+  const { unread, notifications, markAllRead, refresh: refreshNotifications } = useNotifications()
 
   // Prominent on-screen alert for new orders
   const [orderAlert, setOrderAlert] = useState<any>(null)
@@ -89,6 +89,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     window.addEventListener("pointerdown", unlock, { once: true })
     return () => window.removeEventListener("pointerdown", unlock)
   }, [])
+
+  // Refresh the bell immediately when a pedido is cancelled/deleted in the app
+  useEffect(() => {
+    const onUpdated = () => refreshNotifications()
+    window.addEventListener("notifications-updated", onUpdated)
+    return () => window.removeEventListener("notifications-updated", onUpdated)
+  }, [refreshNotifications])
 
   useEffect(() => {
     fetch("/api/auth/me", { credentials: 'include', cache: 'no-store' })

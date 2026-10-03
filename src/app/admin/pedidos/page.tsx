@@ -57,6 +57,8 @@ export default function PedidosPage() {
     })
     load()
     setSelected(null)
+    // Atualiza o sino imediatamente (ex.: cancelamento limpa a notificação)
+    window.dispatchEvent(new Event("notifications-updated"))
   }
 
   const deleteOrders = async () => {
@@ -70,6 +72,8 @@ export default function PedidosPage() {
     })
     setSelectedOrders([])
     load()
+    // Atualiza o sino imediatamente
+    window.dispatchEvent(new Event("notifications-updated"))
   }
 
   const confirmPayment = async (orderId: string, action: 'confirm' | 'reject') => {
