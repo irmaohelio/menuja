@@ -220,9 +220,8 @@ export default function LojaPage() {
     return () => clearInterval(interval)
   }, [slug])
 
-  // Convite para instalar o app
+  // Convite para instalar o app (aparece sozinho, como no app de referência)
   useEffect(() => {
-    // Registrar o service worker (necessário para o navegador liberar o botão "Instalar")
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(() => {})
     }
@@ -231,38 +230,50 @@ export default function LojaPage() {
     const ua = navigator.userAgent || ''
     const ios = /iPad|iPhone|iPod/.test(ua)
     setIsIOS(ios)
-    // Navegador interno de apps (WhatsApp, Instagram, Facebook...) ou WebView
     const isInApp = /FBAN|FBAV|Instagram|WhatsApp|Line\/|Twitter|MicroMessenger|; wv\)/i.test(ua) || (ios && !/Safari/i.test(ua))
     setInApp(isInApp)
-    try { if (sessionStorage.getItem(`install_hide_${slug}`)) return } catch {}
+    try {
+      if (localStorage.getItem(`install_hide_${slug}`) || localStorage.getItem(`install_done_${slug}`)) return
+    } catch {}
 
-    const onBIP = (e: any) => {
-      e.preventDefault()
-      setInstallEvt(e)
-      setShowInstall(true)
+    const onBIP = (e: any) => { e.preventDefault(); setInstallEvt(e) }
+    const onInstalled = () => {
+      setShowInstall(false)
+      try { localStorage.setItem(`install_done_${slug}`, '1') } catch {}
     }
     window.addEventListener('beforeinstallprompt', onBIP)
+    window.addEventListener('appinstalled', onInstalled)
 
-    // Mostra o convite mesmo sem o evento nativo (o Chrome pode não disparar na 1ª visita)
-    const timer = setTimeout(() => setShowInstall(true), 6000)
+    // Mostra o banner sozinho, pouco depois de abrir
+    const timer = setTimeout(() => setShowInstall(true), 1500)
 
     return () => {
       window.removeEventListener('beforeinstallprompt', onBIP)
+      window.removeEventListener('appinstalled', onInstalled)
       clearTimeout(timer)
     }
   }, [slug])
 
   const doInstall = async () => {
-    if (!installEvt) return
-    installEvt.prompt()
-    try { await installEvt.userChoice } catch {}
-    setInstallEvt(null)
-    setShowInstall(false)
+    if (installEvt) {
+      installEvt.prompt()
+      try { await installEvt.userChoice } catch {}
+      setInstallEvt(null)
+      setShowInstall(false)
+      try { localStorage.setItem(`install_done_${slug}`, '1') } catch {}
+      return
+    }
+    if (inApp) { copyStoreLink(); return }
+    if (isIOS) {
+      alert('Para instalar no iPhone/iPad:\n1. Toque em Compartilhar (□↑) na barra do Safari.\n2. Role e toque em "Adicionar à Tela de Início".\n3. Confirme em "Adicionar".')
+      return
+    }
+    alert('Para instalar:\n1. Abra o menu do navegador (três pontinhos, no canto superior).\n2. Toque em "Instalar aplicativo" ou "Adicionar à tela inicial".')
   }
 
   const dismissInstall = () => {
     setShowInstall(false)
-    try { sessionStorage.setItem(`install_hide_${slug}`, '1') } catch {}
+    try { localStorage.setItem(`install_hide_${slug}`, '1') } catch {}
   }
 
   const copyStoreLink = () => {
@@ -1409,27 +1420,12 @@ export default function LojaPage() {
             )}
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold leading-tight">Instalar o app da loja</p>
-              {installEvt ? (
-                <p className="text-xs text-gray-300">Acesso rápido, direto da tela inicial do celular.</p>
-              ) : inApp ? (
-                <p className="text-xs text-gray-300">Copie o link e abra no {isIOS ? "Safari" : "Chrome"} para instalar (este navegador de app não instala).</p>
-              ) : isIOS ? (
-                <p className="text-xs text-gray-300">Toque em Compartilhar (□↑) e em "Adicionar à Tela de Início".</p>
-              ) : (
-                <p className="text-xs text-gray-300">Abra no menu do navegador (três pontinhos, canto superior) e toque em "Instalar aplicativo" ou "Adicionar à tela inicial".</p>
-              )}
+              <p className="text-xs text-gray-300">Peça mais rápido e acompanhe seus pedidos.</p>
             </div>
-            {installEvt ? (
-              <button onClick={doInstall} className="shrink-0 px-3 py-2 rounded-xl text-sm font-bold text-white"
-                style={{ backgroundColor: store.buttonColor || store.primaryColor }}>
-                Instalar
-              </button>
-            ) : inApp ? (
-              <button onClick={copyStoreLink} className="shrink-0 px-3 py-2 rounded-xl text-sm font-bold text-white"
-                style={{ backgroundColor: store.buttonColor || store.primaryColor }}>
-                Copiar link
-              </button>
-            ) : null}
+            <button onClick={doInstall} className="shrink-0 px-3 py-2 rounded-xl text-sm font-bold text-white"
+              style={{ backgroundColor: store.buttonColor || store.primaryColor }}>
+              {installEvt ? "Instalar" : isIOS ? "Como instalar" : "Instalar"}
+            </button>
             <button onClick={dismissInstall} className="shrink-0 text-gray-400 hover:text-white text-lg leading-none">✕</button>
           </div>
         </div>
