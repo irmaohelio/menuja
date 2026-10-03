@@ -42,6 +42,8 @@ export default function ConfiguracoesPage() {
       console.log("[CONFIG] Response data:", JSON.stringify(data).substring(0, 200))
       if (data.success) {
         alert("Salvo!")
+        // Atualiza o indicador Aberta/Fechada do topo
+        window.dispatchEvent(new CustomEvent("store-config-updated"))
         // Reload fresh data (mantém os horários editados localmente)
         fetch("/api/store/settings").then(r => r.json()).then(d => {
           if (d.success) {
@@ -75,7 +77,9 @@ export default function ConfiguracoesPage() {
         alert("Erro ao salvar: " + (data.error || "Tente novamente"))
       } else {
         setSavedHour(dayOfWeek)
-        setTimeout(() => setSavedHour(prev => (prev === dayOfWeek ? null : prev)), 2000)
+        setTimeout(() => setSavedHour(prev => (prev === dayOfWeek ? null : prev)), 1200)
+        // Atualiza o indicador Aberta/Fechada do topo imediatamente
+        window.dispatchEvent(new CustomEvent("store-config-updated", { detail: { businessHours: hours } }))
       }
     } catch (err) {
       alert("Erro de conexão")
@@ -117,11 +121,13 @@ export default function ConfiguracoesPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Configurações</h1>
-        <button onClick={save} disabled={saving}
-          className="px-6 py-2 text-white rounded-xl font-medium disabled:opacity-50"
-          style={{ backgroundColor: "var(--btn)" }}>
-          {saving ? "Salvando..." : "Salvar"}
-        </button>
+        {tab !== "horarios" && (
+          <button onClick={save} disabled={saving}
+            className="px-6 py-2 text-white rounded-xl font-medium disabled:opacity-50"
+            style={{ backgroundColor: "var(--btn)" }}>
+            {saving ? "Salvando..." : "Salvar"}
+          </button>
+        )}
       </div>
 
       {/* Tabs */}
@@ -267,7 +273,7 @@ export default function ConfiguracoesPage() {
                 </>
               )}
               <button onClick={() => saveHour(h.dayOfWeek)} disabled={savingHour === h.dayOfWeek}
-                className={`ml-auto px-3 py-1.5 text-white rounded-lg text-xs font-medium disabled:opacity-50 ${
+                className={`ml-2 px-3 py-1.5 text-white rounded-lg text-xs font-medium disabled:opacity-50 ${
                   savedHour === h.dayOfWeek ? "bg-green-600" : "bg-blue-600 hover:bg-blue-700"
                 }`}>
                 {savingHour === h.dayOfWeek ? "Salvando..." : savedHour === h.dayOfWeek ? "Salvo! ✓" : "Salvar"}

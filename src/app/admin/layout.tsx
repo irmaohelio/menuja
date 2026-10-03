@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
 import { useNotifications } from "@/lib/use-notifications"
@@ -111,31 +111,41 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   // Keep business hours / temp-closed status fresh so the "Aberta/Fechada"
   // indicator updates on its own (no page refresh needed)
+  const refreshStoreConfig = useCallback(async () => {
+    try {
+      const r = await fetch("/api/store/settings", { cache: "no-store" })
+      const data = await r.json()
+      if (!data?.success) return
+      setStore((prev: any) => prev ? {
+        ...prev,
+        businessHours: data.businessHours ?? prev.businessHours,
+        isTempClosed: data.store?.isTempClosed ?? prev.isTempClosed,
+        tempClosedMsg: data.store?.tempClosedMsg ?? prev.tempClosedMsg,
+      } : prev)
+    } catch {}
+  }, [])
+
   useEffect(() => {
     if (!store?.slug) return
-    let active = true
-    const refresh = async () => {
-      try {
-        const r = await fetch("/api/store/settings", { cache: "no-store" })
-        const data = await r.json()
-        if (!active || !data?.success) return
-        setStore((prev: any) => prev ? {
-          ...prev,
-          businessHours: data.businessHours ?? prev.businessHours,
-          isTempClosed: data.store?.isTempClosed ?? prev.isTempClosed,
-          tempClosedMsg: data.store?.tempClosedMsg ?? prev.tempClosedMsg,
-        } : prev)
-      } catch {}
+    refreshStoreConfig()
+    const id = setInterval(refreshStoreConfig, 5000)
+    const onVis = () => { if (document.visibilityState === "visible") refreshStoreConfig() }
+    // Instant update when the settings screen saves hours
+    const onUpdated = (e: Event) => {
+      const detail = (e as CustomEvent).detail
+      if (detail?.businessHours) {
+        setStore((prev: any) => prev ? { ...prev, businessHours: detail.businessHours } : prev)
+      }
+      refreshStoreConfig()
     }
-    const id = setInterval(refresh, 10000)
-    const onVis = () => { if (document.visibilityState === "visible") refresh() }
     document.addEventListener("visibilitychange", onVis)
+    window.addEventListener("store-config-updated", onUpdated)
     return () => {
-      active = false
       clearInterval(id)
       document.removeEventListener("visibilitychange", onVis)
+      window.removeEventListener("store-config-updated", onUpdated)
     }
-  }, [store?.slug])
+  }, [store?.slug, refreshStoreConfig])
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" })
