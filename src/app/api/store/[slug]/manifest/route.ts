@@ -17,8 +17,6 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     return new Response(JSON.stringify({ name: 'MenuJá', short_name: 'MenuJá', start_url: '/', display: 'standalone' }), { headers })
   }
 
-  const logoType = store.logo ? (store.logo.endsWith('.webp') ? 'image/webp' : store.logo.endsWith('.jpg') || store.logo.endsWith('.jpeg') ? 'image/jpeg' : 'image/png') : null
-
   const name = store.name?.trim() || store.slug
 
   const manifest = {
@@ -31,10 +29,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     orientation: 'portrait',
     background_color: '#ffffff',
     theme_color: store.primaryColor || '#e11d48',
+    lang: 'pt-BR',
     icons: [
-      ...(store.logo ? [{ src: store.logo, sizes: '200x200', type: logoType }] : []),
-      { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
-      { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+      // Ícones servidos do próprio domínio (o Chrome exige isso para considerar instalável)
+      { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+      { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
       { src: '/icons/icon-512-maskable.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
     ],
   }
