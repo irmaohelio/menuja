@@ -62,6 +62,9 @@ export default function LojaPage() {
   const [coupon, setCoupon] = useState<{ code: string; discount: number } | null>(null)
   const [couponError, setCouponError] = useState("")
   const [applyingCoupon, setApplyingCoupon] = useState(false)
+  const [installEvt, setInstallEvt] = useState<any>(null)
+  const [showInstall, setShowInstall] = useState(false)
+  const [isIOS, setIsIOS] = useState(false)
   const [googleUser, setGoogleUser] = useState<any>(() => {
     try {
       const saved = localStorage.getItem(`google_user_${slug}`)
@@ -152,6 +155,7 @@ export default function LojaPage() {
   }, [slug])
   const featuredScrollRef = useRef<HTMLDivElement>(null)
   const scrollPausedRef = useRef(false)
+  const menuVersionRef = useRef<string | null>(null)
 
   // Extract the fetch logic so we can reuse it for initial load
   const fetchStore = () => {
@@ -179,6 +183,13 @@ export default function LojaPage() {
       cache: 'no-store',
       headers: { 'Pragma': 'no-cache', 'Cache-Control': 'no-cache' },
     }).then(r => r.json()).then(data => {
+      // Cardápio mudou (item esgotado/disponível, preço, etc.) → recarrega sozinho
+      if (data.menuVersion) {
+        if (menuVersionRef.current && data.menuVersion !== menuVersionRef.current) {
+          fetchStore()
+        }
+        menuVersionRef.current = data.menuVersion
+      }
       setStore((prev: any) => {
         if (!prev) return prev
         if (prev.isTempClosed !== data.isTempClosed || prev.tempClosedMsg !== data.tempClosedMsg || prev.withinHours !== data.withinHours) {
@@ -207,6 +218,56 @@ export default function LojaPage() {
     const interval = setInterval(pollStatus, 1000)
     return () => clearInterval(interval)
   }, [slug])
+
+  // Manifest específico da loja (permite instalar o app do cliente)
+  useEffect(() => {
+    let link = document.querySelector('link[rel="manifest"]') as HTMLLinkElement | null
+    if (!link) {
+      link = document.createElement('link')
+      link.rel = 'manifest'
+      document.head.appendChild(link)
+    }
+    const prev = link.getAttribute('href')
+    link.setAttribute('href', `/api/store/${slug}/manifest`)
+    return () => { if (prev) link!.setAttribute('href', prev) }
+  }, [slug])
+
+  // Convite para instalar o app
+  useEffect(() => {
+    const standalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone
+    if (standalone) return
+    const ios = /iPad|iPhone|iPod/.test(navigator.userAgent)
+    setIsIOS(ios)
+    try { if (localStorage.getItem(`install_dismissed_${slug}`)) return } catch {}
+
+    const onBIP = (e: any) => {
+      e.preventDefault()
+      setInstallEvt(e)
+      setShowInstall(true)
+    }
+    window.addEventListener('beforeinstallprompt', onBIP)
+
+    let timer: any
+    if (ios) timer = setTimeout(() => setShowInstall(true), 3000)
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', onBIP)
+      if (timer) clearTimeout(timer)
+    }
+  }, [slug])
+
+  const doInstall = async () => {
+    if (!installEvt) return
+    installEvt.prompt()
+    try { await installEvt.userChoice } catch {}
+    setInstallEvt(null)
+    setShowInstall(false)
+  }
+
+  const dismissInstall = () => {
+    setShowInstall(false)
+    try { localStorage.setItem(`install_dismissed_${slug}`, '1') } catch {}
+  }
 
   // Scroll detection for back to top button
   useEffect(() => {
@@ -1334,6 +1395,30 @@ export default function LojaPage() {
         >
           ↑
         </button>
+      )}
+
+      {/* Convite para instalar o app */}
+      {showInstall && (
+        <div className="fixed bottom-16 left-0 right-0 z-40 px-3 pointer-events-none">
+          <div className="max-w-lg mx-auto bg-gray-900 text-white rounded-2xl shadow-2xl p-3 flex items-center gap-3 pointer-events-auto">
+            <span className="text-2xl">📲</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold leading-tight">Instalar o app da loja</p>
+              {isIOS ? (
+                <p className="text-xs text-gray-300">Toque em Compartilhar (□↑) e em "Adicionar à Tela de Início".</p>
+              ) : (
+                <p className="text-xs text-gray-300">Acesso rápido, direto da tela inicial do celular.</p>
+              )}
+            </div>
+            {!isIOS && installEvt && (
+              <button onClick={doInstall} className="shrink-0 px-3 py-2 rounded-xl text-sm font-bold text-white"
+                style={{ backgroundColor: store.buttonColor || store.primaryColor }}>
+                Instalar
+              </button>
+            )}
+            <button onClick={dismissInstall} className="shrink-0 text-gray-400 hover:text-white text-lg leading-none">✕</button>
+          </div>
+        </div>
       )}
 
       {/* Bottom Nav */}
