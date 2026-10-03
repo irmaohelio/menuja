@@ -9,9 +9,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   })
   if (!store) return {}
 
+  const name = store.name?.trim() || slug
+
   return {
-    title: `${store.name} — Cardápio e Delivery`,
-    description: `Peça online em ${store.name}. Cardápio digital e delivery rápido.`,
+    title: `${name} — Cardápio e Delivery`,
+    description: `Peça online em ${name}. Cardápio digital e delivery rápido.`,
     manifest: `/api/store/${slug}/manifest`,
     icons: store.logo ? { icon: [{ url: store.logo }], apple: [{ url: store.logo }] } : undefined,
   }

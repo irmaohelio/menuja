@@ -19,10 +19,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
 
   const logoType = store.logo ? (store.logo.endsWith('.webp') ? 'image/webp' : store.logo.endsWith('.jpg') || store.logo.endsWith('.jpeg') ? 'image/jpeg' : 'image/png') : null
 
+  const name = store.name?.trim() || store.slug
+
   const manifest = {
-    name: store.name,
-    short_name: store.name.slice(0, 15),
-    description: `${store.name} — cardápio e delivery`,
+    name,
+    short_name: name.slice(0, 15),
+    description: `${name} — cardápio e delivery`,
     start_url: `/loja/${store.slug}`,
     scope: '/',
     display: 'standalone',
