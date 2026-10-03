@@ -6,17 +6,18 @@ import { success, error, unauthorized } from '@/lib/api'
 
 export const runtime = 'nodejs'
 
-// Proporção fixa por tipo de imagem: todas ficam padronizadas (recorte automático)
+// Cada tipo tem uma "moldura" de proporção fixa. A imagem inteira é encaixada
+// dentro dela (fit: contain) com fundo branco — nunca é esticada nem cortada.
 function targetFor(type: string) {
   switch (type) {
     case 'logo':
-      return { width: 200, height: 200, position: 'centre' as const }
+      return { width: 200, height: 200, fit: 'contain' as const }
     case 'banner':
-      return { width: 1560, height: 320, position: 'centre' as const }
+      return { width: 1560, height: 320, fit: 'cover' as const }
     case 'product':
     default:
-      // 4:5 retrato; 'attention' escolhe a região mais interessante da foto
-      return { width: 720, height: 900, position: 'attention' as const }
+      // 4:5 retrato, igual ao card do app
+      return { width: 720, height: 900, fit: 'contain' as const }
   }
 }
 
@@ -31,12 +32,15 @@ export async function POST(req: NextRequest) {
   if (!file) return error('Nenhum arquivo enviado')
 
   const buffer = Buffer.from(await file.arrayBuffer())
-  const { width, height, position } = targetFor(type)
+  const { width, height, fit } = targetFor(type)
 
   try {
     const resized = await sharp(buffer)
       .rotate() // corrige a orientação de fotos tiradas pelo celular (EXIF)
-      .resize(width, height, { fit: 'cover', position })
+      .resize(width, height, {
+        fit,
+        background: { r: 255, g: 255, b: 255, alpha: 1 }, // fundo branco nas sobras
+      })
       .webp({ quality: 82 })
       .toBuffer()
 
