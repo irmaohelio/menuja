@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { success, error } from '@/lib/api'
 import { isWithinBusinessHours } from '@/lib/business-hours'
-import { findStoreCustomer, attachCustomerIdentifiers, normalizeEmail, normalizePhone } from '@/lib/customers'
+import { findStoreCustomer, attachCustomerIdentifiers, createStoreCustomer, normalizeEmail, normalizePhone } from '@/lib/customers'
 
 export async function POST(req: NextRequest) {
   try {
@@ -91,8 +91,10 @@ export async function POST(req: NextRequest) {
       if (!cleanEmail && !cleanPhone) {
         return error('Informe um telefone ou entre com sua conta Google')
       }
-      customer = await prisma.customer.create({
-        data: { storeId: store.id, name: customerName, email: cleanEmail, phone: cleanPhone },
+      customer = await createStoreCustomer(store.id, {
+        name: customerName,
+        email: cleanEmail,
+        phone: cleanPhone,
       })
     }
 

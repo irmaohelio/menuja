@@ -260,6 +260,8 @@ model Customer {
   orders    Order[]
   addresses CustomerAddress[]
 
+  @@unique([storeId, email])
+  @@unique([storeId, phone])
   @@index([storeId])
 }
 

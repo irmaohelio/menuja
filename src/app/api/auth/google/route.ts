@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { success, error } from '@/lib/api'
-import { findStoreCustomer, attachCustomerIdentifiers, normalizeEmail, normalizePhone } from '@/lib/customers'
+import { findStoreCustomer, attachCustomerIdentifiers, createStoreCustomer, normalizeEmail, normalizePhone } from '@/lib/customers'
 
 export async function POST(req: NextRequest) {
   try {
@@ -44,13 +44,10 @@ export async function POST(req: NextRequest) {
       // Attach the identifiers it was missing (e.g. phone from a previous manual order)
       customer = await attachCustomerIdentifiers(customer, { email: cleanEmail, phone: cleanPhone })
     } else {
-      customer = await prisma.customer.create({
-        data: {
-          storeId,
-          name: name || cleanEmail!.split('@')[0],
-          email: cleanEmail,
-          phone: cleanPhone,
-        },
+      customer = await createStoreCustomer(storeId, {
+        name: name || cleanEmail!.split('@')[0],
+        email: cleanEmail,
+        phone: cleanPhone,
       })
     }
 

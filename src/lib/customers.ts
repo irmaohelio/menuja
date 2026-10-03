@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client'
 import type { Customer } from '@prisma/client'
 import { prisma } from './prisma'
 
@@ -46,4 +47,21 @@ export async function attachCustomerIdentifiers(
 
   if (Object.keys(data).length === 0) return customer
   return prisma.customer.update({ where: { id: customer.id }, data })
+}
+
+// Create a customer within a store, tolerating concurrent inserts that hit the
+// unique (storeId, email) / (storeId, phone) constraints by reusing the winner.
+export async function createStoreCustomer(
+  storeId: string,
+  data: { name: string; email?: string | null; phone?: string | null },
+): Promise<Customer> {
+  try {
+    return await prisma.customer.create({ data: { storeId, ...data } })
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+      const existing = await findStoreCustomer(storeId, data)
+      if (existing) return existing
+    }
+    throw e
+  }
 }
