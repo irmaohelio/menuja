@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TESTE A</title>
+  <link rel="manifest" href="/loja-manifest-test.json" />
+  <meta name="theme-color" content="#e11d48" />
+  <style>body{font-family:system-ui;padding:24px}#s{font-size:24px;font-weight:bold;margin:16px 0}#r{color:#6b7280}</style>
+</head>
+<body>
+  <h1>TESTE A — manifest estático com start_url da loja</h1>
+  <p id="s">Verificando...</p>
+  <div id="r"></div>
+  <script>
+    window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); window.__p = e; document.getElementById('s').textContent = 'A = CONVITE DISPAROU ✔' })
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js')
+    setTimeout(function () { if (!window.__p) document.getElementById('s').textContent = 'A = NÃO DISPAROU ✖' }, 9000)
+    fetch('/loja-manifest-test.json').then(function(){document.getElementById('r').textContent='manifest carregou ok'}).catch(function(){document.getElementById('r').textContent='erro ao carregar manifest'})
+  </script>
+</body>
+</html>

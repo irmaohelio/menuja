@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TESTE B</title>
+  <link rel="manifest" href="/api/store/acaiteria-santos/manifest" />
+  <meta name="theme-color" content="#e11d48" />
+  <style>body{font-family:system-ui;padding:24px}#s{font-size:24px;font-weight:bold;margin:16px 0}#r{color:#6b7280}</style>
+</head>
+<body>
+  <h1>TESTE B — manifest dinâmico da loja</h1>
+  <p id="s">Verificando...</p>
+  <div id="r"></div>
+  <script>
+    window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); window.__p = e; document.getElementById('s').textContent = 'B = CONVITE DISPAROU ✔' })
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js')
+    setTimeout(function () { if (!window.__p) document.getElementById('s').textContent = 'B = NÃO DISPAROU ✖' }, 9000)
+    fetch('/api/store/acaiteria-santos/manifest').then(function(r){return r.json()}).then(function(j){document.getElementById('r').textContent='manifest: name=' + j.name + ' start_url=' + j.start_url + ' icons=' + j.icons.length}).catch(function(e){document.getElementById('r').textContent='erro: ' + e})
+  </script>
+</body>
+</html>
