@@ -220,7 +220,7 @@ export default function LojaPage() {
     return () => clearInterval(interval)
   }, [slug])
 
-  // Convite para instalar o app (aparece sozinho, como no app de referência)
+  // Convite para instalar — aparece sempre até o cliente instalar
   useEffect(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then((reg) => reg.update().catch(() => {})).catch(() => {})
@@ -230,35 +230,22 @@ export default function LojaPage() {
     const ua = navigator.userAgent || ''
     const ios = /iPad|iPhone|iPod/.test(ua)
     setIsIOS(ios)
-    const isInApp = /FBAN|FBAV|Instagram|WhatsApp|Line\/|Twitter|MicroMessenger|; wv\)/i.test(ua) || (ios && !/Safari/i.test(ua))
-    setInApp(isInApp)
-    try {
-      if (localStorage.getItem(`install_hide2_${slug}`) || localStorage.getItem(`install_done2_${slug}`)) return
-    } catch {}
+    setInApp(/FBAN|FBAV|Instagram|WhatsApp|Line\/|Twitter|MicroMessenger|; wv\)/i.test(ua) || (ios && !/Safari/i.test(ua)))
+
+    // Banner aparece na hora (não espera o evento nativo)
+    try { if (sessionStorage.getItem(`install_dismissed_${slug}`)) return } catch {}
+    setShowInstall(true)
 
     const onBIP = (e: any) => { e.preventDefault(); setInstallEvt(e) }
-    const onReady = () => {
-      const ev = (window as any).__deferredInstallPrompt
-      if (ev) setInstallEvt(ev)
-    }
-    const onInstalled = () => {
-      setShowInstall(false)
-      try { localStorage.setItem(`install_done2_${slug}`, '1') } catch {}
-    }
+    const onInstalled = () => { setShowInstall(false); setInstallEvt(null) }
     window.addEventListener('beforeinstallprompt', onBIP)
-    window.addEventListener('menuja-install-ready', onReady)
     window.addEventListener('appinstalled', onInstalled)
-    // O evento pode ter disparado antes do React montar — recupera o que foi guardado
+    // Evento pode ter chegado antes do React montar
     if ((window as any).__deferredInstallPrompt) setInstallEvt((window as any).__deferredInstallPrompt)
-
-    // Mostra o banner sozinho, pouco depois de abrir
-    const timer = setTimeout(() => setShowInstall(true), 1500)
 
     return () => {
       window.removeEventListener('beforeinstallprompt', onBIP)
-      window.removeEventListener('menuja-install-ready', onReady)
       window.removeEventListener('appinstalled', onInstalled)
-      clearTimeout(timer)
     }
   }, [slug])
 
@@ -266,9 +253,6 @@ export default function LojaPage() {
     if (installEvt) {
       installEvt.prompt()
       try { await installEvt.userChoice } catch {}
-      setInstallEvt(null)
-      setShowInstall(false)
-      try { localStorage.setItem(`install_done2_${slug}`, '1') } catch {}
       return
     }
     if (inApp) { copyStoreLink(); return }
@@ -276,12 +260,12 @@ export default function LojaPage() {
       alert('Para instalar no iPhone/iPad:\n1. Toque em Compartilhar (□↑) na barra do Safari.\n2. Role e toque em "Adicionar à Tela de Início".\n3. Confirme em "Adicionar".')
       return
     }
-    alert('Para instalar:\n1. Abra o menu do navegador (três pontinhos, no canto superior).\n2. Toque em "Instalar aplicativo" ou "Adicionar à tela inicial".')
+    alert('Para instalar:\n1. Abra o menu do navegador (⋮, no canto superior).\n2. Toque em "Instalar aplicativo".\n\nOu volte mais tarde — o botão "Instalar" aparece sozinho.')
   }
 
   const dismissInstall = () => {
     setShowInstall(false)
-    try { localStorage.setItem(`install_hide2_${slug}`, '1') } catch {}
+    try { sessionStorage.setItem(`install_dismissed_${slug}`, '1') } catch {}
   }
 
   const copyStoreLink = () => {
