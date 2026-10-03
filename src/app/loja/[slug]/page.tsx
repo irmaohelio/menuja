@@ -58,6 +58,10 @@ export default function LojaPage() {
   })
   const [showProfile, setShowProfile] = useState(false)
   const [showBackToTop, setShowBackToTop] = useState(false)
+  const [couponInput, setCouponInput] = useState("")
+  const [coupon, setCoupon] = useState<{ code: string; discount: number } | null>(null)
+  const [couponError, setCouponError] = useState("")
+  const [applyingCoupon, setApplyingCoupon] = useState(false)
   const [googleUser, setGoogleUser] = useState<any>(() => {
     try {
       const saved = localStorage.getItem(`google_user_${slug}`)
@@ -331,6 +335,30 @@ export default function LojaPage() {
     return sum + (item.unitPrice + optsTotal) * item.quantity
   }, 0)
 
+  const deliveryFeeValue = checkoutForm.deliveryType === "delivery" ? (store?.settings?.deliveryFee || 0) : 0
+  const discountValue = coupon?.discount || 0
+  const finalTotal = Math.max(0, cartTotal - discountValue + deliveryFeeValue)
+
+  const applyCoupon = async () => {
+    const code = couponInput.trim()
+    if (!code) return
+    setApplyingCoupon(true)
+    setCouponError("")
+    try {
+      const res = await fetch(`/api/coupons/validate?store=${slug}&code=${encodeURIComponent(code)}&subtotal=${cartTotal}`)
+      const data = await res.json()
+      if (data.success) {
+        setCoupon({ code: data.code, discount: data.discount })
+      } else {
+        setCoupon(null)
+        setCouponError(data.error || "Cupom inválido")
+      }
+    } catch {
+      setCouponError("Erro ao validar cupom")
+    }
+    setApplyingCoupon(false)
+  }
+
   const handleGoogleLogin = async () => {
     const gsi = (window as any).google?.accounts?.id
     if (!gsi) {
@@ -448,6 +476,7 @@ export default function LojaPage() {
         customerCity: checkoutForm.city || profile.city,
         customerState: checkoutForm.state,
         notes: checkoutForm.notes,
+        couponCode: coupon?.code || null,
         scheduledDate: cart.find(i => i.scheduledDate)?.scheduledDate || null,
         items: cart.map(item => ({
           productId: item.productId && !item.productId.startsWith('sorvete') ? item.productId : null,
@@ -966,16 +995,37 @@ export default function LojaPage() {
                     className="w-full px-4 py-3 border rounded-xl text-sm" rows={2} />
                 </div>
 
+                {/* Cupom */}
+                <div className="bg-white p-4 rounded-2xl shadow-sm mb-4">
+                  <label className="block text-sm font-medium mb-2">🎟️ Cupom de desconto</label>
+                  <div className="flex gap-2">
+                    <input value={couponInput} onChange={e => { setCouponInput(e.target.value.toUpperCase()); setCouponError("") }}
+                      placeholder="CÓDIGO" className="flex-1 px-4 py-3 border rounded-xl text-sm uppercase" />
+                    <button onClick={applyCoupon} disabled={applyingCoupon}
+                      className="px-4 py-3 rounded-xl text-white text-sm font-bold disabled:opacity-50"
+                      style={{ backgroundColor: store.buttonColor }}>
+                      {applyingCoupon ? "..." : "Aplicar"}
+                    </button>
+                  </div>
+                  {couponError && <p className="text-xs text-red-500 mt-2">{couponError}</p>}
+                  {coupon && (
+                    <p className="text-xs text-emerald-600 mt-2">✓ Cupom <strong>{coupon.code}</strong> aplicado (-R$ {coupon.discount.toFixed(2)})</p>
+                  )}
+                </div>
+
                 {/* Totais */}
                 <div className="bg-white p-4 rounded-2xl shadow-sm mb-4">
                   <div className="flex justify-between text-sm mb-1"><span>Subtotal</span><span>R$ {cartTotal.toFixed(2)}</span></div>
                   {checkoutForm.deliveryType === "delivery" && store.settings?.deliveryFee > 0 && (
                     <div className="flex justify-between text-sm mb-1"><span>Taxa de entrega</span><span>R$ {store.settings.deliveryFee.toFixed(2)}</span></div>
                   )}
+                  {discountValue > 0 && (
+                    <div className="flex justify-between text-sm mb-1 text-emerald-600"><span>Cupom {coupon?.code}</span><span>- R$ {discountValue.toFixed(2)}</span></div>
+                  )}
                   <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2">
                     <span>Total</span>
                     <span style={{ color: store.primaryColor }}>
-                      R$ {(cartTotal + (checkoutForm.deliveryType === "delivery" ? (store.settings?.deliveryFee || 0) : 0)).toFixed(2)}
+                      R$ {finalTotal.toFixed(2)}
                     </span>
                   </div>
                 </div>

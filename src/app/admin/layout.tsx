@@ -49,6 +49,7 @@ const menuItems = [
   { href: "/admin/pedidos", label: "Pedidos", icon: "🔔" },
   { href: "/admin/produtos", label: "Produtos", icon: "📦" },
   { href: "/admin/categorias", label: "Categorias", icon: "📁" },
+  { href: "/admin/cupons", label: "Cupons", icon: "🎟️" },
   { href: "/admin/configuracoes", label: "Config.", icon: "⚙️" },
   { href: "/admin/planos", label: "Planos", icon: "💎" },
 ]

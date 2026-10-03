@@ -95,6 +95,26 @@ model Store {
   highlights     StoreHighlight[]
   notifications  Notification[]
   pizzaCrusts    PizzaCrust[]
+  coupons        Coupon[]
+}
+
+model Coupon {
+  id           String   @id @default(uuid())
+  storeId      String
+  code         String
+  discountType String   @default("percent") // 'percent' | 'fixed'
+  value        Float
+  minOrder     Float    @default(0)
+  maxUses      Int? // null = ilimitado
+  usedCount    Int      @default(0)
+  expiresAt    DateTime?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, code])
+  @@index([storeId])
 }
 
 model StoreSettings {
@@ -301,6 +321,7 @@ model Order {
   subtotal             Float
   deliveryFee          Float    @default(0)
   discount             Float    @default(0)
+  couponCode           String?
   total                Float
   status               String   @default("received")
   notes                String?

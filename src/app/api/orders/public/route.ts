@@ -5,6 +5,7 @@ import { success, error } from '@/lib/api'
 import { isWithinBusinessHours } from '@/lib/business-hours'
 import { findStoreCustomer, attachCustomerIdentifiers, createStoreCustomer, normalizeEmail, normalizePhone } from '@/lib/customers'
 import { rateLimit, clientIp } from '@/lib/rate-limit'
+import { validateCoupon } from '@/lib/coupons'
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,7 +13,8 @@ export async function POST(req: NextRequest) {
     const {
       storeSlug, customerName, customerPhone, customerEmail, deliveryType, paymentMethod,
       changeFor, items, customerAddress, customerNumber, customerComplement,
-      customerNeighborhood, customerCity, customerState, customerReference, notes, scheduledDate
+      customerNeighborhood, customerCity, customerState, customerReference, notes, scheduledDate,
+      couponCode
     } = body
 
     if (!storeSlug || !customerName || !items?.length) {
@@ -68,7 +70,18 @@ export async function POST(req: NextRequest) {
     })
 
     const deliveryFee = deliveryType === 'delivery' ? (store.settings?.deliveryFee || 0) : 0
-    const total = subtotal + deliveryFee
+
+    // Cupom de desconto (validado no servidor)
+    let discount = 0
+    let appliedCoupon: { id: string; code: string } | null = null
+    if (couponCode) {
+      const result = await validateCoupon(store.id, couponCode, subtotal)
+      if (!result.ok) return error(result.error)
+      discount = result.discount
+      appliedCoupon = { id: result.coupon.id, code: result.coupon.code }
+    }
+
+    const total = Math.max(0, subtotal - discount + deliveryFee)
 
     // Resolver cliente sempre restrito a esta loja (evita vínculo entre lojas).
     // Identidade unificada por e-mail OU telefone — nunca duplica a mesma pessoa.
@@ -128,6 +141,8 @@ export async function POST(req: NextRequest) {
             changeFor,
             subtotal,
             deliveryFee,
+            discount,
+            couponCode: appliedCoupon?.code || null,
             total,
             notes,
             scheduledDate: scheduledDate ? new Date(scheduledDate) : null,
@@ -143,6 +158,11 @@ export async function POST(req: NextRequest) {
       }
     }
     if (!order) return error('Não foi possível gerar o pedido. Tente novamente.', 500)
+
+    // Registra o uso do cupom
+    if (appliedCoupon) {
+      await prisma.coupon.update({ where: { id: appliedCoupon.id }, data: { usedCount: { increment: 1 } } })
+    }
 
     // Salvar endereço do cliente
     if (customer && customerAddress) {
