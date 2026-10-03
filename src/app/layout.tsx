@@ -68,7 +68,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `window.__deferredInstallPrompt=null;window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__deferredInstallPrompt=e;window.dispatchEvent(new Event('menuja-install-ready'));});window.addEventListener('appinstalled',function(){window.__appInstalled=true;});`,
+            __html: `window.__deferredInstallPrompt=null;window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__deferredInstallPrompt=e;window.dispatchEvent(new Event('menuja-install-ready'));});window.addEventListener('appinstalled',function(){window.__appInstalled=true;});if('serviceWorker' in navigator){try{navigator.serviceWorker.register('/sw.js');}catch(e){}}`,
           }}
         />
         <script
