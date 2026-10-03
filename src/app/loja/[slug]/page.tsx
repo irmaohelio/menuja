@@ -223,7 +223,7 @@ export default function LojaPage() {
   // Convite para instalar o app (aparece sozinho, como no app de referência)
   useEffect(() => {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {})
+      navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then((reg) => reg.update().catch(() => {})).catch(() => {})
     }
     const standalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone
     if (standalone) return

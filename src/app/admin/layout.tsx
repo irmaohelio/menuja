@@ -93,7 +93,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   // Registra o service worker (necessário para instalar o app do lojista)
   useEffect(() => {
-    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {})
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" }).then((r) => r.update().catch(() => {})).catch(() => {})
+    }
   }, [])
 
   // Refresh the bell immediately when a pedido is cancelled/deleted in the app
