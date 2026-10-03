@@ -6,6 +6,7 @@ import { isWithinBusinessHours } from '@/lib/business-hours'
 import { findStoreCustomer, attachCustomerIdentifiers, createStoreCustomer, normalizeEmail, normalizePhone } from '@/lib/customers'
 import { rateLimit, clientIp } from '@/lib/rate-limit'
 import { validateCoupon } from '@/lib/coupons'
+import { sendOrderWhatsApp, orderWhatsAppText } from '@/lib/notify'
 
 export async function POST(req: NextRequest) {
   try {
@@ -201,6 +202,19 @@ export async function POST(req: NextRequest) {
         orderId: order.id,
       },
     })
+
+    // Avisa o lojista no WhatsApp (se configurado)
+    await sendOrderWhatsApp(
+      store.settings,
+      orderWhatsAppText({
+        orderNumber: order.orderNumber,
+        customerName,
+        total,
+        deliveryType,
+        paymentMethod,
+        customerNeighborhood,
+      }),
+    )
 
     return success({ order })
   } catch (e: any) {

@@ -135,6 +135,11 @@ model StoreSettings {
   halfAndHalfPrice Float?
   whatsappOrders   Boolean @default(false)
 
+  // Notificação de novo pedido por WhatsApp (CallMeBot)
+  notifyOnOrder   Boolean @default(false)
+  notifyWhatsapp  String?
+  notifyApiKey    String?
+
   store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
 }
 
