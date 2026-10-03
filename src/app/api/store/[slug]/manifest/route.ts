@@ -31,11 +31,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     theme_color: store.primaryColor || '#e11d48',
     lang: 'pt-BR',
     icons: [
-      // Ícones servidos do próprio domínio, gerados a partir do logo da loja.
-      // (Se a loja não tiver logo, o endpoint cai no ícone padrão do MenuJá.)
-      { src: `/api/store/${store.slug}/icon?size=192`, sizes: '192x192', type: 'image/png', purpose: 'any' },
-      { src: `/api/store/${store.slug}/icon?size=512`, sizes: '512x512', type: 'image/png', purpose: 'any' },
-      { src: `/api/store/${store.slug}/icon?size=512&maskable=1`, sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+      { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+      { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+      { src: '/icons/icon-512-maskable.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
     ],
   }
 
