@@ -2,12 +2,13 @@ import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { success, error } from '@/lib/api'
 import { isWithinBusinessHours } from '@/lib/business-hours'
+import { findStoreCustomer, attachCustomerIdentifiers, normalizeEmail, normalizePhone } from '@/lib/customers'
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const {
-      storeSlug, customerName, customerPhone, deliveryType, paymentMethod,
+      storeSlug, customerName, customerPhone, customerEmail, deliveryType, paymentMethod,
       changeFor, items, customerAddress, customerNumber, customerComplement,
       customerNeighborhood, customerCity, customerState, customerReference, notes, scheduledDate
     } = body
@@ -69,22 +70,30 @@ export async function POST(req: NextRequest) {
     })
     const orderNumber = (lastOrder?.orderNumber || 0) + 1
 
-    // Buscar ou criar cliente (sempre restrito a esta loja — evita vínculo entre lojas)
+    // Resolver cliente sempre restrito a esta loja (evita vínculo entre lojas).
+    // Identidade unificada por e-mail OU telefone — nunca duplica a mesma pessoa.
+    const cleanEmail = normalizeEmail(customerEmail)
+    const cleanPhone = normalizePhone(customerPhone)
+
     let customer = null
     if (body.customerId) {
       customer = await prisma.customer.findFirst({
         where: { id: body.customerId, storeId: store.id },
       })
     }
-    if (!customer && customerPhone) {
-      customer = await prisma.customer.findFirst({
-        where: { storeId: store.id, phone: customerPhone },
-      })
-      if (!customer) {
-        customer = await prisma.customer.create({
-          data: { storeId: store.id, name: customerName, phone: customerPhone },
-        })
+    if (!customer) {
+      customer = await findStoreCustomer(store.id, { email: cleanEmail, phone: cleanPhone })
+    }
+    if (customer) {
+      // Anexa o identificador que ainda faltava (ex.: cliente entrou com Google e agora informou o telefone)
+      customer = await attachCustomerIdentifiers(customer, { email: cleanEmail, phone: cleanPhone })
+    } else {
+      if (!cleanEmail && !cleanPhone) {
+        return error('Informe um telefone ou entre com sua conta Google')
       }
+      customer = await prisma.customer.create({
+        data: { storeId: store.id, name: customerName, email: cleanEmail, phone: cleanPhone },
+      })
     }
 
     const order = await prisma.order.create({

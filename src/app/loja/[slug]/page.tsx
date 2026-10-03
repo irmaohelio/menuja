@@ -277,7 +277,9 @@ export default function LojaPage() {
 
   const saveProfile = () => {
     if (!profile.name.trim()) { alert("Informe seu nome"); return }
-    if (!profile.phone.trim()) { alert("Informe seu telefone"); return }
+    if (!profile.phone.trim() && !googleUser) {
+      alert("Informe seu telefone ou entre com sua conta Google"); return
+    }
     localStorage.setItem(`customer_profile_${slug}`, JSON.stringify(profile))
     setShowProfile(false)
     // Auto-fill checkout form
@@ -314,7 +316,12 @@ export default function LojaPage() {
           const res = await fetch('/api/auth/google', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ credential: response.credential, storeId: store.id }),
+            body: JSON.stringify({
+              credential: response.credential,
+              storeId: store.id,
+              // Envia o telefone já informado para unificar com um cadastro existente
+              phone: profile.phone || checkoutForm.phone || null,
+            }),
           })
           const data = await res.json()
           if (data.success) {
@@ -373,7 +380,7 @@ export default function LojaPage() {
     localStorage.removeItem(`google_user_${slug}`)
   }
 
-  const isProfileComplete = profile.name && profile.phone
+  const isProfileComplete = Boolean(profile.name && (profile.phone || googleUser))
 
   const submitOrder = async () => {
     if (cart.length === 0) { alert("Carrinho vazio"); return }
@@ -400,6 +407,7 @@ export default function LojaPage() {
         customerId: googleUser?.id || null,
         customerName: checkoutForm.name,
         customerPhone: checkoutForm.phone,
+        customerEmail: googleUser?.email || null,
         deliveryType: checkoutForm.deliveryType,
         paymentMethod: checkoutForm.paymentMethod,
         changeFor: checkoutForm.changeFor ? parseFloat(checkoutForm.changeFor) : null,

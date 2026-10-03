@@ -1,10 +1,11 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { success, error } from '@/lib/api'
+import { findStoreCustomer, attachCustomerIdentifiers, normalizeEmail, normalizePhone } from '@/lib/customers'
 
 export async function POST(req: NextRequest) {
   try {
-    const { credential, storeId } = await req.json()
+    const { credential, storeId, phone } = await req.json()
 
     if (!credential || !storeId) {
       return error('credential and storeId required', 400)
@@ -29,35 +30,42 @@ export async function POST(req: NextRequest) {
 
     const { email, name, picture } = ticket
 
-    if (!email) {
+    const cleanEmail = normalizeEmail(email)
+    const cleanPhone = normalizePhone(phone)
+
+    if (!cleanEmail && !cleanPhone) {
       return error('Email not found in token', 401)
     }
 
-    // Find or create customer
-    let customer = await prisma.customer.findFirst({
-      where: { storeId, email },
-      include: { addresses: true },
-    })
+    // Find an existing customer by email OR phone (unified identity per store)
+    let customer = await findStoreCustomer(storeId, { email: cleanEmail, phone: cleanPhone })
 
-    if (!customer) {
+    if (customer) {
+      // Attach the identifiers it was missing (e.g. phone from a previous manual order)
+      customer = await attachCustomerIdentifiers(customer, { email: cleanEmail, phone: cleanPhone })
+    } else {
       customer = await prisma.customer.create({
         data: {
           storeId,
-          name: name || email.split('@')[0],
-          email,
-          phone: null,
+          name: name || cleanEmail!.split('@')[0],
+          email: cleanEmail,
+          phone: cleanPhone,
         },
-        include: { addresses: true },
       })
     }
 
+    const full = await prisma.customer.findUnique({
+      where: { id: customer.id },
+      include: { addresses: true },
+    })
+
     return success({
       customer: {
-        id: customer.id,
-        name: customer.name,
-        email: customer.email,
-        phone: customer.phone,
-        addresses: customer.addresses,
+        id: full!.id,
+        name: full!.name,
+        email: full!.email,
+        phone: full!.phone,
+        addresses: full!.addresses,
         picture,
       },
     })
