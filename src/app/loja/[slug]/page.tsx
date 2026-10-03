@@ -568,8 +568,8 @@ export default function LojaPage() {
 
               {/* Right: Action Buttons */}
               <div className="flex items-center gap-2">
-                <button onClick={() => setShowProfile(true)} 
-                  className={`w-10 h-10 rounded-xl flex items-center justify-center text-white transition-all ${isProfileComplete ? 'bg-white/15 hover:bg-white/25' : 'bg-amber-400/80 hover:bg-amber-400 animate-pulse'}`}>
+                <button onClick={() => setShowProfile(true)}
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm text-white transition-all ${isProfileComplete ? 'bg-white/15 hover:bg-white/25' : 'bg-amber-400/80 hover:bg-amber-400 animate-pulse'}`}>
                   {isProfileComplete ? '👤' : '⚠️'}
                 </button>
                 <button onClick={() => {
@@ -580,8 +580,14 @@ export default function LojaPage() {
                     navigator.clipboard.writeText(url)
                     alert('Link copiado!')
                   }
-                }} className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center text-white hover:bg-white/25 transition-all">
-                  📤
+                }} aria-label="Compartilhar" className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center text-white hover:bg-white/25 transition-all">
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="18" cy="5" r="3" />
+                    <circle cx="6" cy="12" r="3" />
+                    <circle cx="18" cy="19" r="3" />
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+                  </svg>
                 </button>
               </div>
             </div>
