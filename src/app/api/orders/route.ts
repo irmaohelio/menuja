@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { getCurrentStore } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { success, error, unauthorized } from '@/lib/api'
+import { deleteBlobs } from '@/lib/blob'
 
 export async function GET(req: NextRequest) {
   const store = await getCurrentStore()
@@ -50,6 +51,8 @@ export async function PUT(req: NextRequest) {
     await prisma.notification.deleteMany({
       where: { orderId, storeId: store.id },
     })
+    // Libera espaço: apaga o comprovante de pagamento do Blob
+    await deleteBlobs([order.paymentProofUrl])
   }
 
   return success({ order: updated })
@@ -91,6 +94,9 @@ export async function DELETE(req: NextRequest) {
   await prisma.order.deleteMany({
     where: { id: { in: orderIds } },
   })
+
+  // Libera espaço: apaga os comprovantes de pagamento vinculados
+  await deleteBlobs(orders.map((o) => o.paymentProofUrl))
 
   return success({ deleted: orderIds.length })
 }
