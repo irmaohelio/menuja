@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Teste loja</title>
+  <link rel="manifest" href="/loja-manifest-test.json" />
+  <meta name="theme-color" content="#e11d48" />
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 24px; }
+    #status { font-size: 22px; font-weight: bold; margin: 16px 0; }
+    button { padding: 12px 20px; font-size: 16px; border-radius: 10px; border: 0; background: #e11d48; color: #fff; }
+  </style>
+</head>
+<body>
+  <h1>Teste: manifest com start_url da loja</h1>
+  <p id="status">Verificando...</p>
+  <button id="btn" disabled>Instalar</button>
+  <script>
+    window.addEventListener('beforeinstallprompt', function (e) {
+      e.preventDefault(); window.__p = e
+      document.getElementById('status').textContent = 'CONVITE DISPAROU ✔'
+      var b = document.getElementById('btn'); b.disabled = false; b.onclick = function () { e.prompt() }
+    })
+    window.addEventListener('appinstalled', function () { document.getElementById('status').textContent = 'INSTALADO ✔' })
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js')
+    setTimeout(function () { if (!window.__p) document.getElementById('status').textContent = 'CONVITE NÃO DISPAROU ✖' }, 9000)
+  </script>
+</body>
+</html>
