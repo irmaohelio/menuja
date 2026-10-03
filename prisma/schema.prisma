@@ -315,6 +315,7 @@ model Order {
   items     OrderItem[]
   statusLog OrderStatusLog[]
 
+  @@unique([storeId, orderNumber])
   @@index([storeId])
   @@index([status])
   @@index([createdAt])

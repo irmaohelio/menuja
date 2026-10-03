@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { success, error } from '@/lib/api'
 import { isWithinBusinessHours } from '@/lib/business-hours'
@@ -62,14 +63,6 @@ export async function POST(req: NextRequest) {
     const deliveryFee = deliveryType === 'delivery' ? (store.settings?.deliveryFee || 0) : 0
     const total = subtotal + deliveryFee
 
-    // Gerar número do pedido
-    const lastOrder = await prisma.order.findFirst({
-      where: { storeId: store.id },
-      orderBy: { orderNumber: 'desc' },
-      select: { orderNumber: true },
-    })
-    const orderNumber = (lastOrder?.orderNumber || 0) + 1
-
     // Resolver cliente sempre restrito a esta loja (evita vínculo entre lojas).
     // Identidade unificada por e-mail OU telefone — nunca duplica a mesma pessoa.
     const cleanEmail = normalizeEmail(customerEmail)
@@ -98,34 +91,51 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    const order = await prisma.order.create({
-      data: {
-        storeId: store.id,
-        customerId: customer?.id,
-        orderNumber,
-        customerName,
-        customerPhone,
-        customerAddress,
-        customerNumber,
-        customerComplement,
-        customerNeighborhood,
-        customerCity,
-        customerState,
-        customerReference,
-        deliveryType: deliveryType || 'delivery',
-        paymentMethod: paymentMethod || 'cash',
-        changeFor,
-        subtotal,
-        deliveryFee,
-        total,
-        notes,
-        scheduledDate: scheduledDate ? new Date(scheduledDate) : null,
-        paymentStatus: scheduledDate ? 'awaiting_proof' : null,
-        items: { create: itemsData },
-        statusLog: { create: { status: 'received' } },
-      },
-      include: { items: { include: { options: true } } },
-    })
+    // Cria o pedido com número sequencial; em caso de corrida (dois pedidos ao mesmo tempo),
+    // a constraint única (storeId, orderNumber) garante que não repete número.
+    let order: any = null
+    for (let attempt = 0; attempt < 5 && !order; attempt++) {
+      const lastOrder = await prisma.order.findFirst({
+        where: { storeId: store.id },
+        orderBy: { orderNumber: 'desc' },
+        select: { orderNumber: true },
+      })
+      const orderNumber = (lastOrder?.orderNumber || 0) + 1
+      try {
+        order = await prisma.order.create({
+          data: {
+            storeId: store.id,
+            customerId: customer?.id,
+            orderNumber,
+            customerName,
+            customerPhone,
+            customerAddress,
+            customerNumber,
+            customerComplement,
+            customerNeighborhood,
+            customerCity,
+            customerState,
+            customerReference,
+            deliveryType: deliveryType || 'delivery',
+            paymentMethod: paymentMethod || 'cash',
+            changeFor,
+            subtotal,
+            deliveryFee,
+            total,
+            notes,
+            scheduledDate: scheduledDate ? new Date(scheduledDate) : null,
+            paymentStatus: scheduledDate ? 'awaiting_proof' : null,
+            items: { create: itemsData },
+            statusLog: { create: { status: 'received' } },
+          },
+          include: { items: { include: { options: true } } },
+        })
+      } catch (e) {
+        if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') continue
+        throw e
+      }
+    }
+    if (!order) return error('Não foi possível gerar o pedido. Tente novamente.', 500)
 
     // Salvar endereço do cliente
     if (customer && customerAddress) {
@@ -160,7 +170,7 @@ export async function POST(req: NextRequest) {
         storeId: store.id,
         type: 'new_order',
         title: 'Novo pedido!',
-        message: `Pedido #${orderNumber} - ${customerName} - R$ ${total.toFixed(2)}`,
+        message: `Pedido #${order.orderNumber} - ${customerName} - R$ ${total.toFixed(2)}`,
         orderId: order.id,
       },
     })
