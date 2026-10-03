@@ -18,6 +18,60 @@ const steps = [
   "Receba seus pedidos",
 ]
 
+const plans = [
+  {
+    id: "monthly",
+    name: "Mensal",
+    price: 34.9,
+    period: "mês",
+    icon: "📅",
+    popular: false,
+    savings: null as string | null,
+    features: [
+      "Produtos ilimitados",
+      "Pedidos ilimitados",
+      "Link da loja personalizado",
+      "Suporte por WhatsApp",
+      "Relatórios de vendas",
+      "Sem marca d'água",
+    ],
+  },
+  {
+    id: "semiannual",
+    name: "Semestral",
+    price: 199.9,
+    period: "6 meses",
+    icon: "⭐",
+    popular: true,
+    savings: "Economia de R$ 1,58/mês",
+    features: [
+      "Produtos ilimitados",
+      "Pedidos ilimitados",
+      "Link da loja personalizado",
+      "Suporte prioritário",
+      "Relatórios avançados",
+      "Sem marca d'água",
+    ],
+  },
+  {
+    id: "annual",
+    name: "Anual",
+    price: 374.9,
+    period: "ano",
+    icon: "🏢",
+    popular: false,
+    savings: "Economia de R$ 3,66/mês",
+    features: [
+      "Produtos ilimitados",
+      "Pedidos ilimitados",
+      "Domínio próprio",
+      "Suporte prioritário",
+      "Relatórios avançados",
+      "Sem marca d'água",
+    ],
+  },
+]
+
 const segments = [
   "🍕 Pizzaria", "🍔 Lanche Delivery", "🌮 Salgados", "🍱 Marmitas",
   "🍨 Açaí", "🎂 Doces", "🍺 Bebidas", "📦 Outros",
@@ -146,22 +200,60 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Preço */}
+      {/* Preços */}
       <section className="py-16 px-4 bg-gradient-to-br from-rose-600 to-pink-500 text-white">
-        <div className="max-w-md mx-auto text-center">
-          <div className="inline-block bg-white/20 px-4 py-1.5 rounded-full text-sm font-bold mb-4">🎁 14 dias grátis para testar</div>
-          <h2 className="text-2xl font-bold mb-4">Plano Mensal</h2>
-          <div className="text-6xl font-extrabold mb-2">R$34,99</div>
-          <p className="text-rose-100 text-lg mb-8">/mês • sem taxa de adesão • cancele quando quiser</p>
-          <div className="bg-white/10 rounded-xl p-6 mb-8 text-left space-y-3">
-            <p>✅ Cardápio digital ilimitado</p>
-            <p>✅ Pedidos em tempo real</p>
-            <p>✅ Relatórios de vendas</p>
-            <p>✅ Link personalizado para WhatsApp</p>
-            <p>✅ Controle de horários</p>
-            <p>✅ Suporte prioritário</p>
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-10">
+            <div className="inline-block bg-white/20 px-4 py-1.5 rounded-full text-sm font-bold mb-4">🎁 14 dias grátis para testar</div>
+            <h2 className="text-3xl font-extrabold mb-2">Escolha seu plano</h2>
+            <p className="text-rose-100">Sem taxa de adesão • Cancele quando quiser</p>
           </div>
-          <Link href="/cadastro" className="inline-block px-8 py-4 bg-white text-rose-600 rounded-xl font-bold text-lg hover:bg-rose-50 transition shadow-lg">Começar teste grátis</Link>
+
+          <div className="grid sm:grid-cols-3 gap-5 items-start">
+            {plans.map((plan) => (
+              <div
+                key={plan.id}
+                className={`relative bg-white rounded-2xl p-6 text-gray-800 shadow-xl flex flex-col h-full ${
+                  plan.popular ? "ring-4 ring-white/60 sm:-mt-3" : ""
+                }`}
+              >
+                {plan.popular && (
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-rose-600 text-white text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap">
+                    MAIS POPULAR
+                  </span>
+                )}
+                <div className="text-3xl mb-1">{plan.icon}</div>
+                <h3 className="text-lg font-bold">{plan.name}</h3>
+                <div className="mt-3">
+                  <span className="text-3xl font-extrabold">R$ {plan.price.toFixed(2).replace(".", ",")}</span>
+                  <span className="text-gray-500 text-sm">/{plan.period}</span>
+                </div>
+                {plan.savings ? (
+                  <p className="text-xs font-medium text-emerald-600 mt-1">💰 {plan.savings}</p>
+                ) : (
+                  <p className="text-xs text-transparent mt-1 select-none">.</p>
+                )}
+                <ul className="text-sm text-gray-600 space-y-2 my-5 flex-1">
+                  {plan.features.map((f, i) => (
+                    <li key={i} className="flex gap-2">
+                      <span className="text-emerald-500">✅</span>
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href="/cadastro"
+                  className={`text-center px-6 py-3 rounded-xl font-bold transition ${
+                    plan.popular
+                      ? "bg-rose-600 text-white hover:bg-rose-700"
+                      : "bg-rose-100 text-rose-700 hover:bg-rose-200"
+                  }`}
+                >
+                  Começar grátis
+                </Link>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
