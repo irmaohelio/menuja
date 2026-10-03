@@ -17,7 +17,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     return new Response(JSON.stringify({ name: 'MenuJá', short_name: 'MenuJá', start_url: '/', display: 'standalone' }), { headers })
   }
 
-  const logoType = store.logo ? (store.logo.endsWith('.webp') ? 'image/webp' : 'image/png') : null
+  const logoType = store.logo ? (store.logo.endsWith('.webp') ? 'image/webp' : store.logo.endsWith('.jpg') || store.logo.endsWith('.jpeg') ? 'image/jpeg' : 'image/png') : null
 
   const manifest = {
     name: store.name,
@@ -30,7 +30,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     background_color: '#ffffff',
     theme_color: store.primaryColor || '#e11d48',
     icons: [
-      ...(store.logo ? [{ src: store.logo, sizes: '512x512', type: logoType }] : []),
+      ...(store.logo ? [{ src: store.logo, sizes: '200x200', type: logoType }] : []),
       { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
       { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
       { src: '/icons/icon-512-maskable.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },

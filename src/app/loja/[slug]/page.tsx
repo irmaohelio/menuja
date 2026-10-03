@@ -221,6 +221,10 @@ export default function LojaPage() {
 
   // Convite para instalar o app
   useEffect(() => {
+    // Registrar o service worker (necessário para o navegador liberar o botão "Instalar")
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {})
+    }
     const standalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone
     if (standalone) return
     const ios = /iPad|iPhone|iPod/.test(navigator.userAgent)

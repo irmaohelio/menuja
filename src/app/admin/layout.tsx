@@ -91,6 +91,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return () => window.removeEventListener("pointerdown", unlock)
   }, [])
 
+  // Registra o service worker (necessário para instalar o app do lojista)
+  useEffect(() => {
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {})
+  }, [])
+
   // Refresh the bell immediately when a pedido is cancelled/deleted in the app
   useEffect(() => {
     const onUpdated = () => refreshNotifications()
