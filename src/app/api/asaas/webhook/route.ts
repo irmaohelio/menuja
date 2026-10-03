@@ -4,6 +4,16 @@ import { prisma } from "@/lib/prisma"
 // POST /api/asaas/webhook
 export async function POST(req: NextRequest) {
   try {
+    // Autenticação opcional: se ASAAS_WEBHOOK_TOKEN estiver configurado,
+    // só aceita chamadas com o header "asaas-access-token" correto.
+    const webhookToken = process.env.ASAAS_WEBHOOK_TOKEN
+    if (webhookToken) {
+      const provided = req.headers.get("asaas-access-token")
+      if (provided !== webhookToken) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      }
+    }
+
     const body = await req.json()
     const { event, payment } = body
 
