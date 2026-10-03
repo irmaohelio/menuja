@@ -237,18 +237,26 @@ export default function LojaPage() {
     } catch {}
 
     const onBIP = (e: any) => { e.preventDefault(); setInstallEvt(e) }
+    const onReady = () => {
+      const ev = (window as any).__deferredInstallPrompt
+      if (ev) setInstallEvt(ev)
+    }
     const onInstalled = () => {
       setShowInstall(false)
       try { localStorage.setItem(`install_done_${slug}`, '1') } catch {}
     }
     window.addEventListener('beforeinstallprompt', onBIP)
+    window.addEventListener('menuja-install-ready', onReady)
     window.addEventListener('appinstalled', onInstalled)
+    // O evento pode ter disparado antes do React montar — recupera o que foi guardado
+    if ((window as any).__deferredInstallPrompt) setInstallEvt((window as any).__deferredInstallPrompt)
 
     // Mostra o banner sozinho, pouco depois de abrir
     const timer = setTimeout(() => setShowInstall(true), 1500)
 
     return () => {
       window.removeEventListener('beforeinstallprompt', onBIP)
+      window.removeEventListener('menuja-install-ready', onReady)
       window.removeEventListener('appinstalled', onInstalled)
       clearTimeout(timer)
     }
