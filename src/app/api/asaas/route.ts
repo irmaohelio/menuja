@@ -131,7 +131,12 @@ export async function POST(req: NextRequest) {
 
     const billingType = toBillingType(paymentMethod)
 
-    // Reaproveita assinatura existente para não gerar cobrança duplicada
+    // Se já tem plano ativo, não gera nada
+    if (store.planStatus === "active") {
+      return NextResponse.json({ error: "Você já possui uma assinatura ativa." }, { status: 409 })
+    }
+
+    // Reaproveita assinatura/cobrança em aberto do mesmo plano (evita duplicar)
     if (store.asaasSubscriptionId) {
       const subRes = await asaas(`/subscriptions/${store.asaasSubscriptionId}`)
       if (subRes.ok) {
@@ -151,12 +156,8 @@ export async function POST(req: NextRequest) {
               payment: { method: paymentMethod, ...paymentInfo },
             })
           }
-          // Existe assinatura do mesmo plano mas sem cobrança em aberto (já paga?)
-          if (!open) {
-            return NextResponse.json({ error: "Já existe uma assinatura deste plano. Aguarde a confirmação do pagamento." }, { status: 409 })
-          }
         }
-        // Plano ou forma diferentes → cancela a assinatura antiga antes de criar nova
+        // Assinatura inativa, de outro plano, ou sem cobrança em aberto → cancela e cria nova
         await cancelSubscription(store.asaasSubscriptionId)
       }
     }
