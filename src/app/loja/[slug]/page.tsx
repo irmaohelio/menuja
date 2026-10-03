@@ -213,9 +213,9 @@ export default function LojaPage() {
     return () => document.removeEventListener('visibilitychange', handleVisibility)
   }, [slug])
 
-  // Poll open/close status every 1 second
+  // Poll open/close + menu version every 3 seconds
   useEffect(() => {
-    const interval = setInterval(pollStatus, 1000)
+    const interval = setInterval(pollStatus, 3000)
     return () => clearInterval(interval)
   }, [slug])
 
