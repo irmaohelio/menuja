@@ -2,9 +2,16 @@
 self.addEventListener('install', () => self.skipWaiting())
 self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()))
 
-// Alguns navegadores exigem um handler de fetch para considerar o app instalável.
-// Deixamos o navegador seguir o fluxo normal (sem interceptar as requisições).
-self.addEventListener('fetch', () => {})
+// Handler de fetch de verdade (o Chrome exige isso para liberar a instalação).
+// Passa direto para a rede; não mexe nas rotas dinâmicas do app.
+self.addEventListener('fetch', (event) => {
+  const req = event.request
+  if (req.method !== 'GET') return
+  const url = new URL(req.url)
+  if (url.origin !== self.location.origin) return
+  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/_next/')) return
+  event.respondWith(fetch(req).catch(() => caches.match(req).then((r) => r || new Response('', { status: 504 }))))
+})
 
 self.addEventListener('push', (event) => {
   let data = {}
