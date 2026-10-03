@@ -438,9 +438,17 @@ export default function ConfiguracoesPage() {
 
           <div className="border-t pt-5">
             <h3 className="font-bold">📱 Notificações no celular (push)</h3>
-            <p className="text-sm text-gray-500 mt-1">
-              Instale o app ("Adicionar à tela inicial") e receba um aviso no celular a cada pedido, mesmo com o app fechado.
-            </p>
+            <p className="text-sm text-gray-500 mt-1">Receba um aviso no celular a cada pedido, mesmo com o app fechado.</p>
+            <ol className="text-sm text-gray-600 mt-3 space-y-1 list-decimal list-inside">
+              <li>Instale o app pelo navegador do celular:
+                <ul className="ml-5 mt-1 space-y-1 text-gray-500 list-disc list-inside">
+                  <li><strong>Android (Chrome):</strong> menu ⋮ → "Instalar aplicativo" (ou "Adicionar à tela inicial").</li>
+                  <li><strong>iPhone (Safari):</strong> botão Compartilhar (□↑) → "Adicionar à Tela de Início".</li>
+                </ul>
+              </li>
+              <li>Abra o app pelo ícone que apareceu.</li>
+              <li>Toque em <strong>"Ativar neste aparelho"</strong> abaixo e aceite a permissão.</li>
+            </ol>
             <button onClick={enablePush}
               className="mt-3 px-5 py-2.5 rounded-xl text-white font-medium" style={{ backgroundColor: "var(--btn)" }}>
               Ativar neste aparelho
