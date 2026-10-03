@@ -233,7 +233,7 @@ export default function LojaPage() {
     const isInApp = /FBAN|FBAV|Instagram|WhatsApp|Line\/|Twitter|MicroMessenger|; wv\)/i.test(ua) || (ios && !/Safari/i.test(ua))
     setInApp(isInApp)
     try {
-      if (localStorage.getItem(`install_hide_${slug}`) || localStorage.getItem(`install_done_${slug}`)) return
+      if (localStorage.getItem(`install_hide2_${slug}`) || localStorage.getItem(`install_done2_${slug}`)) return
     } catch {}
 
     const onBIP = (e: any) => { e.preventDefault(); setInstallEvt(e) }
@@ -243,7 +243,7 @@ export default function LojaPage() {
     }
     const onInstalled = () => {
       setShowInstall(false)
-      try { localStorage.setItem(`install_done_${slug}`, '1') } catch {}
+      try { localStorage.setItem(`install_done2_${slug}`, '1') } catch {}
     }
     window.addEventListener('beforeinstallprompt', onBIP)
     window.addEventListener('menuja-install-ready', onReady)
@@ -268,7 +268,7 @@ export default function LojaPage() {
       try { await installEvt.userChoice } catch {}
       setInstallEvt(null)
       setShowInstall(false)
-      try { localStorage.setItem(`install_done_${slug}`, '1') } catch {}
+      try { localStorage.setItem(`install_done2_${slug}`, '1') } catch {}
       return
     }
     if (inApp) { copyStoreLink(); return }
@@ -281,7 +281,7 @@ export default function LojaPage() {
 
   const dismissInstall = () => {
     setShowInstall(false)
-    try { localStorage.setItem(`install_hide_${slug}`, '1') } catch {}
+    try { localStorage.setItem(`install_hide2_${slug}`, '1') } catch {}
   }
 
   const copyStoreLink = () => {

@@ -11,7 +11,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     select: { name: true, slug: true, logo: true, primaryColor: true, isActive: true, isBlocked: true },
   })
 
-  const headers = { 'Content-Type': 'application/manifest+json', 'Cache-Control': 'no-store' }
+  // Headers iguais aos de um manifest.json estático (foi o formato que o Chrome aceitou)
+  const headers = {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+    'Cache-Control': 'public, max-age=0, must-revalidate',
+  }
 
   if (!store || !store.isActive || store.isBlocked) {
     return new Response(JSON.stringify({ name: 'MenuJá', short_name: 'MenuJá', start_url: '/', display: 'standalone' }), { headers })
