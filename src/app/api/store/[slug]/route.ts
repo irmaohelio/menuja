@@ -45,7 +45,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
             where: { isActive: true },
             orderBy: { sortOrder: 'asc' },
             include: {
-              optionGroups: { include: { options: { orderBy: { sortOrder: 'asc' } } }, orderBy: { sortOrder: 'asc' } },
+              optionGroups: { include: { options: { where: { isActive: true }, orderBy: { sortOrder: 'asc' } } }, orderBy: { sortOrder: 'asc' } },
               pizzaSizes: { orderBy: { sortOrder: 'asc' }, include: { flavors: { orderBy: { sortOrder: 'asc' } } } },
             },
           },

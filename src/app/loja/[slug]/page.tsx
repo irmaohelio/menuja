@@ -697,8 +697,8 @@ export default function LojaPage() {
                 >
                   {(hasScroll ? [...featured, ...featured] : featured).map((p: any, idx: number) => (
                     <div key={p.id + '-' + idx}
-                      onClick={() => setSelectedProduct(p)}
-                      className="flex-shrink-0 bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100"
+                      onClick={() => p.isAvailable !== false && setSelectedProduct(p)}
+                      className={`flex-shrink-0 bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100 ${p.isAvailable === false ? "opacity-70" : ""}`}
                       style={{ width: '120px', maxWidth: '120px', minWidth: '120px', flex: '0 0 120px', marginRight: '12px' }}>
                       {p.image && (
                         <div className="w-full aspect-[4/5] bg-white overflow-hidden">
@@ -707,12 +707,15 @@ export default function LojaPage() {
                       )}
                       <div className="p-2">
                         <p className="text-xs font-medium truncate">{p.name}</p>
-                        <p className="text-xs font-bold mt-0.5" style={{ color: store.primaryColor }}>
-                          {p.pizzaSizes?.length > 0
-                            ? `a partir de R$ ${Math.min(...p.pizzaSizes.map((s: any) => s.price)).toFixed(2)}`
-                            : `R$ ${(p.promoPrice || p.price).toFixed(2)}`
-                          }
-                        </p>
+                        {p.isAvailable === false ? (
+                          <span className="inline-block text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full mt-0.5">Esgotado</span>
+                        ) : (
+                          <p className="text-xs font-bold mt-0.5" style={{ color: store.primaryColor }}>
+                            {p.pizzaSizes?.length > 0
+                              ? `a partir de R$ ${Math.min(...p.pizzaSizes.map((s: any) => s.price)).toFixed(2)}`
+                              : `R$ ${(p.promoPrice || p.price).toFixed(2)}`}
+                          </p>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -758,8 +761,8 @@ export default function LojaPage() {
                     </div>
                   ) : (
                     cat.products.map((p: any) => (
-                      <div key={p.id} onClick={() => setSelectedProduct(p)}
-                        className="bg-white rounded-2xl shadow-sm cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100">
+                      <div key={p.id} onClick={() => p.isAvailable !== false && setSelectedProduct(p)}
+                        className={`bg-white rounded-2xl shadow-sm cursor-pointer active:scale-[0.97] transition-all hover:shadow-md border border-gray-100 relative ${p.isAvailable === false ? "opacity-70" : ""}`}>
                         {p.image && (
                           <div className="w-full aspect-[4/5] bg-white overflow-hidden">
                             <img src={p.image} alt={p.name} className="w-full h-full object-contain" />
@@ -768,14 +771,18 @@ export default function LojaPage() {
                         <div className="p-2.5">
                           <p className="text-sm font-medium truncate">{p.name}</p>
                           {p.description && <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">{p.description}</p>}
-                          <p className="text-sm font-bold mt-1.5" style={{ color: store.primaryColor }}>
-                            {p.pizzaSizes?.length > 0
-                              ? `a partir de R$ ${Math.min(...p.pizzaSizes.map((s: any) => s.price)).toFixed(2)}`
-                              : p.promoPrice
-                                ? `R$ ${p.promoPrice.toFixed(2)}`
-                                : `R$ ${p.price.toFixed(2)}`
-                            }
-                          </p>
+                          {p.isAvailable === false ? (
+                            <span className="inline-block text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full mt-1.5 font-medium">Esgotado</span>
+                          ) : (
+                            <p className="text-sm font-bold mt-1.5" style={{ color: store.primaryColor }}>
+                              {p.pizzaSizes?.length > 0
+                                ? `a partir de R$ ${Math.min(...p.pizzaSizes.map((s: any) => s.price)).toFixed(2)}`
+                                : p.promoPrice
+                                  ? `R$ ${p.promoPrice.toFixed(2)}`
+                                  : `R$ ${p.price.toFixed(2)}`
+                              }
+                            </p>
+                          )}
                         </div>
                       </div>
                     ))
@@ -1658,12 +1665,12 @@ function ProductModal({ product, store, onClose, onAdd }: {
               <button onClick={() => setQuantity(quantity + 1)} className="py-2 px-1 font-bold">+</button>
             </div>
             <button onClick={handleAdd}
-              disabled={(halfHalf && !flavor2) || (isEncomenda && !scheduledDate)}
+              disabled={(halfHalf && !flavor2) || (isEncomenda && !scheduledDate) || product.isAvailable === false}
               className={`flex-1 py-3 rounded-xl font-bold text-white ${
-                (halfHalf && !flavor2) || (isEncomenda && !scheduledDate) ? "opacity-50 cursor-not-allowed" : ""
+                (halfHalf && !flavor2) || (isEncomenda && !scheduledDate) || product.isAvailable === false ? "opacity-50 cursor-not-allowed" : ""
               }`}
               style={{ backgroundColor: store.buttonColor }}>
-              {halfHalf && !flavor2 ? "Escolha a 2ª metade" : isEncomenda && !scheduledDate ? "Escolha a data de entrega" : `Adicionar • R$ ${((effectivePrice + crustPrice + optionsPrice + extraFlavorsCost) * quantity).toFixed(2)}`}
+              {product.isAvailable === false ? "Esgotado" : halfHalf && !flavor2 ? "Escolha a 2ª metade" : isEncomenda && !scheduledDate ? "Escolha a data de entrega" : `Adicionar • R$ ${((effectivePrice + crustPrice + optionsPrice + extraFlavorsCost) * quantity).toFixed(2)}`}
             </button>
           </div>
         </div>

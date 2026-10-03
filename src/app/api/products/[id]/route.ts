@@ -26,6 +26,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       promoPrice: body.promoPrice,
       categoryId: body.categoryId,
       isActive: body.isActive,
+      isAvailable: body.isAvailable,
       isFeatured: body.isFeatured,
       isPizza: body.isPizza,
   }
@@ -58,13 +59,14 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         })
         if (group.options?.length) {
           await prisma.productOption.createMany({
-            data: group.options.map((opt: any, i: number) => ({
-              groupId: created.id,
-              name: opt.name,
-              price: opt.price || 0,
-              isDefault: opt.isDefault || false,
-              sortOrder: i,
-            })),
+          data: group.options.map((opt: any, i: number) => ({
+            groupId: created.id,
+            name: opt.name,
+            price: opt.price || 0,
+            isDefault: opt.isDefault || false,
+            isActive: opt.isActive !== false,
+            sortOrder: i,
+          })),
           })
         }
       }

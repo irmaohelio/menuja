@@ -42,6 +42,17 @@ export async function POST(req: NextRequest) {
       return error('Loja fechada no momento')
     }
 
+    // Não aceitar itens esgotados ou ocultos
+    const productIds = items.map((i: any) => i.productId).filter((id: any) => id && !String(id).startsWith('sorvete'))
+    if (productIds.length) {
+      const prods = await prisma.product.findMany({
+        where: { id: { in: productIds }, storeId: store.id },
+        select: { id: true, name: true, isActive: true, isAvailable: true },
+      })
+      const blocked = prods.find((p) => !p.isActive || p.isAvailable === false)
+      if (blocked) return error(`"${blocked.name}" está esgotado no momento.`)
+    }
+
     // Calcular totais
     let subtotal = 0
     const itemsData = items.map((item: any) => {

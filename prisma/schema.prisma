@@ -205,6 +205,7 @@ model Product {
   price         Float
   promoPrice    Float?
   isActive      Boolean  @default(true)
+  isAvailable   Boolean  @default(true) // false = esgotado (segue visível no cardápio)
   isFeatured    Boolean  @default(false)
   sortOrder     Int      @default(0)
   isPizza       Boolean  @default(false)
@@ -244,6 +245,7 @@ model ProductOption {
   name      String
   price     Float   @default(0)
   isDefault Boolean @default(false)
+  isActive  Boolean @default(true) // false = adicional indisponível (não aparece no app)
   sortOrder Int     @default(0)
 
   group ProductOptionGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)

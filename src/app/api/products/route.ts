@@ -45,6 +45,8 @@ export async function POST(req: NextRequest) {
       promoPrice: body.promoPrice,
       isFeatured: body.isFeatured || false,
       isPizza: body.isPizza || false,
+      isAvailable: body.isAvailable !== false,
+      isActive: body.isActive !== false,
       sortOrder: (maxOrder?.sortOrder ?? -1) + 1,
     },
   })
@@ -69,6 +71,7 @@ export async function POST(req: NextRequest) {
             name: opt.name,
             price: opt.price || 0,
             isDefault: opt.isDefault || false,
+            isActive: opt.isActive !== false,
             sortOrder: i,
           })),
         })

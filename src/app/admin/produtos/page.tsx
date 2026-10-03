@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect } from "react"
 
-type Adicional = { name: string; price: string }
+type Adicional = { name: string; price: string; isActive?: boolean }
 type PizzaSize = { name: string; price: string }
 type CategoryTemplate = { [categoryId: string]: Adicional[] }
 
@@ -28,7 +28,7 @@ export default function ProdutosPage() {
   const [editing, setEditing] = useState<any>(null)
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({
-    name: "", description: "", price: "", promoPrice: "", categoryId: "", isFeatured: false, hasSizes: false, hasExtras: false, image: "",
+    name: "", description: "", price: "", promoPrice: "", categoryId: "", isFeatured: false, hasSizes: false, hasExtras: false, image: "", isAvailable: true, isActive: true,
   })
   const [adicionais, setAdicionais] = useState<Adicional[]>([])
   const [addName, setAddName] = useState("")
@@ -156,7 +156,7 @@ export default function ProdutosPage() {
       promoPrice: form.promoPrice ? parseFloat(form.promoPrice) : null,
       optionGroups: form.hasExtras && adicionais.length > 0 ? [{
         name: "Adicionais", required: false, minQty: 0, maxQty: 20,
-        options: adicionais.map(a => ({ name: a.name, price: parseFloat(a.price) || 0, isDefault: false })),
+        options: adicionais.map(a => ({ name: a.name, price: parseFloat(a.price) || 0, isDefault: false, isActive: a.isActive !== false })),
       }] : [],
     }
     delete body.hasSizes
@@ -195,6 +195,14 @@ export default function ProdutosPage() {
     load()
   }
 
+  const toggleAvailable = async (product: any) => {
+    await fetch(`/api/products/${product.id}`, {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isAvailable: product.isAvailable === false }),
+    })
+    load()
+  }
+
   const toggleFeatured = async (product: any) => {
     await fetch(`/api/products/${product.id}`, {
       method: "PUT", headers: { "Content-Type": "application/json" },
@@ -215,7 +223,7 @@ export default function ProdutosPage() {
   }
 
   const resetForm = () => {
-    setForm({ name: "", description: "", price: "", promoPrice: "", categoryId: "", isFeatured: false, hasSizes: false, hasExtras: false, image: "" })
+    setForm({ name: "", description: "", price: "", promoPrice: "", categoryId: "", isFeatured: false, hasSizes: false, hasExtras: false, image: "", isAvailable: true, isActive: true })
     setAdicionais([])
     setPizzaSizes([])
   }
@@ -226,8 +234,9 @@ export default function ProdutosPage() {
       name: p.name, description: p.description || "", price: String(p.price),
       promoPrice: p.promoPrice ? String(p.promoPrice) : "", categoryId: p.categoryId || "",
       isFeatured: p.isFeatured, hasSizes: p.isPizza || (p.pizzaSizes?.length > 0), hasExtras: p.optionGroups?.[0]?.options?.length > 0, image: p.image || "",
+      isAvailable: p.isAvailable !== false, isActive: p.isActive !== false,
     })
-    setAdicionais(p.optionGroups?.[0]?.options?.map((o: any) => ({ name: o.name, price: String(o.price) })) || [])
+    setAdicionais(p.optionGroups?.[0]?.options?.map((o: any) => ({ name: o.name, price: String(o.price), isActive: o.isActive !== false })) || [])
     setPizzaSizes(p.pizzaSizes?.map((s: any) => ({ name: s.name, price: String(s.price) })) || [])
     setShowForm(true)
     setMinimized(false)
@@ -239,8 +248,9 @@ export default function ProdutosPage() {
       name: p.name + " (cópia)", description: p.description || "", price: String(p.price),
       promoPrice: p.promoPrice ? String(p.promoPrice) : "", categoryId: p.categoryId || "",
       isFeatured: false, hasSizes: p.isPizza || (p.pizzaSizes?.length > 0), hasExtras: p.optionGroups?.[0]?.options?.length > 0, image: p.image || "",
+      isAvailable: true, isActive: true,
     })
-    setAdicionais(p.optionGroups?.[0]?.options?.map((o: any) => ({ name: o.name, price: String(o.price) })) || [])
+    setAdicionais(p.optionGroups?.[0]?.options?.map((o: any) => ({ name: o.name, price: String(o.price), isActive: o.isActive !== false })) || [])
     setPizzaSizes(p.pizzaSizes?.map((s: any) => ({ name: s.name, price: String(s.price) })) || [])
     setShowForm(true)
     setMinimized(false)
@@ -273,11 +283,19 @@ export default function ProdutosPage() {
   const saveEditAdicional = () => {
     if (editandoAdicional === null || !editAddName.trim()) return
     const novos = [...adicionais]
-    novos[editandoAdicional] = { name: editAddName.trim(), price: editAddPrice || "0" }
+    novos[editandoAdicional] = {
+      name: editAddName.trim(),
+      price: editAddPrice || "0",
+      isActive: adicionais[editandoAdicional].isActive !== false,
+    }
     setAdicionais(novos)
     setEditandoAdicional(null)
     setEditAddName("")
     setEditAddPrice("")
+  }
+
+  const toggleAdicionalActive = (idx: number) => {
+    setAdicionais(adicionais.map((a, i) => (i === idx ? { ...a, isActive: a.isActive === false } : a)))
   }
 
   const cancelEditAdicional = () => {
@@ -353,7 +371,7 @@ export default function ProdutosPage() {
                 onEdit={() => startEdit(p)}
                 onDuplicate={() => duplicateProduct(p)}
                 onDelete={() => deleteProduct(p.id)}
-                onToggle={() => toggleActive(p)}
+                onToggle={() => toggleAvailable(p)}
                 onFeatured={() => toggleFeatured(p)}
                 onToggleSize={(sizeId) => toggleSizeActive(p, sizeId)}
               />
@@ -374,7 +392,7 @@ export default function ProdutosPage() {
                 onEdit={() => startEdit(p)}
                 onDuplicate={() => duplicateProduct(p)}
                 onDelete={() => deleteProduct(p.id)}
-                onToggle={() => toggleActive(p)}
+                onToggle={() => toggleAvailable(p)}
                 onFeatured={() => toggleFeatured(p)}
                 onToggleSize={(sizeId) => toggleSizeActive(p, sizeId)}
               />
@@ -492,6 +510,18 @@ export default function ProdutosPage() {
                 )}
               </div>
 
+              {/* Disponibilidade */}
+              <div className="flex gap-4 flex-wrap">
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" checked={form.isAvailable} onChange={e => setForm({...form, isAvailable: e.target.checked})} />
+                  <span className="text-sm">✅ Disponível para venda</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" checked={form.isActive} onChange={e => setForm({...form, isActive: e.target.checked})} />
+                  <span className="text-sm">👁️ Mostrar no cardápio</span>
+                </label>
+              </div>
+
               {/* Preço */}
               {!form.hasSizes && (
                 <div className="grid grid-cols-2 gap-3">
@@ -590,9 +620,14 @@ export default function ProdutosPage() {
                             </div>
                           </div>
                         ) : (
-                          <div className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-lg">
-                            <span className="text-sm font-medium">{a.name}</span>
+                          <div className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-lg gap-2">
+                            <span className={`text-sm font-medium ${a.isActive === false ? "line-through text-gray-400" : ""}`}>{a.name}</span>
                             <div className="flex items-center gap-2">
+                              <button onClick={() => toggleAdicionalActive(i)}
+                                className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${a.isActive !== false ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}
+                                title={a.isActive !== false ? "Marcar como indisponível" : "Marcar como disponível"}>
+                                {a.isActive !== false ? "Disponível" : "Indisponível"}
+                              </button>
                               <span className="text-sm text-green-600 font-medium">+R$ {parseFloat(a.price).toFixed(2)}</span>
                               <button onClick={() => startEditAdicional(i)} className="text-blue-400 hover:text-blue-600 text-sm">✏️</button>
                               <button onClick={() => removeAdicional(i)} className="text-red-400 hover:text-red-600 text-lg leading-none">×</button>
@@ -650,7 +685,7 @@ function ProductCard({ product, onEdit, onDuplicate, onDelete, onToggle, onFeatu
   const p = product
   const hasSizes = p.pizzaSizes?.length > 0
   return (
-    <div className={`bg-white p-3 sm:p-4 rounded-xl shadow-sm transition ${!p.isActive ? "opacity-50" : ""}`}>
+    <div className={`bg-white p-3 sm:p-4 rounded-xl shadow-sm transition ${!p.isActive || p.isAvailable === false ? "opacity-60" : ""}`}>
       <div className="flex items-center gap-3 sm:gap-4">
         <ProductImage src={p.image} alt={p.name} categoryType={p.category?.type} className="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded-lg flex-shrink-0" />
         <div className="flex-1 min-w-0">
@@ -667,7 +702,8 @@ function ProductCard({ product, onEdit, onDuplicate, onDelete, onToggle, onFeatu
               <span className="text-sm font-medium text-green-700">R$ {p.price.toFixed(2)}</span>
             )}
             {p.isPizza && <span className="text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-full">🍕</span>}
-            {!p.isActive && <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">Indisponível</span>}
+            {p.isAvailable === false && <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">Esgotado</span>}
+            {!p.isActive && <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">Oculto</span>}
             {p.optionGroups?.[0]?.options?.length > 0 && (
               <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">+{p.optionGroups[0].options.length}</span>
             )}
@@ -690,12 +726,12 @@ function ProductCard({ product, onEdit, onDuplicate, onDelete, onToggle, onFeatu
         </div>
         <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
         <button onClick={onToggle}
-          className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium transition ${p.isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}
-          title={p.isActive ? "Clique para indisponibilizar" : "Clique para disponibilizar"}>
-          <div className={`w-4 h-4 rounded-full relative transition ${p.isActive ? "bg-green-400" : "bg-red-400"}`}>
-            <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full shadow transition ${p.isActive ? "left-[6px]" : "left-0.5"}`} />
+          className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium transition ${p.isAvailable !== false ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}
+          title={p.isAvailable !== false ? "Clique para marcar como esgotado" : "Clique para marcar como disponível"}>
+          <div className={`w-4 h-4 rounded-full relative transition ${p.isAvailable !== false ? "bg-green-400" : "bg-amber-400"}`}>
+            <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full shadow transition ${p.isAvailable !== false ? "left-[6px]" : "left-0.5"}`} />
           </div>
-          <span className="text-xs">{p.isActive ? "Disponível" : "Indisponível"}</span>
+          <span className="text-xs">{p.isAvailable !== false ? "Disponível" : "Esgotado"}</span>
         </button>
         <button onClick={onFeatured}
           className={`p-1 active:scale-90 transition ${p.isFeatured ? "text-yellow-500" : "text-gray-300 hover:text-yellow-400"}`}
