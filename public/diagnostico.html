@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Diagnóstico PWA</title>
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 20px; font-size: 14px; line-height: 1.6; }
+    .ok { color: #16a34a; font-weight: bold; } .bad { color: #dc2626; font-weight: bold; }
+    code { background: #f3f4f6; padding: 2px 6px; border-radius: 6px; font-size: 12px; }
+    hr { border: 0; border-top: 1px solid #e5e7eb; margin: 16px 0; }
+    button { padding: 10px 16px; font-size: 14px; border-radius: 8px; border: 0; background: #e11d48; color: #fff; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <h2>Diagnóstico de instalação PWA</h2>
+  <div id="out"></div>
+  <hr/>
+  <button id="btn" disabled>Instalar</button>
+  <p id="btn-status"></p>
+  <script>
+    var o = document.getElementById('out')
+    function log(label, ok, detail) {
+      var div = document.createElement('div')
+      div.innerHTML = '<span class="' + (ok ? 'ok' : 'bad') + '">' + (ok ? '✔' : '✖') + '</span> ' + label
+      if (detail) div.innerHTML += ' <code>' + detail + '</code>'
+      o.appendChild(div)
+    }
+    function info(text) { var p = document.createElement('p'); p.style.color='#6b7280'; p.textContent=text; o.appendChild(p) }
+
+    // 1. UA / browser
+    var ua = navigator.userAgent
+    var isChrome = /Chrome\/\d/.test(ua) && !/Edg|OPR|Brave/.test(ua)
+    var isWebView = /; wv\)/.test(ua) || /FBAN|FBAV|Instagram|WhatsApp|Line\//.test(ua)
+    log('Navegador Chrome', isChrome, ua.match(/Chrome\/[\d.]+/)?.[0] || '?')
+    log('WebView/app interno', isWebView, isWebView ? 'SIM' : 'NAO')
+
+    // 2. Service worker
+    var sw = 'serviceWorker' in navigator
+    log('Service Worker suportado', sw)
+
+    // 3. Fetch manifest link from the store page
+    fetch('/loja/acaiteria-santos?t=' + Date.now()).then(function(r){return r.text()}).then(function(html){
+      var headEnd = html.indexOf('</head>')
+      var manIdx = html.indexOf('rel="manifest"')
+      var inHead = manIdx >= 0 && manIdx < headEnd
+      log('manifest na loja está no <head>', inHead, inHead ? 'SIM' : 'NO BODY!')
+
+      // Extract href
+      var href = ''
+      if (manIdx >= 0) {
+        var seg = html.slice(Math.max(0, manIdx - 50), manIdx + 200)
+        var m = seg.match(/href="([^"]+)"/)
+        href = m ? m[1] : '?'
+      }
+      info('href: ' + href)
+
+      // 4. Fetch manifest content
+      if (href && href !== '?') {
+        fetch(href + '?t=' + Date.now()).then(function(r){return r.json()}).then(function(j){
+          log('Manifest carregou', true, 'name=' + j.name + ' icons=' + (j.icons?.length||0))
+          info('start_url: ' + j.start_url)
+        }).catch(function(e){ log('Manifest NÃO carregou', false, e.message) })
+      }
+    })
+
+    // 5. beforeinstallprompt
+    window.addEventListener('beforeinstallprompt', function(e){
+      e.preventDefault()
+      log('beforeinstallprompt DISPAROU', true)
+      var btn = document.getElementById('btn')
+      btn.disabled = false
+      btn.onclick = function(){ e.prompt() }
+      document.getElementById('btn-status').textContent = 'O evento chegou! Clique em Instalar.'
+    })
+
+    setTimeout(function(){
+      if (!window.__fired) {
+        log('beforeinstallprompt NÃO disparou', false)
+        document.getElementById('btn-status').textContent = 'O evento NÃO disparou (veja os itens vermelhos acima)'
+      }
+    }, 12000)
+    window.__fired = false
+    window.addEventListener('beforeinstallprompt', function(){ window.__fired = true })
+
+    // 6. Standalone check
+    var standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone
+    log('Já está como app (standalone)', standalone)
+
+    info('Aberta no: ' + location.href)
+    info('Horário: ' + new Date().toLocaleString('pt-BR'))
+  </script>
+</body>
+</html>
