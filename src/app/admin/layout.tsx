@@ -331,6 +331,27 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </header>
 
+      {/* ===== EXPIRY WARNING ===== */}
+      {trial && !trial.isBlocked && trial.daysRemaining <= 3 && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2.5">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">⏰</span>
+              <p className="text-sm text-amber-800">
+                <strong>{trial.isPaid ? "Plano" : "Teste"}</strong> expira em{" "}
+                <strong>{trial.daysRemaining} dia{trial.daysRemaining !== 1 ? "s" : ""}</strong>
+                {trial.planExpiresAt ? ` (${new Date(trial.planExpiresAt).toLocaleDateString("pt-BR")})` : ""}
+                {trial.isPaid ? "" : ". Escolha um plano para continuar usando o MenuJá."}
+              </p>
+            </div>
+            <Link href="/admin/planos"
+              className="shrink-0 px-3 py-1.5 bg-amber-500 text-white rounded-lg text-xs font-bold hover:bg-amber-600 transition whitespace-nowrap">
+              Ver Planos
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* ===== DESKTOP: Sidebar ===== */}
       <div className="hidden lg:flex">
         <aside className="sticky top-[52px] left-0 h-[calc(100vh-52px)] w-64 bg-white border-r overflow-y-auto">
