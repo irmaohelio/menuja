@@ -7,6 +7,8 @@ import { isWithinBusinessHours } from "@/lib/business-hours"
 
 // Shared AudioContext, unlocked on the first user interaction (browser autoplay policy)
 let audioCtx: AudioContext | null = null
+let soundTimer: any = null
+
 function getAudioCtx(): AudioContext | null {
   if (typeof window === "undefined") return null
   const w = window as any
@@ -16,8 +18,8 @@ function getAudioCtx(): AudioContext | null {
   return audioCtx
 }
 
-// Short 3-note chime played when a new order arrives (Web Audio, no asset needed)
-function playOrderSound() {
+// One 3-note chime
+function playChimeOnce() {
   try {
     const ctx = getAudioCtx()
     if (!ctx) return
@@ -31,7 +33,7 @@ function playOrderSound() {
         osc.type = "sine"
         osc.frequency.value = freq
         gain.gain.setValueAtTime(0.0001, t)
-        gain.gain.exponentialRampToValueAtTime(0.35, t + 0.02)
+        gain.gain.exponentialRampToValueAtTime(0.6, t + 0.02)
         gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.15)
         osc.connect(gain)
         gain.connect(ctx.destination)
@@ -42,6 +44,23 @@ function playOrderSound() {
     if (ctx.state === "suspended") ctx.resume().then(play).catch(() => {})
     else play()
   } catch {}
+}
+
+// Loop the chime for ~5 seconds (or until stopOrderSound is called)
+function startOrderSoundLoop() {
+  stopOrderSound()
+  let count = 0
+  const tick = () => {
+    if (count >= 4) { stopOrderSound(); return }
+    playChimeOnce()
+    count++
+    soundTimer = setTimeout(tick, 1200)
+  }
+  tick()
+}
+
+function stopOrderSound() {
+  if (soundTimer) { clearTimeout(soundTimer); soundTimer = null }
 }
 
 const menuItems = [
@@ -77,17 +96,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     unreadOrders.forEach((n: any) => seenNotifIds.current.add(n.id))
     if (fresh) {
       setOrderAlert(fresh)
-      playOrderSound()
+      startOrderSoundLoop()
     }
   }, [notifications])
 
-  // Unlock audio on the first user interaction so order chimes can play
+  // Unlock audio on user interaction (continuous, not just once)
   useEffect(() => {
     const unlock = () => {
       const ctx = getAudioCtx()
       if (ctx && ctx.state === "suspended") ctx.resume().catch(() => {})
     }
-    window.addEventListener("pointerdown", unlock, { once: true })
+    window.addEventListener("pointerdown", unlock)
     return () => window.removeEventListener("pointerdown", unlock)
   }, [])
 
@@ -234,11 +253,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <p className="font-bold leading-tight">{orderAlert.title || "Novo pedido!"}</p>
               {orderAlert.message && <p className="text-sm text-white/90 truncate">{orderAlert.message}</p>}
             </div>
-            <Link href="/admin/pedidos" onClick={() => setOrderAlert(null)}
+            <Link href="/admin/pedidos" onClick={() => { setOrderAlert(null); stopOrderSound() }}
               className="shrink-0 rounded-xl bg-white text-emerald-700 font-bold text-sm px-3 py-2 hover:bg-emerald-50 transition">
               Ver pedido
             </Link>
-            <button onClick={() => setOrderAlert(null)} aria-label="Fechar"
+            <button onClick={() => { setOrderAlert(null); stopOrderSound() }} aria-label="Fechar"
               className="shrink-0 text-white/80 hover:text-white text-lg leading-none">✕</button>
           </div>
         </div>
