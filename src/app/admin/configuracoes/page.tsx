@@ -454,6 +454,69 @@ export default function ConfiguracoesPage() {
               Ativar neste aparelho
             </button>
           </div>
+
+          {/* Telegram */}
+          <div className="border-t pt-5">
+            <h3 className="font-bold">📲 Telegram (alternativa ao WhatsApp)</h3>
+            <p className="text-sm text-gray-500 mt-1">Receba avisos no Telegram. Grátis e funciona sem ativação complicada.</p>
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-800 space-y-1 mt-3">
+              <p className="font-bold">Como configurar:</p>
+              <p>1. Abra o Telegram e busque <strong>@BotFather</strong>.</p>
+              <p>2. Envie <strong>/newbot</strong> e siga as instruções (escolha nome e usuário).</p>
+              <p>3. Copie o <strong>token</strong> que ele der.</p>
+              <p>4. Abra o bot criado e envie qualquer mensagem (ex: "oi").</p>
+              <p>5. Cole o token abaixo e clique em <strong>"Obter Chat ID"</strong>.</p>
+            </div>
+            <div className="space-y-3 mt-3">
+              <div>
+                <label className="block text-sm font-medium mb-1">Token do bot</label>
+                <input value={settings.notifyTelegramToken || ""} onChange={e => setSettings({ ...settings, notifyTelegramToken: e.target.value })}
+                  placeholder="123456789:ABCdefGHIjklMNOpqrSTUvwxYZ" className="w-full px-4 py-3 border rounded-xl" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Chat ID</label>
+                <div className="flex gap-2">
+                  <input value={settings.notifyTelegramChatId || ""} onChange={e => setSettings({ ...settings, notifyTelegramChatId: e.target.value })}
+                    placeholder="123456789" className="flex-1 px-4 py-3 border rounded-xl" />
+                  <button onClick={async () => {
+                    if (!settings.notifyTelegramToken) { alert("Cole o token do bot primeiro"); return }
+                    try {
+                      const r = await fetch("/api/notify/telegram-chat-id", {
+                        method: "POST", headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ token: settings.notifyTelegramToken }),
+                      })
+                      const d = await r.json()
+                      if (d.success) {
+                        setSettings({ ...settings, notifyTelegramChatId: d.chatId })
+                        alert("Chat ID encontrado: " + d.chatId)
+                      } else {
+                        alert(d.error || "Erro ao obter Chat ID")
+                      }
+                    } catch { alert("Erro de conexão") }
+                  }}
+                    className="px-4 py-3 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 whitespace-nowrap">
+                    Obter Chat ID
+                  </button>
+                </div>
+              </div>
+              <button onClick={async () => {
+                if (!settings.notifyTelegramToken || !settings.notifyTelegramChatId) {
+                  alert("Preencha o token e o Chat ID"); return
+                }
+                try {
+                  const r = await fetch("/api/notify/test", {
+                    method: "POST", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ type: "telegram", telegramToken: settings.notifyTelegramToken, telegramChatId: settings.notifyTelegramChatId }),
+                  })
+                  const d = await r.json()
+                  alert(d.success ? "Mensagem enviada no Telegram!" : d.error || "Erro")
+                } catch { alert("Erro de conexão") }
+              }}
+                className="px-5 py-2.5 rounded-xl text-white font-medium" style={{ backgroundColor: "var(--btn)" }}>
+                Testar Telegram
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

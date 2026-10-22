@@ -154,6 +154,10 @@ model StoreSettings {
   notifyWhatsapp  String?
   notifyApiKey    String?
 
+  // Notificação por Telegram (alternativa gratuita ao WhatsApp)
+  notifyTelegramToken  String?
+  notifyTelegramChatId String?
+
   store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
 }
 

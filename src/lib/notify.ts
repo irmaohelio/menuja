@@ -36,3 +36,30 @@ export function orderWhatsAppText(order: {
   const local = order.deliveryType === 'delivery' && order.customerNeighborhood ? ` (${order.customerNeighborhood})` : ''
   return `🔔 Novo pedido #${order.orderNumber}\n${order.customerName}\n${tipo}${local}\nTotal: R$ ${order.total.toFixed(2)}`
 }
+
+// Telegram: enviar mensagem para o chat do lojista
+export async function sendTelegramMessage(token: string, chatId: string, text: string): Promise<boolean> {
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text }),
+    })
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
+// Telegram: descobrir o chat ID do bot (depois de enviar uma mensagem)
+export async function getTelegramChatId(token: string): Promise<string | null> {
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${token}/getUpdates`)
+    if (!res.ok) return null
+    const data = await res.json()
+    const last = data.result?.[data.result.length - 1]
+    return last?.message?.chat?.id?.toString() || last?.message?.from?.id?.toString() || null
+  } catch {
+    return null
+  }
+}

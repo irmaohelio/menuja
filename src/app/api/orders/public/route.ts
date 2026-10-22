@@ -6,7 +6,7 @@ import { isWithinBusinessHours } from '@/lib/business-hours'
 import { findStoreCustomer, attachCustomerIdentifiers, createStoreCustomer, normalizeEmail, normalizePhone } from '@/lib/customers'
 import { rateLimit, clientIp } from '@/lib/rate-limit'
 import { validateCoupon } from '@/lib/coupons'
-import { sendOrderWhatsApp, orderWhatsAppText } from '@/lib/notify'
+import { sendOrderWhatsApp, orderWhatsAppText, sendTelegramMessage } from '@/lib/notify'
 import { sendStorePush } from '@/lib/push'
 
 export async function POST(req: NextRequest) {
@@ -227,6 +227,22 @@ export async function POST(req: NextRequest) {
         customerNeighborhood,
       }),
     )
+
+    // Avisa o lojista no Telegram (se configurado)
+    if (store.settings?.notifyTelegramToken && store.settings?.notifyTelegramChatId) {
+      await sendTelegramMessage(
+        store.settings.notifyTelegramToken,
+        store.settings.notifyTelegramChatId,
+        orderWhatsAppText({
+          orderNumber: order.orderNumber,
+          customerName,
+          total,
+          deliveryType,
+          paymentMethod,
+          customerNeighborhood,
+        }),
+      )
+    }
 
     // Notificação push nos aparelhos inscritos (se configurado)
     await sendStorePush(store.id, {
