@@ -24,6 +24,33 @@ export async function sendOrderWhatsApp(
   }
 }
 
+// WhatsApp Cloud API (Meta oficial) - gratuito ate 1000 conversas/mes
+export async function sendWhatsAppCloud(
+  to: string,       // numero do lojista (com DDI, ex: 5533999421853)
+  phoneId: string,  // WhatsApp Business phone number ID
+  token: string,    // Meta access token
+  text: string,
+): Promise<boolean> {
+  try {
+    const res = await fetch(`https://graph.facebook.com/v20.0/${phoneId}/messages`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        to: to.replace(/\D/g, ''),
+        type: 'text',
+        text: { body: text },
+      }),
+    })
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
 export function orderWhatsAppText(order: {
   orderNumber: number | string
   customerName: string

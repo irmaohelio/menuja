@@ -149,10 +149,11 @@ model StoreSettings {
   halfAndHalfPrice Float?
   whatsappOrders   Boolean @default(false)
 
-  // Notificação de novo pedido por WhatsApp (CallMeBot)
-  notifyOnOrder   Boolean @default(false)
-  notifyWhatsapp  String?
-  notifyApiKey    String?
+  // Notificação de novo pedido por WhatsApp (Cloud API - Meta oficial)
+  notifyOnOrder     Boolean @default(false)
+  notifyWhatsapp    String?   // número do lojista para receber (com DDI)
+  notifyWhatsappId  String?   // WhatsApp Business phone number ID (Meta)
+  notifyWhatsappToken String? // Meta access token
 
   // Notificação por Telegram (alternativa gratuita ao WhatsApp)
   notifyTelegramToken  String?

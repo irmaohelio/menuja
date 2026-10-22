@@ -6,7 +6,7 @@ import { isWithinBusinessHours } from '@/lib/business-hours'
 import { findStoreCustomer, attachCustomerIdentifiers, createStoreCustomer, normalizeEmail, normalizePhone } from '@/lib/customers'
 import { rateLimit, clientIp } from '@/lib/rate-limit'
 import { validateCoupon } from '@/lib/coupons'
-import { sendOrderWhatsApp, orderWhatsAppText, sendTelegramMessage } from '@/lib/notify'
+import { sendWhatsAppCloud, orderWhatsAppText, sendTelegramMessage } from '@/lib/notify'
 import { sendStorePush } from '@/lib/push'
 
 export async function POST(req: NextRequest) {
@@ -215,18 +215,22 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    // Avisa o lojista no WhatsApp (se configurado)
-    await sendOrderWhatsApp(
-      store.settings,
-      orderWhatsAppText({
-        orderNumber: order.orderNumber,
-        customerName,
-        total,
-        deliveryType,
-        paymentMethod,
-        customerNeighborhood,
-      }),
-    )
+    // Avisa o lojista no WhatsApp (Cloud API - Meta)
+    if (store.settings?.notifyOnOrder && store.settings?.notifyWhatsapp && store.settings?.notifyWhatsappId && store.settings?.notifyWhatsappToken) {
+      await sendWhatsAppCloud(
+        store.settings.notifyWhatsapp,
+        store.settings.notifyWhatsappId,
+        store.settings.notifyWhatsappToken,
+        orderWhatsAppText({
+          orderNumber: order.orderNumber,
+          customerName,
+          total,
+          deliveryType,
+          paymentMethod,
+          customerNeighborhood,
+        }),
+      )
+    }
 
     // Avisa o lojista no Telegram (se configurado)
     if (store.settings?.notifyTelegramToken && store.settings?.notifyTelegramChatId) {

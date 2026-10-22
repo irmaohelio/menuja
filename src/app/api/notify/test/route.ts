@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import { getCurrentStore } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { success, error, unauthorized } from '@/lib/api'
-import { sendOrderWhatsApp, sendTelegramMessage } from '@/lib/notify'
+import { sendWhatsAppCloud, sendTelegramMessage } from '@/lib/notify'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,21 +21,15 @@ export async function POST(req: NextRequest) {
     return ok ? success({ sent: true }) : error('Não foi possível enviar via Telegram. Confira o token e o Chat ID.')
   }
 
-  // WhatsApp (CallMeBot)
-  const notifyWhatsapp = body.notifyWhatsapp || settings?.notifyWhatsapp
-  const notifyApiKey = body.notifyApiKey || settings?.notifyApiKey
+  // WhatsApp Cloud API
+  const to = body.notifyWhatsapp || settings?.notifyWhatsapp
+  const phoneId = body.notifyWhatsappId || settings?.notifyWhatsappId
+  const token = body.notifyWhatsappToken || settings?.notifyWhatsappToken
 
-  if (!notifyWhatsapp || !notifyApiKey) {
-    return error('Configure os dados de notificação primeiro.')
+  if (!to || !phoneId || !token) {
+    return error('Preencha número, Phone Number ID e Access Token primeiro.')
   }
 
-  const ok = await sendOrderWhatsApp(
-    { notifyOnOrder: true, notifyWhatsapp, notifyApiKey },
-    '✅ Teste do MenuJá: seus avisos de pedido no WhatsApp estão funcionando!',
-  )
-
-  if (!ok) {
-    return error('Não foi possível enviar. Confira o número (com DDD) e a API key do CallMeBot.')
-  }
-  return success({ sent: true })
+  const ok = await sendWhatsAppCloud(to, phoneId, token, '✅ Teste do MenuJá: seus avisos de pedido no WhatsApp estão funcionando!')
+  return ok ? success({ sent: true }) : error('Não foi possível enviar. Confira o número (com DDI), Phone Number ID e Access Token.')
 }

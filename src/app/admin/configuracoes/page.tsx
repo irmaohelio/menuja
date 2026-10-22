@@ -11,7 +11,6 @@ export default function ConfiguracoesPage() {
   const [saving, setSaving] = useState(false)
   const [savingHour, setSavingHour] = useState<number | null>(null)
   const [savedHour, setSavedHour] = useState<number | null>(null)
-  const [testingNotify, setTestingNotify] = useState(false)
   const [tab, setTab] = useState("loja")
 
   useEffect(() => {
@@ -86,22 +85,6 @@ export default function ConfiguracoesPage() {
       alert("Erro de conexão")
     }
     setSavingHour(null)
-  }
-
-  const testNotify = async () => {
-    setTestingNotify(true)
-    try {
-      const res = await fetch("/api/notify/test", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ notifyWhatsapp: settings.notifyWhatsapp, notifyApiKey: settings.notifyApiKey }),
-      })
-      const data = await res.json()
-      alert(data.success ? "Mensagem de teste enviada! Confira seu WhatsApp." : data.error || "Falha ao enviar")
-    } catch {
-      alert("Erro de conexão")
-    }
-    setTestingNotify(false)
   }
 
   const urlBase64ToUint8Array = (base64: string) => {
@@ -406,8 +389,16 @@ export default function ConfiguracoesPage() {
       {tab === "notificacoes" && (
         <div className="bg-white p-6 rounded-2xl shadow-sm space-y-4">
           <div>
-            <h3 className="font-bold text-lg">🔔 Aviso de novo pedido por WhatsApp</h3>
-            <p className="text-sm text-gray-500 mt-1">Receba uma mensagem no seu WhatsApp a cada novo pedido.</p>
+            <h3 className="font-bold text-lg">📲 Aviso de novo pedido por WhatsApp</h3>
+            <p className="text-sm text-gray-500 mt-1">Receba uma mensagem no seu WhatsApp a cada novo pedido (WhatsApp Cloud API — oficial e grátis).</p>
+          </div>
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-800 space-y-1">
+            <p className="font-bold">Como configurar (grátis, ~5 min):</p>
+            <p>1. Acesse <strong>developers.facebook.com</strong> e crie uma conta de desenvolvedor.</p>
+            <p>2. Crie um app → tipo "Business" → adicione o produto <strong>WhatsApp</strong>.</p>
+            <p>3. No painel do WhatsApp, copie o <strong>Phone Number ID</strong> e o <strong>Access Token</strong> (de teste funciona; para produção, gere um token permanente).</p>
+            <p>4. Adicione o número do WhatsApp que receberá os avisos (pode ser o seu).</p>
+            <p>5. Cole os dados abaixo e clique em <strong>Testar</strong>.</p>
           </div>
           <label className="flex items-center justify-between">
             <span>Ativar avisos no WhatsApp</span>
@@ -415,26 +406,38 @@ export default function ConfiguracoesPage() {
               onChange={e => setSettings({ ...settings, notifyOnOrder: e.target.checked })} />
           </label>
           <div>
-            <label className="block text-sm font-medium mb-1">Seu WhatsApp (com DDD)</label>
+            <label className="block text-sm font-medium mb-1">Seu WhatsApp (com DDI)</label>
             <input value={settings.notifyWhatsapp || ""} onChange={e => setSettings({ ...settings, notifyWhatsapp: e.target.value })}
-              placeholder="33 99942-1853" className="w-full px-4 py-3 border rounded-xl" />
+              placeholder="5533999421853" className="w-full px-4 py-3 border rounded-xl" />
+            <p className="text-xs text-gray-400 mt-1">Formato: DDI + DDD + número (ex: 5533999421853)</p>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">API key do CallMeBot</label>
-            <input value={settings.notifyApiKey || ""} onChange={e => setSettings({ ...settings, notifyApiKey: e.target.value })}
-              placeholder="Ex: 123456" className="w-full px-4 py-3 border rounded-xl" />
+            <label className="block text-sm font-medium mb-1">Phone Number ID (Meta)</label>
+            <input value={settings.notifyWhatsappId || ""} onChange={e => setSettings({ ...settings, notifyWhatsappId: e.target.value })}
+              placeholder="1234567890123456" className="w-full px-4 py-3 border rounded-xl" />
           </div>
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-800 space-y-1">
-            <p className="font-bold">Como ativar (grátis):</p>
-            <p>1. Salve o número <strong>+34 644 51 95 23</strong> nos contatos.</p>
-            <p>2. Envie no WhatsApp para esse número: <strong>I allow callmebot to send me messages</strong></p>
-            <p>3. Você recebe uma API key — cole no campo acima.</p>
-            <p>4. Clique em <strong>Salvar</strong> (topo) e depois em <strong>Enviar teste</strong>.</p>
+          <div>
+            <label className="block text-sm font-medium mb-1">Access Token (Meta)</label>
+            <input value={settings.notifyWhatsappToken || ""} onChange={e => setSettings({ ...settings, notifyWhatsappToken: e.target.value })}
+              placeholder="EAAG..." className="w-full px-4 py-3 border rounded-xl" />
           </div>
-          <button onClick={testNotify} disabled={testingNotify}
-            className="px-5 py-2.5 rounded-xl text-white font-medium disabled:opacity-50" style={{ backgroundColor: "var(--btn)" }}>
-            {testingNotify ? "Enviando..." : "Enviar teste"}
+          <button onClick={async () => {
+            if (!settings.notifyWhatsapp || !settings.notifyWhatsappId || !settings.notifyWhatsappToken) {
+              alert("Preencha todos os campos primeiro"); return
+            }
+            try {
+              const r = await fetch("/api/notify/test", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ notifyWhatsapp: settings.notifyWhatsapp, notifyWhatsappId: settings.notifyWhatsappId, notifyWhatsappToken: settings.notifyWhatsappToken }),
+              })
+              const d = await r.json()
+              alert(d.success ? "Mensagem enviada no WhatsApp!" : d.error || "Erro")
+            } catch { alert("Erro de conexão") }
+          }}
+            className="px-5 py-2.5 rounded-xl text-white font-medium" style={{ backgroundColor: "var(--btn)" }}>
+            Testar WhatsApp
           </button>
+          <p className="text-xs text-gray-400">Lembre de clicar em Salvar (topo) para guardar os dados.</p>
 
           <div className="border-t pt-5">
             <h3 className="font-bold">📱 Notificações no celular (push)</h3>
