@@ -97,8 +97,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (fresh) {
       setOrderAlert(fresh)
       startOrderSoundLoop()
-    } else if (unreadOrders.length === 0 && orderAlert) {
-      // Pedido confirmado/processado — fecha o alerta
+    } else if (unreadOrders.length === 0) {
       setOrderAlert(null)
       stopOrderSound()
     }
@@ -123,7 +122,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   // Refresh the bell immediately when a pedido is cancelled/deleted in the app
   useEffect(() => {
-    const onUpdated = () => refreshNotifications()
+    const onUpdated = () => {
+      refreshNotifications()
+      setOrderAlert(null)
+      stopOrderSound()
+    }
     window.addEventListener("notifications-updated", onUpdated)
     return () => window.removeEventListener("notifications-updated", onUpdated)
   }, [refreshNotifications])
