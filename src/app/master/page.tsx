@@ -2,6 +2,27 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 
+function getDaysInfo(store: any) {
+  const now = Date.now()
+  if (store.plan === "trial") {
+    const end = new Date(store.trialEndsAt).getTime()
+    const days = Math.max(0, Math.ceil((end - now) / (1000 * 60 * 60 * 24)))
+    return {
+      label: days > 0 ? `Teste: ${days} dias` : "Teste expirado",
+      color: days > 7 ? "bg-green-100 text-green-700" : days > 0 ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700",
+    }
+  }
+  if (store.planExpiresAt) {
+    const end = new Date(store.planExpiresAt).getTime()
+    const days = Math.max(0, Math.ceil((end - now) / (1000 * 60 * 60 * 24)))
+    return {
+      label: days > 0 ? `Plano: ${days} dias` : "Plano expirado",
+      color: days > 7 ? "bg-green-100 text-green-700" : days > 0 ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700",
+    }
+  }
+  return { label: "Sem plano", color: "bg-gray-100 text-gray-500" }
+}
+
 export default function MasterPage() {
   const router = useRouter()
   const [data, setData] = useState<any>(null)
@@ -92,6 +113,14 @@ export default function MasterPage() {
                     <span>{store._count.products} produtos</span>
                     <span>{store._count.customers} clientes</span>
                   </div>
+                  {(() => {
+                    const info = getDaysInfo(store)
+                    return (
+                      <span className={`inline-block mt-2 px-2 py-1 rounded-full text-xs font-medium ${info.color}`}>
+                        {info.label}
+                      </span>
+                    )
+                  })()}
                 </div>
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${store.isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
                   {store.isActive ? "Ativa" : "Inativa"}
