@@ -97,6 +97,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (fresh) {
       setOrderAlert(fresh)
       startOrderSoundLoop()
+    } else if (unreadOrders.length === 0 && orderAlert) {
+      // Pedido confirmado/processado — fecha o alerta
+      setOrderAlert(null)
+      stopOrderSound()
     }
   }, [notifications])
 
