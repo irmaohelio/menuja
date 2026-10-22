@@ -46,6 +46,12 @@ export async function PUT(req: NextRequest) {
     data: { orderId, status },
   })
 
+  // Marca a notificação do pedido como lida (sino para de pulsar)
+  await prisma.notification.updateMany({
+    where: { orderId, storeId: store.id, isRead: false },
+    data: { isRead: true },
+  })
+
   // Pedido cancelado deixa de ser uma notificação pendente (sino para de marcar)
   if (status === 'cancelled') {
     await prisma.notification.deleteMany({

@@ -292,7 +292,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   <div className="p-3 border-b flex items-center justify-between">
                     <span className="font-bold text-sm">Notificações</span>
                     {unread > 0 && (
-                      <button onClick={markAllRead} className="text-xs" style={{ color: "var(--primary)" }}>Marcar como lidas</button>
+                      <button onClick={() => { markAllRead(); setShowNotif(false) }} className="text-xs" style={{ color: "var(--primary)" }}>Marcar como lidas</button>
                     )}
                   </div>
                   {notifications.length === 0 ? (
